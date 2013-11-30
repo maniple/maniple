@@ -177,11 +177,11 @@ abstract class Maniple_Model_Db_Mapper
      * are equal to NULL (which can be typically a result of LEFT JOIN),
      * the subrecord will be replaced with a NULL value.
      *
-     * @param  array $row
      * @param  string $separator
+     * @param  array $row
      * @return array
      */
-    public static function splitKeys(array $row, $separator) // {{{
+    public static function splitKeys($separator, array $row) // {{{
     {
         $result = array();
 

@@ -39,7 +39,8 @@ abstract class Maniple_Model_Db_TableMapper extends Maniple_Model_Db_Mapper
      * Fetch all records from managed table matching given criteria.
      *
      * If an 'index_by' modifier is provided, it will be used as a column
-     * name for indexing retrieved records.
+     * name for indexing retrieved records. Also a callback 'map' modifier
+     * can be provided.
      *
      * @param  array $conditions
      * @param  array $modifiers
@@ -49,9 +50,19 @@ abstract class Maniple_Model_Db_TableMapper extends Maniple_Model_Db_Mapper
     {
         $select = $this->_selectAll($conditions, $modifiers);
 
-        if (isset($modifiers['index_by'])) {
-            $index_by = $modifiers['index_by'];
-            return $this->_fetchAll($select, array('index_by' => $index_by));
+        $index_by = isset($modifiers['index_by'])
+            ? $modifiers['index_by']
+            : null;
+
+        $map = isset($modifiers['map'])
+            ? $modifiers['map']
+            : null;
+
+        if ($index_by || $map) {
+            return $this->_fetchAll($select, array(
+                'index_by' => $index_by,
+                'map' => $map,
+            ));
         }
 
         return $this->_fetchAll($select);
