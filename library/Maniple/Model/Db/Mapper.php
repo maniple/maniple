@@ -9,6 +9,7 @@
  * provider instead.
  *
  * @package Maniple_Model_Db
+ * @uses    Zend_Stdlib
  * @version 2013-11-30
  * @author  xemlock
  */
@@ -132,7 +133,10 @@ abstract class Maniple_Model_Db_Mapper
     protected function _fetchAll(Zend_Db_Select $select, array $modifiers = null) // {{{
     {
         if (isset($modifiers['map'])) {
-            $map = new Zend_Stdlib_CallbackHandler($modifiers['map']);
+            $map = $modifiers['map'];
+            if (!$map instanceof Zend_Stdlib_CallbackHandler) {
+                $map = new Zend_Stdlib_CallbackHandler($map);
+            }
         } else {
             $map = null;
         }
