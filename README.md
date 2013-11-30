@@ -1,2 +1,2 @@
-maniple
+Maniple
 =======
