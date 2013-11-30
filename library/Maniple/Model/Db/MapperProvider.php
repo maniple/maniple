@@ -1,6 +1,7 @@
 <?php
 
-class Maniple_Model_Db_MapperProvider implements Maniple_Model_MapperProvider
+class Maniple_Model_Db_MapperProvider
+    implements Maniple_Model_MapperProviderInterface
 {
     /**
      * @var Zend_Db_Adapter_Abstract
@@ -20,10 +21,10 @@ class Maniple_Model_Db_MapperProvider implements Maniple_Model_MapperProvider
     /**
      * Zend_Db_Adapter_Abstract $db
      */
-    public function __construct(Zend_Db_Adapter_Abstract $db)
+    public function __construct(Zend_Db_Adapter_Abstract $db) // {{{
     {
         $this->_tableProvider = new Maniple_Model_Db_TableProvider($db);
-    }
+    } // }}}
 
     /**
      * Get registered table provider.

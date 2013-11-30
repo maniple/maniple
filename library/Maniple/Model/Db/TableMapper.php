@@ -1,6 +1,7 @@
 <?php
 
 abstract class Maniple_Model_Db_TableMapper extends Maniple_Model_Db_Mapper
+    implements Maniple_Model_RepositoryInterface
 {
     /**
      * Name of managed table.
