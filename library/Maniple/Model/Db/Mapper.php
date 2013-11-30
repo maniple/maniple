@@ -1,39 +1,46 @@
 <?php
 
+/**
+ * Data mapper based on Zend_Db package.
+ *
+ * Data mapper instances are designed to operate on database table(s), and in
+ * consequence must be equipped with a table data gateway provider. Database
+ * connection is not stored directly in mapper, but retrieved from gateway
+ * provider instead.
+ *
+ * @package Maniple_Model_Db
+ * @version 2013-11-30
+ * @author  xemlock
+ */
 abstract class Maniple_Model_Db_Mapper
 {
     /**
-     * @var Zend_Db_Adapter_Abstract
-     * @deprecated
-     */
-    protected $_db;
-
-    /**
-     * Table provider
+     * Table data gateway provider
      * @var Maniple_Model_Db_TableProvider
      */
     protected $_tableProvider;
 
     /**
-     * Mapping between arbitrary table keys and class names / instances
+     * Mapping between arbitrary keys and table classes
      * @var array
      */
-    protected $_tables;
+    protected $_tableMap;
 
     /**
-     * @param Maniple_Model_Db_TableProvider $db
+     * @param Maniple_Model_Db_TableProvider $tableProvider OPTIONAL
      */
-    public function __construct($tableProvider = null) // {{{
+    public function __construct(Maniple_Model_Db_TableProvider $tableProvider = null) // {{{
     {
-        if ($tableProvider instanceof Maniple_Model_Db_TableProvider) {
+        if ($tableProvider) {
             $this->setTableProvider($tableProvider);
-        } elseif ($tableProvider instanceof Zend_Db_Adapter_Abstract) {
-            $this->setAdapter($tableProvider);
         }
     } // }}}
 
     /**
      * Registers a table provider.
+     *
+     * @param  Maniple_Model_Db_TableProvider $tableProvider
+     * @return Maniple_Model_Db_Mapper
      */
     public function setTableProvider(Maniple_Model_Db_TableProvider $tableProvider) // {{{
     {
@@ -42,70 +49,57 @@ abstract class Maniple_Model_Db_Mapper
     } // }}}
 
     /**
-     * Registers a database adapter.
-     *
-     * @deprecated
-     * @param  Zend_Db_Adapter_Abstract $db
-     * @return Maniple_Model_Db_Abstract
+     * @return Maniple_Model_Db_TableProvider
+     * @throws Maniple_Model_Mapper_Exception_InvalidState
      */
-    public function setAdapter(Zend_Db_Adapter_Abstract $db) // {{{
+    public function getTableProvider() // {{{
     {
-        $this->_db = $db;
-        return $this;
+        if (empty($this->_tableProvider)) {
+            throw new Maniple_Model_Db_Exception_InvalidState(
+                'Table provider is not registered with this mapper instance'
+            );
+        }
+        return $this->_tableProvider;
     } // }}}
 
     /**
-     * Returns currently registered database adapter.
+     * Returns database adapter associated with registered table provider.
      *
      * @return Zend_Db_Adapter_Abstract
      * @throws Maniple_Model_Mapper_Exception_InvalidState
      */
     public function getAdapter() // {{{
     {
-        if (empty($this->_db) && $this->_tableProvider) {
-            return $this->_tableProvider->getAdapter();
-        }
-
-        if (!$this->_db instanceof Zend_Db_Adapter_Abstract) {
-            throw new Maniple_Model_Db_Exception_InvalidState(
-                'Database adapter is not registered with this mapper object'
-            );
-        }
-        return $this->_db;
+        return $this->getTableProvider()->getAdapter();
     } // }}}
 
     /**
-     * Creates or retrieves a Zend_Db_Table instance.
+     * Retrieves from the registered table provider a Zend_Db_Table instance
+     * corresponding to given table name.
      *
-     * @param  string $name
+     * @param  string $tableName
      * @return Zend_Db_Table_Abstract
      * @throws Maniple_Model_Mapper_Exception_InvalidArgument
      */
-    protected function _getTable($name) // {{{
+    protected function _getTable($tableName) // {{{
     {
-        if (!isset($this->_tables[$name])) {
+        if (isset($this->_tableMap[$tableName])) {
+            $tableClass = $this->_tableMap[$tableName];
+        } else {
+            $tableClass = $tableName;
+        }
+
+        if (!class_exists($tableClass)) {
             throw new Maniple_Model_Db_Exception_InvalidArgument(sprintf(
-                'Invalid table name: %s', $name
+                'Invalid table class name: %s', $tableClass
             ));
         }
-        if (is_string($this->_tables[$name])) {
-            $tableClass = $this->_tables[$name];
 
-            // maintain backwards compatibility
-            if (isset($this->_tableProvider)) {
-                $table = $this->_tableProvider->getTable($tableClass);
-            } else {
-                $db = $this->getAdapter();
-                $table = Zefram_Db::getTable($tableClass, $db);
-            }
-
-            $this->_tables[$name] = $table;
-        }
-        return $this->_tables[$name];
+        return $this->getTableProvider()->getTable($class);
     } // }}}
 
     /**
-     * Creates an empty SELECT query.
+     * Creates an empty select object.
      *
      * @param  array|string|Zend_Db_Table $table
      * @param  array|string $cols
@@ -124,12 +118,25 @@ abstract class Maniple_Model_Db_Mapper
     } // }}}
 
     /**
+     * Fetch all records from given select object.
+     *
+     * Supported modifiers:
+     * - index_by       name of a record's field whose value will be used as
+     *                  a corresponding key in the result array
+     * - map            callback applied on each retrieved record
+     *
      * @param  Zend_Db_Select $select
      * @param  array $modifiers
      * @return array
      */
     protected function _fetchAll(Zend_Db_Select $select, array $modifiers = null) // {{{
     {
+        if (isset($modifiers['map'])) {
+            $map = new Zend_Stdlib_CallbackHandler($modifiers['map']);
+        } else {
+            $map = null;
+        }
+
         if (isset($modifiers['index_by'])) {
             $index_by = $modifiers['index_by'];
 
@@ -137,12 +144,19 @@ abstract class Maniple_Model_Db_Mapper
             $rows = array();
 
             while ($row = $stmt->fetch()) {
+                if ($map) {
+                    $row = $map->__invoke($row);
+                }
                 $rows[$row[$index_by]] = $row;
             }
 
         } else {
             $db = $select->getAdapter();
             $rows = $db->fetchAll($select, null, Zend_Db::FETCH_ASSOC);
+
+            if ($map) {
+                $rows = array_map(array($map, '__invoke'), $rows);
+            }
         }
 
         return $rows;
@@ -157,7 +171,6 @@ abstract class Maniple_Model_Db_Mapper
         $db = $select->getAdapter();
         return $db->fetchRow($select, null, Zend_Db::FETCH_ASSOC);
     } // }}}
-
 
     /**
      * Combine record columns into a sub-record. If all subrecord columns

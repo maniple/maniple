@@ -14,6 +14,7 @@ class Maniple_Model_Db_TableProvider
 
     /**
      * Zend_Db_Table_Abstract instances
+     * @var array
      */
     protected $_tables = array();
 

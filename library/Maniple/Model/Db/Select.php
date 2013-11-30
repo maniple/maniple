@@ -1,5 +1,12 @@
 <?php
 
+/**
+ * @package Maniple_Model_Db
+ * @uses Zend_Db
+ * @uses Zefram_Db
+ * @version 2013-11-30
+ * @author xemlock
+ */
 class Maniple_Model_Db_Select extends Zefram_Db_Select
 {
     const OP_GT        = '>';
@@ -43,6 +50,11 @@ class Maniple_Model_Db_Select extends Zefram_Db_Select
         return $this->where($where);
     } // }}}
 
+    /**
+     * @param  string|array $sort
+     * @param  string $defaultCorrelation OPTIONAL
+     * @return Maniple_Model_Db_Select
+     */
     public function sort($sort, $defaultCorrelation = null) // {{{
     {
         if (is_null($defaultCorrelation)) {
@@ -52,13 +64,18 @@ class Maniple_Model_Db_Select extends Zefram_Db_Select
         return $this->order($order);
     } // }}}
 
+    /**
+     * Set default correlation name.
+     *
+     * @param  string|null $defaultCorrelation
+     * @return Maniple_Model_Db_Select
+     */
     public function defaultCorrelation($defaultCorrelation = null) // {{{
     {
-        if (empty($defaultCorrelation)) {
-            $this->_defaultCorrelation = null;
-        } else {
-            $this->_defaultCorrelation = (string) $defaultCorrelation;
+        if (null !== $defaultCorrelation) {
+            $defaultCorrelation = (string) $defaultCorrelation;
         }
+        $this->_defaultCorrelation = $defaultCorrelation;
         return $this;
     } // }}}
 
@@ -66,7 +83,7 @@ class Maniple_Model_Db_Select extends Zefram_Db_Select
      * Set record retrieval modifiers.
      *
      * Currently supported modifiers:
-     * sort, order, limit, offset, page, rows_per_page
+     * lock, sort, order, limit, offset, page, rows_per_page
      *
      * @param  array $modifiers
      * @return Maniple_Model_Db_Select
@@ -75,6 +92,11 @@ class Maniple_Model_Db_Select extends Zefram_Db_Select
     {
         foreach ($modifiers as $key => $value) {
             switch ($key) {
+                case 'lock':
+                    // lock selected rows using FOR UPDATE clause
+                    $this->forUpdate($value);
+                    break;
+
                 case 'sort':
                     $this->sort($value);
                     break;
@@ -100,6 +122,7 @@ class Maniple_Model_Db_Select extends Zefram_Db_Select
                     break;
             }
         }
+        return $this;
     } // }}}
 
     /**
