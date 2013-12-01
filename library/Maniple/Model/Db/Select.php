@@ -149,10 +149,12 @@ class Maniple_Model_Db_Select extends Zefram_Db_Select
                     $op = self::OP_LT;
                     break;
 
+                case '.ge':
                 case '.gte':
                     $op = self::OP_GTE;
                     break;
 
+                case '.le':
                 case '.lte':
                     $op = self::OP_LTE;
                     break;
