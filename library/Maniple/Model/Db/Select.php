@@ -4,7 +4,7 @@
  * @package Maniple_Model_Db
  * @uses Zend_Db
  * @uses Zefram_Db
- * @version 2013-11-30
+ * @version 2013-12-01
  * @author xemlock
  */
 class Maniple_Model_Db_Select extends Zefram_Db_Select
@@ -235,8 +235,13 @@ class Maniple_Model_Db_Select extends Zefram_Db_Select
             } elseif (is_array($value)) {
                 // filter-out NULLs as Zend_Db_Adapter_Abstract::quote() handles
                 // them improperly (renders empty string instead of 'NULL').
+                // Moreover, NULL values will not be matched if it occurs in
+                // a list of values (using IN operator). To handle such case
+                // properly, remember if a NULL value is also to be matched.
+                $null = false;
                 foreach ($value as $key => $val) {
                     if (null === $val) {
+                        $null = true;
                         unset($value[$key]);
                     }
                 }
@@ -247,30 +252,57 @@ class Maniple_Model_Db_Select extends Zefram_Db_Select
                         ));
                     }
                 }
+
                 switch ($op) {
                     case self::OP_EQ:
-                        if (count($value)) {
-                            $where[$quoted_column . ' IN (?)'] = $value;
-                        } else {
-                            // this shouldn't match anything
-                            $where[] = $quoted_column . ' IN (NULL)';
-                        }
-                        break;
-
                     case self::OP_NOT:
-                        if (count($value)) {
-                            $where[$quoted_column . ' NOT IN (?)'] = $value;
-                        } else {
-                            // this shouldn't match anything
-                            $where[] = $quoted_column . ' NOT IN (NULL)';
-                        }
                         break;
 
                     default:
                         throw new Maniple_Model_DbMapper_Exception_InvalidArgument(
-                            'A set of values can be tested for inclusion/exclusion only'
+                            'A list of values can be tested for inclusion/exclusion only'
                         );
                 }
+
+                if (count($value)) {
+                    if ($null) {
+                        if (self::OP_EQ === $op) {
+                            $key = sprintf("%s IN (?) OR %s IS NULL",
+                                $quoted_column,
+                                $quoted_column
+                            );
+                        } else {
+                            $key = sprintf("%s NOT IN (?) AND %s IS NOT NULL",
+                                $quoted_column,
+                                $quoted_column
+                            );
+                        }
+                    } else {
+                        $key = sprintf("%s %s (?)",
+                            $quoted_column,
+                            $op === self::OP_EQ ? 'IN' : 'NOT IN'
+                        );
+                    }
+                    $where[$key] = $value;
+                } else {
+                    if ($null) {
+                        // match NULL only as list of non-NULL values is empty
+                        $where[] = sprintf("%s %s NULL",
+                            $quoted_column,
+                            $op === self::OP_EQ ? 'IS' : 'IS NOT'
+                        );
+                    } else {
+                        // this should not match anything regardless whether
+                        // exclusion or inclusion operator is used, i.e. both
+                        // expressions: NULL IN (NULL) and NULL NOT IN (NULL)
+                        // evaluate to NULL
+                        $where[] = sprintf("%s %s (NULL)",
+                            $quoted_column,
+                            $op === self::OP_EQ ? 'IN' : 'NOT IN'
+                        );
+                    }
+                }
+
             } elseif ($nocase) {
                 $where[$quoted_column . ' ' . $op . ' LOWER(?)'] = $value;
             } else {
