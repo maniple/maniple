@@ -96,7 +96,7 @@ abstract class Maniple_Model_Db_Mapper
             ));
         }
 
-        return $this->getTableProvider()->getTable($class);
+        return $this->getTableProvider()->getTable($tableClass);
     } // }}}
 
     /**
