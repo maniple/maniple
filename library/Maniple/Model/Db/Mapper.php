@@ -100,6 +100,37 @@ abstract class Maniple_Model_Db_Mapper
     } // }}}
 
     /**
+     * Supported options:
+     *   string|array exclude   list of columns to exclude from result,
+     *                          matching is case-insensitive
+     *   string prefix          alias columns using a given prefix
+     *
+     * @param  string $tableName
+     * @param  array $options
+     * @return array
+     */
+    protected function _getColumns($tableName, $options = null) // {{{
+    {
+        $cols = $this->_getTable($tableName)->info(Zend_Db_Table_Abstract::COLS);
+
+        if (isset($options['exclude'])) {
+            $exclude = array_filter((array) $options['exclude'], 'is_string');
+            $exclude = array_flip(array_map('strtolower', $exclude));
+            foreach ($cols as $key => $column) {
+                if (isset($exclude[strtolower($key)])) {
+                    unset($cols[$key]);
+                }
+            }
+        }
+
+        if (isset($options['prefix'])) {
+            $cols = self::prefixColumns($options['prefix'], $cols);
+        }
+
+        return $cols;
+    } // }}}
+
+    /**
      * Creates an empty select object.
      *
      * @param  array|string|Zend_Db_Table $table
@@ -267,5 +298,23 @@ abstract class Maniple_Model_Db_Mapper
             }
         }
         return $array;
+    } // }}}
+
+    /**
+     * Builds an aliased columns list from a prefix and column list.
+     *
+     * @param  string $prefix
+     * @param  array $columns
+     * @return array
+     */
+    public static function prefixColumns($prefix, array $columns) // {{{
+    {
+        $result = array();
+
+        foreach ($columns as $column) {
+            $result[$prefix . $column] = $column;
+        }
+
+        return $result;
     } // }}}
 }

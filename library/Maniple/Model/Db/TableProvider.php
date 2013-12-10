@@ -66,11 +66,20 @@ class Maniple_Model_Db_TableProvider
     public function getTable($className) // {{{
     {
         if (empty($this->_tables[$className])) {
-            $table = new $className($this->getAdapter());
-            if (!$table instanceof Zend_Db_Table_Abstract) {
-                throw new Maniple_Model_Db_Exception_InvalidArgument(sprintf(
-                    "Table must be an instance of Zend_Db_Table_Abstract, got '%s' instead.",
-                    get_class($table)
+            if (class_exists($className)) {
+                $table = new $className($this->getAdapter());
+                if (!$table instanceof Zend_Db_Table_Abstract) {
+                    throw new Maniple_Model_Db_Exception_InvalidArgument(sprintf(
+                        "Table must be an instance of Zend_Db_Table_Abstract, got '%s' instead.",
+                        get_class($table)
+                    ));
+                }
+            } else {
+                // assume className is not really a class name, but rather
+                // a table name, instantiate a generic table instead
+                $table = new Zefram_Db_Table(array(
+                    'db' => $this->getAdapter(),
+                    'name' => $className,
                 ));
             }
             if ($this->_tablePrefix) {
