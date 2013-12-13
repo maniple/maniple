@@ -25,7 +25,7 @@ abstract class Maniple_Model_Db_Mapper
      * Mapping between arbitrary keys and table classes
      * @var array
      */
-    protected $_tableMap;
+    protected $_tableMap = array();
 
     /**
      * @param Maniple_Model_Db_TableProvider $tableProvider OPTIONAL
@@ -90,12 +90,6 @@ abstract class Maniple_Model_Db_Mapper
             $tableClass = $tableName;
         }
 
-        if (!class_exists($tableClass)) {
-            throw new Maniple_Model_Db_Exception_InvalidArgument(sprintf(
-                'Invalid table class name: %s', $tableClass
-            ));
-        }
-
         return $this->getTableProvider()->getTable($tableClass);
     } // }}}
 
@@ -105,13 +99,17 @@ abstract class Maniple_Model_Db_Mapper
      *                          matching is case-insensitive
      *   string prefix          alias columns using a given prefix
      *
-     * @param  string $tableName
+     * @param  string|Zend_Db_Table $table
      * @param  array $options
      * @return array
      */
-    protected function _getColumns($tableName, $options = null) // {{{
+    protected function _getColumns($table, $options = null) // {{{
     {
-        $cols = $this->_getTable($tableName)->info(Zend_Db_Table_Abstract::COLS);
+        if (!$table instanceof Zend_Db_Table_Abstract) {
+            $table = $this->_getTable($tableName);
+        }
+
+        $cols = $table->info(Zend_Db_Table_Abstract::COLS);
 
         if (isset($options['exclude'])) {
             $exclude = array_filter((array) $options['exclude'], 'is_string');
