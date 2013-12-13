@@ -106,7 +106,7 @@ abstract class Maniple_Model_Db_Mapper
     protected function _getColumns($table, $options = null) // {{{
     {
         if (!$table instanceof Zend_Db_Table_Abstract) {
-            $table = $this->_getTable($tableName);
+            $table = $this->_getTable($table);
         }
 
         $cols = $table->info(Zend_Db_Table_Abstract::COLS);
