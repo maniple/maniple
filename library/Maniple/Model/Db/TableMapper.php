@@ -9,6 +9,11 @@ abstract class Maniple_Model_Db_TableMapper extends Maniple_Model_Db_Mapper
      */
     protected $_table;
 
+    protected function _getTable($table = null) // {{{
+    {
+        return parent::_getTable($this->_table);
+    } // }}}
+
     /**
      * Build SELECT instance for use in {@link fetch()} and {@link fetchAll()}
      * methods.
