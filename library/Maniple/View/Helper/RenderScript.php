@@ -1,7 +1,13 @@
 <?php
 
 /**
- * Helper to render scripts across different modules
+ * View helper to render scripts across different modules.
+ *
+ * This implementation has two advantages over Partial view helper (ZF 1.12.3):
+ * - it does not clone view to render script
+ * - it correctly determines module views directory based on the output of
+ *   Zend_Controller_Action_Helper_ViewRenderer::getViewBasePathSpec(), not
+ *   by using a hard-coded directory name
  *
  * @package Maniple_View
  * @version 2014-01-14
@@ -11,31 +17,20 @@ class Maniple_View_Helper_RenderScript extends Zend_View_Helper_Abstract
 {
     /**
      * @param  string $script
-     * @param  string $module OPTIONAL
+     * @param  string|array $module OPTIONAL
+     * @param  array $vars OPTIONAL
      * @return string
      */
-    public function renderScript($script, $module = null) // {{{
+    public function renderScript($script, $module = null, $vars = null) // {{{
     {
+        if (is_array($module)) {
+            $vars = $module;
+            $module = null;
+        }
+
         $viewRenderer = Zend_Controller_Action_HelperBroker::getStaticHelper('ViewRenderer');
 
-        // strip off current view suffix from script name
-        $suffix = '.' . $viewRenderer->getViewSuffix();
-        if (substr($script, -strlen($suffix)) === $suffix) {
-            $script = substr($script, 0, -strlen($suffix));
-        }
-
-        if (false !== strpos($script, '/')) {
-            list($controller, $action) = explode('/', $script, 2);
-        } else {
-            $controller = null;
-            $action = $script;
-        }
-
         $request = $viewRenderer->getRequest();
-
-        if (empty($controller)) {
-            $controller = $request->getControllerName();
-        }
 
         $origModule = $request->getModuleName();
         $request->setModuleName($module);
@@ -45,19 +40,10 @@ class Maniple_View_Helper_RenderScript extends Zend_View_Helper_Abstract
         // restore original module name
         $request->setModuleName($origModule);
 
-        // path to script is built without using inflector as this method is
+        // base path is built without using inflector as this method is
         // intended for inline template use only
-        $viewScriptPath = strtr(
-            $viewRenderer->getViewScriptPathSpec(),
-            array(
-                ':moduleDir'  => $moduleDir,
-                ':module'     => $module,
-                ':controller' => $controller,
-                ':action'     => $action,
-                ':suffix'     => $viewRenderer->getViewSuffix(),
-            )
-        );
-
+        // (btw, this is how it should be done in Partial view helper,
+        // not by hard-coding views/ subdirectory)
         $viewBasePath = strtr(
             $viewRenderer->getViewBasePathSpec(),
             array(
@@ -70,9 +56,15 @@ class Maniple_View_Helper_RenderScript extends Zend_View_Helper_Abstract
         $origPaths = $this->view->getScriptPaths();
         $this->view->addScriptPath($viewBasePath . '/scripts');
 
-        // TODO add paths to helpers and filters
+        // TODO add paths to helpers and filters, addBasePath()
 
-        $result = $this->view->render($viewScriptPath);
+        // assign variables before rendering script, this variables will not
+        // be removed after rendering
+        if (is_array($vars)) {
+            $this->view->assign($vars);
+        }
+
+        $result = $this->view->render($script);
 
         // restore original script paths
         $this->view->setScriptPath(null);
