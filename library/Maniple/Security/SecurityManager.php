@@ -118,7 +118,7 @@ class Maniple_Security_SecurityManager
             if (!$this->isAuthenticated()) {
                 return false;
             }
-            $userId = $user->getUser()->getId();
+            $userId = $this->getUser()->getId();
         }
 
         // do not use strict type comparisons, so that arrays containing the
@@ -286,15 +286,15 @@ class Maniple_Security_SecurityManager
             $id = sprintf('%F', $id);
         }
         return (string) $id;
-    }
+    } // }}}
 
     /**
      * Generate anti-CSRF token to be stored in session.
      *
      * @return string
      */
-    protected function _createToken()
+    protected function _createToken() // {{{
     {
         return Zend_Crypt::hash('sha256', microtime() . mt_rand());
-    }
+    } // }}}
 }
