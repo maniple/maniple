@@ -2,6 +2,7 @@
 
 /**
  * @uses Zend_Auth_Storage
+ * @version 2014-02-06
  */
 class Maniple_Security_SecurityManager
 {
@@ -18,97 +19,120 @@ class Maniple_Security_SecurityManager
     protected $_superUserIds = array();
 
     /**
+     * Add superuser ID.
+     *
      * @param mixed $superUserId
      * @return Maniple_Security_SecurityManager
      */
-    public function addSuperUserId($superUserId)
+    public function addSuperUserId($superUserId) // {{{
     {
         if (empty($superUserId)) {
             throw new Maniple_Security_Exception_InvalidArgumentException(
                 'Superuser ID must not be empty'
             );
         }
-        $this->_superUserIds[] = $superUserId;
+        $this->_superUserIds[] = $this->_transformId($superUserId);
         return $this;
-    }
+    } // }}}
 
     /**
+     * Retrieve first superuser ID.
+     *
      * @return mixed
      */
-    public function getSuperUserId()
+    public function getSuperUserId() // {{{
     {
         return reset($this->_superUserIds);
-    }
+    } // }}}
 
     /**
+     * Return all superuser IDs.
+     *
      * @return array
      */
-    public function getSuperUserIds()
+    public function getSuperUserIds() // {{{
     {
         return $this->_superUserIds;
-    }
+    } // }}}
 
     /**
+     * Remove all superuser IDs.
+     *
      * @return Maniple_Security_SecurityManager
      */
-    public function clearSuperUserIds()
+    public function clearSuperUserIds() // {{{
     {
         $this->_superUserIds = array();
         return $this;
-    }
+    } // }}}
 
     /**
+     * Set authentication storage.
+     *
      * @param Zend_Auth_Storage_Interface $storage
      */
-    public function setStorage(Zend_Auth_Storage_Interface $storage)
+    public function setStorage(Zend_Auth_Storage_Interface $storage) // {{{
     {
         $this->_storage = $storage;
         return $this;
-    }
+    } // }}}
 
     /**
+     * Retrieve authentication storage.
+     *
      * @return Zend_Auth_Storage_Interface
      */
-    public function getStorage()
+    public function getStorage() // {{{
     {
         if (empty($this->_storage)) {
             $this->setStorage(new Zend_Auth_Storage_Session());
         }
         return $this->_storage;
-    }
+    } // }}}
 
     /**
      * @return bool
      */
-    public function isAuthenticated()
+    public function isAuthenticated() // {{{
     {
         return !$this->getStorage()->isEmpty();
-    }
+    } // }}}
 
     /**
      * @return bool
      */
-    public function isImpersonated()
+    public function isImpersonated() // {{{
     {
         return $this->isAuthenticated()
             && isset($_SESSION[self::SESSION_KEY]['impersonation']);
-    }
+    } // }}}
 
     /**
+     * @param  mixed $userId OPTIONAL
      * @return bool
+     * @throws Maniple_Security_Exception_InvalidStateException
      */
-    public function isSuperUser()
+    public function isSuperUser($userId = null) // {{{
     {
-        return $this->isAuthenticated()
-            && ($user = $this->getUser())
-            && in_array($user->getId(), $this->_superUserIds);
-    }
+        if (null === $userId) {
+            if (!$this->isAuthenticated()) {
+                return false;
+            }
+            $userId = $user->getUser()->getId();
+        }
+
+        // do not use strict type comparisons, so that arrays containing the
+        // same key-value pairs can be matched regardless of theis ordering
+        return in_array($this->_transformId($userId), $this->_superUserIds);
+    } // }}}
 
     /**
+     * Retrieve currently authenticated user.
+     *
      * @return Maniple_Security_User
      * @throws Maniple_Security_Exception_InvalidStateException
      */
-    public function getUser()
+    public function getUser() // {{{
     {
         if (!$this->isAuthenticated()) {
             return null;
@@ -124,13 +148,13 @@ class Maniple_Security_SecurityManager
         }
 
         return $identity;
-    }
+    } // }}}
 
     /**
      * @param Zend_Auth_Adapter_DbTable $adapter
      * @return bool
      */
-    public function setUser(Maniple_Security_User $user, array $context = null)
+    public function setUser(Maniple_Security_User $user, array $context = null) // {{{
     {
         $_SESSION[self::SESSION_KEY] = array(
             'context' => $context,
@@ -138,13 +162,13 @@ class Maniple_Security_SecurityManager
         );
 
         $this->getStorage()->write($user);
-    }
+    } // }}}
 
     /**
      * @return mixed context attached to user upon authentication
      * @throws Maniple_Security_Exception_AuthenticationException
      */
-    public function clearUser()
+    public function clearUser() // {{{
     {
         if ($this->isAuthenticated()) {
             if (isset($_SESSION[self::SESSION_KEY]['context'])) {
@@ -187,7 +211,7 @@ class Maniple_Security_SecurityManager
         throw new Maniple_Security_Exception_AuthenticationException(
             'User is not authenticated'
         );
-    }
+    } // }}}
 
     /**
      * Impersonate as another user.
@@ -196,7 +220,7 @@ class Maniple_Security_SecurityManager
      * @param  array $context
      * @throws Maniple_Security_Exception_NotAllowedException
      */
-    public function impersonate(Maniple_Security_User $user, array $context = null)
+    public function impersonate(Maniple_Security_User $user, array $context = null) // {{{
     {
         if (!$this->isSuperUser()) {
             throw new Maniple_Security_Exception_NotAllowedException(
@@ -214,18 +238,18 @@ class Maniple_Security_SecurityManager
         );
 
         $this->getStorage()->write($user);
-    }
+    } // }}}
 
     /**
      * Does the authenticated user have access to given resource.
-     * Superuser is automatically allowed.
+     * Superusers are automatically allowed.
      *
      * @param  Zend_Acl $acl
      * @param  string|Zend_Acl_Resource_Interface $resource
      * @param  string $privilege
      * @return bool
      */
-    public function isAllowed(Zend_Acl $acl, $resource = null, $privilege = null)
+    public function isAllowed(Zend_Acl $acl, $resource = null, $privilege = null) // {{{
     {
         if ($this->isSuperUser()) {
             return true;
@@ -244,6 +268,24 @@ class Maniple_Security_SecurityManager
         }
 
         return false;
+    } // }}}
+
+    /**
+     * Create representation of given ID suitable for storing and checking if
+     * it belongs to superusers.
+     *
+     * @param  mixed $id
+     * @return string|array
+     */
+    protected function _transformId($id) // {{{
+    {
+        if (is_array($id)) {
+            return array_map(array($this, __FUNCTION__), $id);
+        }
+        if (is_float($id)) {
+            $id = sprintf('%F', $id);
+        }
+        return (string) $id;
     }
 
     /**
