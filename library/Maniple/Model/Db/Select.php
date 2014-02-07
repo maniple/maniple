@@ -39,7 +39,7 @@ class Maniple_Model_Db_Select extends Zefram_Db_Select
      *
      * @param array $conditions
      * @param string $defaultCorrelation OPTIONAL
-     * @return Maniple_Model_DbMapper_Select
+     * @return Maniple_Model_Db_Select
      */
     public function conditions(array $conditions, $defaultCorrelation = null) // {{{
     {
@@ -230,7 +230,7 @@ class Maniple_Model_Db_Select extends Zefram_Db_Select
                         break;
 
                     default:
-                        throw new Maniple_Model_DbMapper_Exception_InvalidArgument(
+                        throw new Maniple_Model_Db_Exception_InvalidArgument(
                             'NULL value can be tested for equality/inequality only'
                         );
                 }
@@ -261,7 +261,7 @@ class Maniple_Model_Db_Select extends Zefram_Db_Select
                         break;
 
                     default:
-                        throw new Maniple_Model_DbMapper_Exception_InvalidArgument(
+                        throw new Maniple_Model_Db_Exception_InvalidArgument(
                             'A list of values can be tested for inclusion/exclusion only'
                         );
                 }
@@ -376,5 +376,14 @@ class Maniple_Model_Db_Select extends Zefram_Db_Select
         }
 
         return $order;
+    } // }}}
+
+    /**
+     * @param  Zend_Db_Adapter_Abstract $db
+     * @return Maniple_Model_Db_Select
+     */
+    public static function factory(Zend_Db_Adapter_Abstract $db) // {{{
+    {
+        return new self($db);
     } // }}}
 }
