@@ -14,7 +14,7 @@ class Maniple_Model_Model
     /**
      * @param  string $key
      * @return mixed
-     * @throws RuntimeException
+     * @throws InvalidArgumentException
      */
     public function __get($key) // {{{
     {
@@ -22,14 +22,14 @@ class Maniple_Model_Model
         if (property_exists($this, $property)) {
             return $property;
         }
-        throw new RuntimeException(sprintf('Invalid property: %s', $property));
+        throw new InvalidArgumentException(sprintf('Invalid property: %s', $key));
     } // }}}
 
     /**
      * @param  string $key
      * @param  mixed $value
      * @return void
-     * @throws RuntimeException
+     * @throws InvalidArgumentException
      */
     public function __set($key, $value) // {{{
     {
@@ -46,7 +46,7 @@ class Maniple_Model_Model
             return;
         }
 
-        throw new RuntimeException(sprintf('Invalid property: %s', $property));
+        throw new InvalidArgumentException(sprintf('Invalid property: %s', $key));
     } // }}}
 
     /**
