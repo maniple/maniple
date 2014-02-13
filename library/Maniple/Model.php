@@ -61,6 +61,8 @@ class Maniple_Model
      */
     protected function _getProperty($key, $throw = true) // {{{
     {
+        $key = self::toCamelCase($key);
+
         $getter = 'get' . $key;
         if (method_exists($this, $getter)) {
             return $this->{$getter}();
@@ -68,7 +70,7 @@ class Maniple_Model
 
         $property = '_' . $key;
         if (property_exists($this, $property)) {
-            return $property;
+            return $this->{$property};
         }
 
         if ($throw) {
