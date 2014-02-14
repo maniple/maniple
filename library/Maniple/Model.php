@@ -31,10 +31,26 @@ class Maniple_Model
     /**
      * @param  int $keyTransform
      * @return array
+     * @throws InvalidArgumentException
      */
     public function toArray($keyTransform = self::CAMELIZE) // {{{
     {
         $array = array();
+
+        switch ($keyTransform) {
+            case self::UNDERSCORE:
+                $transform = array(__CLASS__, 'underscore');
+                break;
+
+            case self::CAMELIZE:
+                $transform = array(__CLASS__, 'camelize');
+                break;
+
+            default:
+                throw new InvalidArgumentException(sprintf(
+                    'Unrecognized key transform value (%s)', $keyTransform
+                ));
+        }
 
         foreach (get_object_vars($this) as $property => $value) {
             // include only properties starting with an underscore,
@@ -44,7 +60,7 @@ class Maniple_Model
             }
 
             $property = substr($property, 1);
-            $key = self::transform($property, $keyTransform);
+            $key = call_user_func($transform, $property);
             $array[$key] = $this->_getProperty($property, false);
         }
 
@@ -169,7 +185,7 @@ class Maniple_Model
      * @param  string $str
      * @return string
      */
-    public static function underscore($str)
+    public static function underscore($str) // {{{
     {
         if (is_array($str)) {
             return $str[1][0] . '_' . strtolower($str[1][1]);
@@ -177,25 +193,5 @@ class Maniple_Model
         return preg_replace_callback(
             '/([a-z][A-Z])/', array(__CLASS__, __FUNCTION__), (string) $str
         );
-    }
-
-    /**
-     * @param  string $string
-     * @param  int $transform
-     * @return string
-     */
-    public static function transform($string, $transform) // {{{
-    {
-        switch ($transform) {
-            case self::CAMELIZE:
-                $string = self::camelize($string);
-                break;
-
-            case self::UNDERSCORE:
-                $string = self::underscore($string);
-                break;
-        }
-
-        return (string) $string;
     } // }}}
 }
