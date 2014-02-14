@@ -2,6 +2,9 @@
 
 class Maniple_Model
 {
+    const CAMELIZE   = 0;
+    const UNDERSCORE = 1;
+
     /**
      * @param  array $data OPTIONAL
      * @return void
@@ -20,9 +23,32 @@ class Maniple_Model
     public function setFromArray(array $data) // {{{
     {
         foreach ($data as $key => $value) {
-            $this->__set($key, $value, false);
+            $this->_setProperty($key, $value, false);
         }
         return $this;
+    } // }}}
+
+    /**
+     * @param  int $keyTransform
+     * @return array
+     */
+    public function toArray($keyTransform = self::CAMELIZE) // {{{
+    {
+        $array = array();
+
+        foreach (get_object_vars($this) as $property => $value) {
+            // include only properties starting with an underscore,
+            // remove the underscore before retrieving property value
+            if ('_' !== $property[0]) {
+                continue;
+            }
+
+            $property = substr($property, 1);
+            $key = self::transform($property, $keyTransform);
+            $array[$key] = $this->_getProperty($property, false);
+        }
+
+        return $array;
     } // }}}
 
     /**
@@ -34,7 +60,7 @@ class Maniple_Model
      */
     protected function _setProperty($key, $value, $throw = true) // {{{
     {
-        $key = self::toCamelCase($key);
+        $key = self::camelize($key);
 
         $setter = 'set' . $key;
         if (method_exists($this, $setter)) {
@@ -48,7 +74,9 @@ class Maniple_Model
             return $this;
         }
 
-        throw new InvalidArgumentException(sprintf('Invalid property: %s', $key));
+        if ($throw) {
+            throw new InvalidArgumentException(sprintf('Invalid property: %s', $key));
+        }
 
         return false;
     } // }}}
@@ -61,7 +89,7 @@ class Maniple_Model
      */
     protected function _getProperty($key, $throw = true) // {{{
     {
-        $key = self::toCamelCase($key);
+        $key = self::camelize($key);
 
         $getter = 'get' . $key;
         if (method_exists($this, $getter)) {
@@ -76,6 +104,8 @@ class Maniple_Model
         if ($throw) {
             throw new InvalidArgumentException(sprintf('Invalid property: %s', $key));
         }
+
+        return null;
     } // }}}
 
     /**
@@ -84,7 +114,7 @@ class Maniple_Model
      */
     public function has($key) // {{{
     {
-        return property_exists($this, '_' . self::toCamelCase($key));
+        return property_exists($this, '_' . self::camelize($key));
     } // }}}
 
     /**
@@ -93,7 +123,7 @@ class Maniple_Model
      */
     public function __isset($key) // {{{
     {
-        return isset($this->{'_' . self::toCamelCase($key)});
+        return isset($this->{'_' . self::camelize($key)});
     } // }}}
 
     /**
@@ -123,13 +153,49 @@ class Maniple_Model
      * @param  string $str
      * @return string
      */
-    public static function toCamelCase($str) // {{{
+    public static function camelize($str) // {{{
     {
-        if (is_array($str) && isset($str[1])) {
+        if (is_array($str)) {
             return strtoupper($str[1]);
         }
         return preg_replace_callback(
             '/_(\w)/', array(__CLASS__, __FUNCTION__), (string) $str
         );
+    } // }}}
+
+    /**
+     * Transform given string to underscore separated notation.
+     *
+     * @param  string $str
+     * @return string
+     */
+    public static function underscore($str)
+    {
+        if (is_array($str)) {
+            return $str[1][0] . '_' . strtolower($str[1][1]);
+        }
+        return preg_replace_callback(
+            '/([a-z][A-Z])/', array(__CLASS__, __FUNCTION__), (string) $str
+        );
+    }
+
+    /**
+     * @param  string $string
+     * @param  int $transform
+     * @return string
+     */
+    public static function transform($string, $transform) // {{{
+    {
+        switch ($transform) {
+            case self::CAMELIZE:
+                $string = self::camelize($string);
+                break;
+
+            case self::UNDERSCORE:
+                $string = self::underscore($string);
+                break;
+        }
+
+        return (string) $string;
     } // }}}
 }
