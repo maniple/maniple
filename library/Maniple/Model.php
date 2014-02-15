@@ -61,7 +61,26 @@ class Maniple_Model
 
             $property = substr($property, 1);
             $key = call_user_func($transform, $property);
-            $array[$key] = $this->_getProperty($property, false);
+
+            $value = $this->_getProperty($property, false);
+
+            // if property value is an instance of model or an array of models,
+            // call toArray() recursively
+            switch (true) {
+                case $value instanceof Maniple_Model:
+                    $value = $value->toArray($keyTransform);
+                    break;
+
+                case is_array($value):
+                    foreach ($value as $valueKey => $valueValue) {
+                        if ($valueValue instanceof Maniple_Model) {
+                            $value[$valueKey] = $valueValue->toArray($keyTransform);
+                        }
+                    }
+                    break;
+            }
+
+            $array[$key] = $value;
         }
 
         return $array;
