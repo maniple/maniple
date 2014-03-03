@@ -1,6 +1,6 @@
 <?php
 
-class Maniple_Model
+class Maniple_Model implements ArrayAccess
 {
     const CAMELIZE   = 0;
     const UNDERSCORE = 1;
@@ -163,6 +163,23 @@ class Maniple_Model
 
     /**
      * @param  string $key
+     * @return void
+     * @throws InvalidArgumentException
+     */
+    public function __unset($key) // {{{
+    {
+        // if property is an array, set an empty array as value, otherwise
+        // set property to NULL. Setter methods are expected to be able
+        // to handle this.
+        if (is_array($this->_getProperty($key, true))) {
+            $this->__set($key, array());
+        } else {
+            $this->__set($key, null);
+        }
+    } // }}}
+
+    /**
+     * @param  string $key
      * @return mixed
      * @throws InvalidArgumentException
      */
@@ -180,6 +197,45 @@ class Maniple_Model
     public function __set($key, $value) // {{{
     {
         return $this->_setProperty($key, $value, true);
+    } // }}}
+
+    /**
+     * @param  string $key
+     * @return mixed
+     * @throws InvalidArgumentException
+     */
+    public function offsetGet($key) // {{{
+    {
+        return $this->__get($key);
+    } // }}}
+
+    /**
+     * @param  string $key
+     * @param  mixed $value
+     * @return void
+     */
+    public function offsetSet($key, $value) // {{{
+    {
+        return $this->__set($key, $value);
+    } // }}}
+
+    /**
+     * @param  string $key
+     * @return bool
+     */
+    public function offsetExists($key) // {{{
+    {
+        return $this->has($key);
+    } // }}}
+
+    /**
+     * @param  string $key
+     * @return void
+     * @throws InvalidArgumentException
+     */
+    public function offsetUnset($key) // {{{
+    {
+        return $this->__unset($key);
     } // }}}
 
     /**
