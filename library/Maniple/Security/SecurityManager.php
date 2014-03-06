@@ -2,7 +2,7 @@
 
 /**
  * @uses Zend_Auth_Storage
- * @version 2014-02-06
+ * @version 2014-03-06
  */
 class Maniple_Security_SecurityManager
 {
@@ -129,7 +129,7 @@ class Maniple_Security_SecurityManager
     /**
      * Retrieve currently authenticated user.
      *
-     * @return Maniple_Security_User
+     * @return Maniple_Security_User|null
      * @throws Maniple_Security_Exception_InvalidStateException
      */
     public function getUser() // {{{
@@ -148,6 +148,24 @@ class Maniple_Security_SecurityManager
         }
 
         return $identity;
+    } // }}}
+
+    /**
+     * @return mixed
+     * @throws Maniple_Security_Exception_AuthenticationException
+     * @throws Maniple_Security_Exception_InvalidStateException
+     */
+    public function getUserId() // {{{
+    {
+        $user = $this->getUser();
+
+        if (empty($user)) {
+            throw new Maniple_Security_Exception_AuthenticationException(
+                'User is not authenticated'
+            );
+        }
+
+        return $user->getId();
     } // }}}
 
     /**
