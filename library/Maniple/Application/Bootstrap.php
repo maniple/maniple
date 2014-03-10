@@ -1,7 +1,7 @@
 <?php
 
 /**
- * @version 2013-12-05
+ * @version 2014-03-10 / 2013-12-05
  * @author xemlock
  */
 class Maniple_Application_Bootstrap extends Zend_Application_Bootstrap_Bootstrap
@@ -21,6 +21,22 @@ class Maniple_Application_Bootstrap extends Zend_Application_Bootstrap_Bootstrap
             $this->setContainer($serviceLocator);
         }
         return $this->_container;
+    } // }}}
+
+    /**
+     * Initialize resource of a given name, if it's not already initialized
+     * and return the result.
+     *
+     * @param  null|string|array $resource OPTIONAL
+     * @return mixed
+     */
+    protected function _bootstrap($resource = null) // {{{
+    {
+        parent::_bootstrap($resource);
+
+        if (null !== $resource && $this->hasResource($resource)) {
+            return $this->getResource($resource);
+        }
     } // }}}
 
     /**
@@ -46,50 +62,77 @@ class Maniple_Application_Bootstrap extends Zend_Application_Bootstrap_Bootstrap
     } // }}}
 
     /**
-     * Initialize resource of a given name, if it's not already initialized
-     * and return the results.
-     *
-     * @param  string $resource OPTIONAL
-     * @return mixed
+     * @param  string $resource
+     * @return void
      */
-    protected function _bootstrap($resource = null) // {{{
+    protected function _executeResource($resource) // {{{
     {
-        parent::_bootstrap($resource);
+        $resource = strtolower($resource);
+        $hasRun = in_array($resource, $this->_run);
 
-        if (null !== $resource && $this->hasResource($resource)) {
-            return $this->getResource($resource);
+        parent::_executeResource($resource);
+
+        if ('modules' === $resource && !$hasRun) {
+            $this->_executeModules();
         }
     } // }}}
 
     /**
-     * Load routes defined by loaded modules.
+     * The last stage of module initialization: registers resources and routes
+     * defined by modules.
      *
      * @return void
      * @throws InvalidArgumentException
      */
-    protected function _initRoutes() // {{{
+    protected function _executeModules() // {{{
     {
-        if (!method_exists($this, '_initModules') && !$this->hasPluginResource('modules')) {
-            // no modules resource available
-            return;
-        }
-
-        $modules = $this->_bootstrap('modules');
-        $router = $this->_bootstrap('frontController')->getRouter();
+        $modules = $this->getResource('modules');
 
         foreach ($modules as $module) {
-            if (method_exists($module, 'getRoutes')) {
-                $routes = $module->getRoutes();
+            $this->_executeModuleRoutes($module);
+            $this->_executeModuleResources($module);
+        }
+    } // }}}
 
-                if (is_array($routes)) {
-                    $routes = new Zend_Config($routes);
+    /**
+     * @param  Zend_Application_Module_Bootstrap $module
+     * @return void
+     * @throws InvalidArgumentException
+     */
+    protected function _executeModuleRoutes($module) // {{{
+    {
+        $router = $this->_bootstrap('frontController')->getRouter();
+
+        if (method_exists($module, 'getRoutes')) {
+            $routes = $module->getRoutes();
+
+            if (is_array($routes)) {
+                $routes = new Zend_Config($routes);
+            }
+
+            if (!$routes instanceof Zend_Config) {
+                throw new InvalidArgumentException('Route config must be an instance of Zend_Config');
+            }
+
+            $router->addConfig($routes);
+        }
+    } // }}}
+
+    /**
+     * @param  Zend_Application_Module_Bootstrap $module
+     * @return void
+     * @throws InvalidArgumentException
+     */
+    protected function _executeModuleResources($module) // {{{
+    {
+        if (method_exists($module, 'getResources')) {
+            foreach ($module->getResources() as $name => $resource) {
+                if ($this->hasResource($name)) {
+                    throw new InvalidArgumentException(sprintf(
+                        "Resource '%s' is already registered", $name
+                    ));
                 }
-
-                if (!$routes instanceof Zend_Config) {
-                    throw new InvalidArgumentException('Route config must be an instance of Zend_Config');
-                }
-
-                $router->addConfig($routes);
+                $this->_setResource($name, $resource);
             }
         }
     } // }}}

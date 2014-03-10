@@ -172,6 +172,9 @@ class Maniple_Application_ServiceLocator
             if (is_string($value) && !strncasecmp($value, 'service:', 8)) {
                 $params[$key] = $this->getService(substr($value, 8));
             }
+            if (is_string($value) && !strncasecmp($value, 'resource:', 9)) {
+                $params[$key] = $this->getService(substr($value, 9));
+            }
         }
 
         return new $class($this, $params);
