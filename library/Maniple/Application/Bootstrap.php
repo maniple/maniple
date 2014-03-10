@@ -106,6 +106,10 @@ class Maniple_Application_Bootstrap extends Zend_Application_Bootstrap_Bootstrap
 
     protected function _initModules() // {{{
     {
+        if (!$this->hasPluginResource('modules')) {
+            return;
+        }
+
         $modules = $this->getPluginResource('modules')->init();
 
         // Zend_Loader_Autoloader is initialized in the Zend_Application ctor
