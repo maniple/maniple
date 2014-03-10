@@ -11,7 +11,7 @@ abstract class Maniple_Model_Db_TableMapper extends Maniple_Model_Db_Mapper
 
     protected function _getTable($table = null) // {{{
     {
-        return parent::_getTable($this->_table);
+        return parent::_getTable($table ? $table : $this->_table);
     } // }}}
 
     /**
