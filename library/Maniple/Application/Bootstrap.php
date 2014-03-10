@@ -62,39 +62,6 @@ class Maniple_Application_Bootstrap extends Zend_Application_Bootstrap_Bootstrap
     } // }}}
 
     /**
-     * @param  string $resource
-     * @return void
-     */
-    protected function _executeResource($resource) // {{{
-    {
-        $resource = strtolower($resource);
-        $hasRun = in_array($resource, $this->_run);
-
-        parent::_executeResource($resource);
-
-        if ('modules' === $resource && !$hasRun) {
-            $this->_executeModules();
-        }
-    } // }}}
-
-    /**
-     * The last stage of module initialization: registers resources and routes
-     * defined by modules.
-     *
-     * @return void
-     * @throws InvalidArgumentException
-     */
-    protected function _executeModules() // {{{
-    {
-        $modules = $this->getResource('modules');
-
-        foreach ($modules as $module) {
-            $this->_executeModuleRoutes($module);
-            $this->_executeModuleResources($module);
-        }
-    } // }}}
-
-    /**
      * @param  Zend_Application_Module_Bootstrap $module
      * @return void
      * @throws InvalidArgumentException
@@ -135,6 +102,39 @@ class Maniple_Application_Bootstrap extends Zend_Application_Bootstrap_Bootstrap
                 $this->_setResource($name, $resource);
             }
         }
+    } // }}}
+
+    protected function _initModules() // {{{
+    {
+        $modules = $this->getPluginResource('modules')->init();
+
+        // Zend_Loader_Autoloader is initialized in the Zend_Application ctor
+        // application autoloader is a simple one which only mapps _ and \\
+        // to directory separators and utilized include paths.
+        // Here we need autoloader for module library directory which maps
+        // Module_ClassName to module/library/ClassName.php
+
+        $moduleLibraryAutoloader = new Zend_Loader_StandardAutoloader();
+        $moduleLibraryAutoloader->register(); // add to autoload stack
+
+        // add libary dir to include path, see:
+        // http://stackoverflow.com/questions/13377983/zend-framework-module-library
+        foreach ($modules as $name => $module) {
+            $ref = new ReflectionClass($module);
+            $path = dirname($ref->getFileName()) . '/library';
+
+            if (is_dir($path)) {
+                $moduleLibraryAutoloader->registerPrefix(ucfirst($name) . '_', $path);
+                // set_include_path($path . PATH_SEPARATOR . get_include_path());
+            }
+
+            // The last stage of module initialization: registers resources and
+            // routes defined by modules.
+            $this->_executeModuleRoutes($module);
+            $this->_executeModuleResources($module);
+        }
+
+        return $modules;
     } // }}}
 
     /**
