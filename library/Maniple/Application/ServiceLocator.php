@@ -177,7 +177,23 @@ class Maniple_Application_ServiceLocator
             }
         }
 
-        return new $class($this, $params);
+        $service = new $class($this, $params); // This way of service initialization is now deprecated
+        $filter = new Zend_Filter_Word_UnderscoreToCamelCase();
+
+        foreach ($params as $key => $value) {
+            $methods = array(
+                'set' . $filter->filter($key),
+                'set' . $key
+            );
+            foreach ($methods as $method) {
+                if (method_exists($service, $method)) {
+                    $service->{$method}($value);
+                    break;
+                }
+            }
+        }
+
+        return $service;
     } // }}}
 
     /**
