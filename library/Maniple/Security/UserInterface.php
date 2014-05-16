@@ -1,6 +1,6 @@
 <?php
 
-interface Maniple_Security_User
+interface Maniple_Security_UserInterface
 {
     /**
      * @return mixed
