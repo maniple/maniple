@@ -129,7 +129,7 @@ class Maniple_Security_SecurityManager
     /**
      * Retrieve currently authenticated user.
      *
-     * @return Maniple_Security_User|null
+     * @return Maniple_Security_UserInterface|null
      * @throws Maniple_Security_Exception_InvalidStateException
      */
     public function getUser() // {{{
@@ -140,7 +140,7 @@ class Maniple_Security_SecurityManager
 
         $identity = $this->getStorage()->read();
 
-        if (!$identity instanceof Maniple_Security_User) {
+        if (!$identity instanceof Maniple_Security_UserInterface) {
             $this->getStorage()->clear();
             throw new Maniple_Security_Exception_InvalidStateException(
                 'Invalid session state'
@@ -169,10 +169,11 @@ class Maniple_Security_SecurityManager
     } // }}}
 
     /**
-     * @param Zend_Auth_Adapter_DbTable $adapter
+     * @param Maniple_Security_UserInterface $user
+     * @param array $context OPTIONAL
      * @return bool
      */
-    public function setUser(Maniple_Security_User $user, array $context = null) // {{{
+    public function setUser(Maniple_Security_UserInterface $user, array $context = null) // {{{
     {
         $_SESSION[self::SESSION_KEY] = array(
             'context' => $context,
@@ -234,11 +235,11 @@ class Maniple_Security_SecurityManager
     /**
      * Impersonate as another user.
      *
-     * @param  Maniple_Security_User $user
-     * @param  array $context
+     * @param  Maniple_Security_UserInterface $user
+     * @param  array $context OPTIONAL
      * @throws Maniple_Security_Exception_NotAllowedException
      */
-    public function impersonate(Maniple_Security_User $user, array $context = null) // {{{
+    public function impersonate(Maniple_Security_UserInterface $user, array $context = null) // {{{
     {
         if (!$this->isSuperUser()) {
             throw new Maniple_Security_Exception_NotAllowedException(
