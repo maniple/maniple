@@ -13,7 +13,7 @@ class Maniple_Model_Db_TableProvider extends Zefram_Db_Table_Provider
      * @return Zend_Db_Table_Abstract
      * @throws Maniple_Model_Db_Exception_InvalidArgument
      */
-    public function getTable($className) // {{{
+    public function getTable($className, $db = null) // {{{
     {
         if (strpos($className, '.') !== false) {
             list($moduleName, $tableName) = explode('.', $className, 2);
@@ -21,7 +21,7 @@ class Maniple_Model_Db_TableProvider extends Zefram_Db_Table_Provider
         }
 
         if (empty($this->_tables[$className])) {
-            $this->_tables[$className] = parent::getTable($className, $this->getAdapter());
+            $this->_tables[$className] = parent::getTable($className, $db);
         }
         return $this->_tables[$className];
     } // }}}

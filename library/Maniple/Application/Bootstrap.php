@@ -71,7 +71,7 @@ class Maniple_Application_Bootstrap extends Zend_Application_Bootstrap_Bootstrap
         $router = $this->_bootstrap('frontController')->getRouter();
 
         if (method_exists($module, 'getRoutes')) {
-            $routes = $module->getRoutes();
+            $routes = $module->getRoutes($this);
 
             if (is_array($routes)) {
                 $routes = new Zend_Config($routes);
@@ -93,7 +93,7 @@ class Maniple_Application_Bootstrap extends Zend_Application_Bootstrap_Bootstrap
     protected function _executeModuleResources($module) // {{{
     {
         if (method_exists($module, 'getResources')) {
-            foreach ($module->getResources() as $name => $resource) {
+            foreach ($module->getResources($this) as $name => $resource) {
                 if ($this->hasResource($name)) {
                     throw new InvalidArgumentException(sprintf(
                         "Resource '%s' is already registered", $name
