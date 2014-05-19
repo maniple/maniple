@@ -188,33 +188,44 @@ class Maniple_Application_Resource_Modules extends Zend_Application_Resource_Res
 
             // get resources defined via getResourcesConfig() method
             // (to be lazy-loaded or arbitrarily named)
-            $resourcesConfig = isset($options[$module]['resourcesConfig'])
-                ? (array) $options[$module]['resourcesConfig']
-                : array();
             if (method_exists($moduleBootstrap, 'getResourcesConfig')) {
                 $resourcesConfig = $this->mergeOptions($resourcesConfig, $moduleBootstrap->getResourcesConfig($bootstrap));
+            } else {
+                $resourcesConfig = array();
             }
             foreach (array('getResources', 'onResources') as $legacy) {
                 if (method_exists($moduleBootstrap, $legacy)) {
                     $resourcesConfig = $this->mergeOptions($resourcesConfig, $moduleBootstrap->$legacy($bootstrap));
                 }
             }
-
+            // override existing options with settings from application config
+            if (isset($options[$module]['resourcesConfig'])) {
+                $resourcesConfig = $this->mergeOptions(
+                    $resourcesConfig,
+                    array_intersect_key($options[$module]['resourcesConfig'], $resourcesConfig)
+                );
+            }
             foreach ($resourcesConfig as $name => $resource) {
                 $bootstrap->setResource($name, $resource);
             }
 
             // get routes defined by getRoutesConfig()
-            $routesConfig = isset($options[$module]['routesConfig'])
-                ? (array) $options[$module]['routesConfig']
-                : array();
             if (method_exists($moduleBootstrap, 'getRoutesConfig')) {
                 $routesConfig = $this->mergeOptions($routesConfig, $moduleBootstrap->getResourcesConfig());
+            } else {
+                $routesConfig = array();
             }
             foreach (array('getRoutes', 'onRoutes') as $legacy) {
                 if (method_exists($moduleBootstrap, $legacy)) {
                     $routesConfig = $this->mergeOptions($routesConfig, $moduleBootstrap->$legacy());
                 }
+            }
+            // override existing options with settings from application config
+            if (isset($options[$module]['routesConfig'])) {
+                $routesConfig = $this->mergeOptions(
+                    $routesConfig,
+                    array_intersect_key($options[$module]['routesConfig'], $routesConfig)
+                );
             }
             if (is_array($routesConfig)) {
                 $routesConfig = new Zend_Config($routesConfig);
