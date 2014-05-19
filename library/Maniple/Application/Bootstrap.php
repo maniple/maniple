@@ -1,12 +1,31 @@
 <?php
 
 /**
- * @version 2014-03-10 / 2013-12-05
+ * @version 2014-05-19
  * @author xemlock
  */
 class Maniple_Application_Bootstrap extends Zend_Application_Bootstrap_Bootstrap
     implements ArrayAccess
 {
+    /**
+     * Get the plugin loader for resources
+     *
+     * @return Zend_Loader_PluginLoader_Interface
+     */
+    public function getPluginLoader() // {{{
+    {
+        if ($this->_pluginLoader === null) {
+            $prefixPaths = array(
+                'Zefram_Application_Resource_' => 'Zefram/Application/Resource/',
+                'Maniple_Application_Resource_' => 'Maniple/Application/Resource/',
+            );
+            foreach ($prefixPaths as $prefix => $path) {
+                parent::getPluginLoader()->addPrefixPath($prefix, $path);
+            }
+        }
+        return $this->_pluginLoader;
+    } // }}}
+
     /**
      * Retrieve resource container.
      *
@@ -47,7 +66,7 @@ class Maniple_Application_Bootstrap extends Zend_Application_Bootstrap_Bootstrap
      * @param  mixed $value
      * @return Maniple_Application_Bootstrap
      */
-    protected function _setResource($name, $value) // {{{
+    public function setResource($name, $value) // {{{
     {
         $resource = strtolower($name);
 
@@ -62,84 +81,12 @@ class Maniple_Application_Bootstrap extends Zend_Application_Bootstrap_Bootstrap
     } // }}}
 
     /**
-     * @param  Zend_Application_Module_Bootstrap $module
-     * @return void
-     * @throws InvalidArgumentException
+     * @deprecated
      */
-    protected function _executeModuleRoutes($module) // {{{
+    protected function _setResource($name, $value)
     {
-        $router = $this->_bootstrap('frontController')->getRouter();
-
-        if (method_exists($module, 'getRoutes')) {
-            $routes = $module->getRoutes($this);
-
-            if (is_array($routes)) {
-                $routes = new Zend_Config($routes);
-            }
-
-            if (!$routes instanceof Zend_Config) {
-                throw new InvalidArgumentException('Route config must be an instance of Zend_Config');
-            }
-
-            $router->addConfig($routes);
-        }
-    } // }}}
-
-    /**
-     * @param  Zend_Application_Module_Bootstrap $module
-     * @return void
-     * @throws InvalidArgumentException
-     */
-    protected function _executeModuleResources($module) // {{{
-    {
-        if (method_exists($module, 'getResources')) {
-            foreach ($module->getResources($this) as $name => $resource) {
-                if ($this->hasResource($name)) {
-                    throw new InvalidArgumentException(sprintf(
-                        "Resource '%s' is already registered", $name
-                    ));
-                }
-                $this->_setResource($name, $resource);
-            }
-        }
-    } // }}}
-
-    protected function _initModules() // {{{
-    {
-        if (!$this->hasPluginResource('modules')) {
-            return;
-        }
-
-        $modules = $this->getPluginResource('modules')->init();
-
-        // Zend_Loader_Autoloader is initialized in the Zend_Application ctor
-        // application autoloader is a simple one which only mapps _ and \\
-        // to directory separators and utilized include paths.
-        // Here we need autoloader for module library directory which maps
-        // Module_ClassName to module/library/ClassName.php
-
-        $moduleLibraryAutoloader = new Zend_Loader_StandardAutoloader();
-        $moduleLibraryAutoloader->register(); // add to autoload stack
-
-        // add libary dir to include path, see:
-        // http://stackoverflow.com/questions/13377983/zend-framework-module-library
-        foreach ($modules as $name => $module) {
-            $ref = new ReflectionClass($module);
-            $path = dirname($ref->getFileName()) . '/library';
-
-            if (is_dir($path)) {
-                $moduleLibraryAutoloader->registerPrefix(ucfirst($name) . '_', $path);
-                // set_include_path($path . PATH_SEPARATOR . get_include_path());
-            }
-
-            // The last stage of module initialization: registers resources and
-            // routes defined by modules.
-            $this->_executeModuleRoutes($module);
-            $this->_executeModuleResources($module);
-        }
-
-        return $modules;
-    } // }}}
+        return $this->setResource($name, $value);
+    }
 
     /**
      * Proxy to {@see getResource()}.
@@ -153,7 +100,7 @@ class Maniple_Application_Bootstrap extends Zend_Application_Bootstrap_Bootstrap
     } // }}}
 
     /**
-     * Proxy to {@see _setResource()}.
+     * Proxy to {@see setResource()}.
      *
      * @param  string $offset
      * @param  mixed $value
@@ -161,7 +108,7 @@ class Maniple_Application_Bootstrap extends Zend_Application_Bootstrap_Bootstrap
      */
     public function offsetSet($offset, $value) // {{{
     {
-        $this->_setResource($offset, $value);
+        $this->setResource($offset, $value);
     } // }}}
 
     /**
