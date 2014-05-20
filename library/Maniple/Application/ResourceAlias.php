@@ -3,7 +3,7 @@
 /**
  * @internal
  */
-class Maniple_Application_ResourceContainer_ResourceAlias
+class Maniple_Application_ResourceAlias
 {
     /**
      * @var string
