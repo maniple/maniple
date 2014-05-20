@@ -10,7 +10,7 @@
  * Settings from resources.modules.moduleName.routesConfig override settings
  * from module's getRoutesConfig().
  *
- * @version 2015-05-19
+ * @version 2014-05-20
  */
 class Maniple_Application_Resource_Modules extends Zend_Application_Resource_ResourceAbstract
 {
@@ -116,8 +116,13 @@ class Maniple_Application_Resource_Modules extends Zend_Application_Resource_Res
                 'prefix' => $modulePrefix,
                 'path' => $modulePath,
                 'bootstrapClass' => $bootstrapClass,
+                'stackIndex' => isset($options[$module['stackIndex']]) ?
+                    (int) $options[$module['stackIndex']]
+                    : 0,
             );
         }
+
+        // TODO sort modules by stackIndex
 
         $this->_modules = $bootstraps;
     }
@@ -170,17 +175,10 @@ class Maniple_Application_Resource_Modules extends Zend_Application_Resource_Res
             if (isset($options[$module])) {
                 $moduleOptions = $options[$module];
             } else {
-                $moduleOptions = array();
+                $moduleOptions = null;
             }
 
             $moduleBootstrap = new $moduleInfo['bootstrapClass']($bootstrap);
-
-            echo '<div style="border:1px solid">', $module, '<pre>OPTIONS BEFORE:';
-            print_r($moduleBootstrap->getOptions());
-            $moduleBootstrap->setOptions($moduleOptions);
-            echo '<br/><br/>OPTIONS AFTER:';
-            print_r($moduleBootstrap->getOptions());
-            echo '</pre></div>';
 
             // bootstrap any built-in / plugin resources, they will be stored in
             // the common resource container
@@ -189,29 +187,38 @@ class Maniple_Application_Resource_Modules extends Zend_Application_Resource_Res
             // get resources defined via getResourcesConfig() method
             // (to be lazy-loaded or arbitrarily named)
             if (method_exists($moduleBootstrap, 'getResourcesConfig')) {
-                $resourcesConfig = $this->mergeOptions($resourcesConfig, $moduleBootstrap->getResourcesConfig($bootstrap));
+                $resourcesConfig = $moduleBootstrap->getResourcesConfig($bootstrap);
             } else {
                 $resourcesConfig = array();
             }
-            foreach (array('getResources', 'onResources') as $legacy) {
+
+            // legacy setup
+            foreach (array('getResources', 'onResources', 'onServices') as $legacy) {
                 if (method_exists($moduleBootstrap, $legacy)) {
                     $resourcesConfig = $this->mergeOptions($resourcesConfig, $moduleBootstrap->$legacy($bootstrap));
                 }
             }
+
+            // echo '<div style="border:1px solid">', $module, '<pre>OPTIONS BEFORE:', print_r($resourcesConfig, 1);
+            // echo 'Override with: ', print_r(@$moduleOptions['resourcesConfig'], 1), '<br/>';
+
             // override existing options with settings from application config
-            if (isset($options[$module]['resourcesConfig'])) {
+            if (isset($moduleOptions['resourcesConfig'])) {
                 $resourcesConfig = $this->mergeOptions(
                     $resourcesConfig,
-                    array_intersect_key($options[$module]['resourcesConfig'], $resourcesConfig)
+                    array_intersect_key($moduleOptions['resourcesConfig'], $resourcesConfig)
                 );
             }
+
             foreach ($resourcesConfig as $name => $resource) {
                 $bootstrap->setResource($name, $resource);
             }
 
+            // echo '<br/><br/>OPTIONS AFTER:',print_r($resourcesConfig, 1), '</pre></div>';
+
             // get routes defined by getRoutesConfig()
             if (method_exists($moduleBootstrap, 'getRoutesConfig')) {
-                $routesConfig = $this->mergeOptions($routesConfig, $moduleBootstrap->getResourcesConfig());
+                $routesConfig = $moduleBootstrap->getRoutesConfig();
             } else {
                 $routesConfig = array();
             }

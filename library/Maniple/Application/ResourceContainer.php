@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * Resource container with lazy object initialization.
+ *
+ * @version 2014-05-20
+ */
 class Maniple_Application_ResourceContainer
 {
     /**
@@ -19,11 +24,6 @@ class Maniple_Application_ResourceContainer
         }
 
         if (is_array($options)) {
-            if (isset($options['bootstrap'])) {
-                $this->setBootstrap($options['bootstrap']);
-                unset($options['bootstrap']);
-            }
-
             $this->addResources($options);
         }
     } // }}}
@@ -31,23 +31,23 @@ class Maniple_Application_ResourceContainer
     /**
      * Add many services at once
      *
-     * @param  array $services
-     * @return Euhit_ServiceLocator
+     * @param  array|Traversable $services
+     * @return Maniple_Application_ResourceContainer
      */
-    public function addResources($services) // {{{
+    public function addResources($resources) // {{{
     {
-        foreach ($services as $name => $service) {
-            $this->addResource($name, $service);
+        foreach ($resources as $name => $resource) {
+            $this->addResource($name, $resource);
         }
         return $this;
     } // }}}
 
     /**
-     * Add a service
+     * Add a resource
      *
      * @param  string $name
      * @param  string|array|object $service
-     * @return Euhit_ResourceLocator
+     * @return Maniple_Application_ResourceContainer
      */
     public function addResource($name, $service) // {{{
     {
@@ -95,30 +95,30 @@ class Maniple_Application_ResourceContainer
      */
     public function getResource($name) // {{{
     {
-        $serviceName = strtolower($name);
+        $resourceName = strtolower($name);
 
-        if (isset($this->_resources[$serviceName])) {
-            $service = $this->_resources[$serviceName];
+        if (isset($this->_resources[$resourceName])) {
+            $resource = $this->_resources[$resourceName];
 
             switch (true) {
-                case $service instanceof Maniple_Application_ResourceAlias:
+                case $resource instanceof Maniple_Application_ResourceAlias:
+                    // resolve resource alias
                     // TODO cycle detection
-                    $this->_resources[$serviceName] = $this->getResource($service->getTarget());
-                    break;
+                    return $this->_resources[$resourceName] = $this->getResource($resource->getTarget());
 
-                case is_array($service) && isset($service['class']):
-                    $this->_resources[$serviceName] = $this->_loadResource($service);
-                    break;
+                case is_array($resource) && isset($resource['class']):
+                    return $this->_resources[$resourceName] = $this->_loadResource($resource);
+
+                default:
+                    return $resource;
             }
-
-            return $service;
         }
 
-        throw new Exception("No service is registered for key '$name'");
+        throw new Exception("No resource is registered for key '$name'");
     } // }}}
 
     /**
-     * Create a service instance from array representation.
+     * Create a resource instance from definition.
      *
      * @param  array $service
      * @return mixed
@@ -127,7 +127,7 @@ class Maniple_Application_ResourceContainer
     protected function _loadResource(array $service) // {{{
     {
         if (empty($service['class'])) {
-            throw new Exception('No service class name provided');
+            throw new Exception('No resource class name provided');
         }
 
         $class = $service['class'];
@@ -173,8 +173,7 @@ class Maniple_Application_ResourceContainer
     /**
      * Proxy to {@see getResource()}.
      *
-     * This function is typically called by Bootstrap when the service locator
-     * is used as a resource container.
+     * This function is expected to be called by Bootstrap.
      *
      * @param  string $name
      * @return mixed
@@ -187,8 +186,7 @@ class Maniple_Application_ResourceContainer
     /**
      * Proxy to {@see addResource()}.
      *
-     * This function is typically called by Bootstrap when the service locator
-     * is used as a resource container.
+     * This function is expected to be called by Bootstrap.
      *
      * @param  string $name
      * @param  mixed $service
@@ -201,8 +199,7 @@ class Maniple_Application_ResourceContainer
     /**
      * Is service of a given name defined.
      *
-     * This function is typically called by Bootstrap when the service locator
-     * is used as a resource container.
+     * This function is expected to called by Bootstrap.
      *
      * @param  string $name
      * @return bool
@@ -213,7 +210,7 @@ class Maniple_Application_ResourceContainer
     } // }}}
 
     /**
-     * Unregister service of a given name.
+     * Unregister resource of a given name.
      *
      * @param string $name
      */
