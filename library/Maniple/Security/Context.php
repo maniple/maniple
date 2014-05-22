@@ -4,7 +4,7 @@
  * @uses Zend_Auth_Storage
  * @version 2014-03-06
  */
-class Maniple_Security_SecurityManager
+class Maniple_Security_Context implements Maniple_Security_ContextInterface
 {
     const SESSION_KEY = '__security';
 
@@ -257,36 +257,6 @@ class Maniple_Security_SecurityManager
         );
 
         $this->getStorage()->write($user);
-    } // }}}
-
-    /**
-     * Does the authenticated user have access to given resource.
-     * Superusers are automatically allowed.
-     *
-     * @param  Zend_Acl $acl
-     * @param  string|Zend_Acl_Resource_Interface $resource
-     * @param  string $privilege
-     * @return bool
-     */
-    public function isAllowed(Zend_Acl $acl, $resource = null, $privilege = null) // {{{
-    {
-        if ($this->isSuperUser()) {
-            return true;
-        }
-
-        if (null !== ($user = $this->getUser())) {
-            foreach ((array) $user->getRoles() as $role) {
-                try {
-                    if ($acl->isAllowed($role, $resource, $privilege)) {
-                        return true;
-                    }
-                } catch (Zend_Acl_Exception $e) {
-                    // role or resource not found
-                }
-            }
-        }
-
-        return false;
     } // }}}
 
     /**
