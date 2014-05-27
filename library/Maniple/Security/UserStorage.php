@@ -1,10 +1,12 @@
 <?php
 
 /**
+ * UserStorage is a container for currently authenticated user.
+ *
  * @uses Zend_Auth_Storage
- * @version 2014-03-06
+ * @version 2014-05-27
  */
-class Maniple_Security_Context implements Maniple_Security_ContextInterface
+class Maniple_Security_UserStorage implements Maniple_Security_UserStorageInterface
 {
     const SESSION_KEY = '__security';
 
@@ -12,59 +14,6 @@ class Maniple_Security_Context implements Maniple_Security_ContextInterface
      * @var Zend_Auth_Storage_Interface
      */
     protected $_storage;
-
-    /**
-     * @var array
-     */
-    protected $_superUserIds = array();
-
-    /**
-     * Add superuser ID.
-     *
-     * @param mixed $superUserId
-     * @return Maniple_Security_SecurityManager
-     */
-    public function addSuperUserId($superUserId) // {{{
-    {
-        if (empty($superUserId)) {
-            throw new Maniple_Security_Exception_InvalidArgumentException(
-                'Superuser ID must not be empty'
-            );
-        }
-        $this->_superUserIds[] = $this->_transformId($superUserId);
-        return $this;
-    } // }}}
-
-    /**
-     * Retrieve first superuser ID.
-     *
-     * @return mixed
-     */
-    public function getSuperUserId() // {{{
-    {
-        return reset($this->_superUserIds);
-    } // }}}
-
-    /**
-     * Return all superuser IDs.
-     *
-     * @return array
-     */
-    public function getSuperUserIds() // {{{
-    {
-        return $this->_superUserIds;
-    } // }}}
-
-    /**
-     * Remove all superuser IDs.
-     *
-     * @return Maniple_Security_SecurityManager
-     */
-    public function clearSuperUserIds() // {{{
-    {
-        $this->_superUserIds = array();
-        return $this;
-    } // }}}
 
     /**
      * Set authentication storage.
@@ -105,25 +54,6 @@ class Maniple_Security_Context implements Maniple_Security_ContextInterface
     {
         return $this->isAuthenticated()
             && isset($_SESSION[self::SESSION_KEY]['impersonation']);
-    } // }}}
-
-    /**
-     * @param  mixed $userId OPTIONAL
-     * @return bool
-     * @throws Maniple_Security_Exception_InvalidStateException
-     */
-    public function isSuperUser($userId = null) // {{{
-    {
-        if (null === $userId) {
-            if (!$this->isAuthenticated()) {
-                return false;
-            }
-            $userId = $this->getUser()->getId();
-        }
-
-        // do not use strict type comparisons, so that arrays containing the
-        // same key-value pairs can be matched regardless of theis ordering
-        return in_array($this->_transformId($userId), $this->_superUserIds);
     } // }}}
 
     /**
@@ -257,24 +187,6 @@ class Maniple_Security_Context implements Maniple_Security_ContextInterface
         );
 
         $this->getStorage()->write($user);
-    } // }}}
-
-    /**
-     * Create representation of given ID suitable for storing and checking if
-     * it belongs to superusers.
-     *
-     * @param  mixed $id
-     * @return string|array
-     */
-    protected function _transformId($id) // {{{
-    {
-        if (is_array($id)) {
-            return array_map(array($this, __FUNCTION__), $id);
-        }
-        if (is_float($id)) {
-            $id = sprintf('%F', $id);
-        }
-        return (string) $id;
     } // }}}
 
     /**

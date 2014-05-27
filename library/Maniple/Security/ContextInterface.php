@@ -24,4 +24,12 @@ interface Maniple_Security_ContextInterface
      * @return bool
      */
     public function isSuperUser($userId = null);
+
+    /**
+     * Does currently authenticated user have a given permission.
+     *
+     * @param  mixed $permission
+     * @return bool
+     */
+    public function isAllowed($permission);
 }
