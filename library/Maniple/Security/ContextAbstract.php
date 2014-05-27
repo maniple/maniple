@@ -85,6 +85,9 @@ abstract class Maniple_Security_ContextAbstract implements Maniple_Security_Cont
     } // }}}
 
     /**
+     * Is user with given ID or, if none given, currently authenticated user
+     * a super-user.
+     *
      * @param  mixed $userId OPTIONAL
      * @return bool
      * @throws Maniple_Security_Exception_InvalidStateException

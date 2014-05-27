@@ -17,13 +17,11 @@ interface Maniple_Security_ContextInterface
     public function isAuthenticated();
 
     /**
-    /**
-     * Is user with given ID or, if none given, currently authenticated user
-     * a super-user.
+     * Is currently authenticated user a super-user.
      *
      * @return bool
      */
-    public function isSuperUser($userId = null);
+    public function isSuperUser();
 
     /**
      * Does currently authenticated user have a given permission.
