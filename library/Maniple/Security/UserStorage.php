@@ -167,16 +167,9 @@ class Maniple_Security_UserStorage implements Maniple_Security_UserStorageInterf
      *
      * @param  Maniple_Security_UserInterface $user
      * @param  array $context OPTIONAL
-     * @throws Maniple_Security_Exception_NotAllowedException
      */
     public function impersonate(Maniple_Security_UserInterface $user, array $context = null) // {{{
     {
-        if (!$this->isSuperUser()) {
-            throw new Maniple_Security_Exception_NotAllowedException(
-                'You must be Superuser to impersonate'
-            );
-        }
-
         $_SESSION[self::SESSION_KEY] = array(
             'impersonation' => array(
                 'security' => $_SESSION[self::SESSION_KEY],
