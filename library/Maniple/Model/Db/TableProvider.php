@@ -1,6 +1,6 @@
 <?php
 
-class Maniple_Model_Db_TableProvider extends Zefram_Db_Table_Provider
+class Maniple_Model_Db_TableProvider extends Zefram_Db_TableProvider
 {
     /**
      * Zend_Db_Table_Abstract instances
