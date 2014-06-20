@@ -21,6 +21,11 @@ class Maniple_Model_ModelWrapper
 
     public function assign($key, $value = null)
     {
+        return $this->addExtra($key, $value);
+    }
+
+    public function addExtra($key, $value = null)
+    {
         if (is_array($key) || $key instanceof Traversable) {
             foreach ($key as $k => $val) {
                 $this->_extra[$k] = $val;
@@ -33,7 +38,7 @@ class Maniple_Model_ModelWrapper
 
     public function __set($key, $value)
     {
-        return $this->assign($key, $value);
+        return $this->addExtra($key, $value);
     }
 
     public function __get($key)
