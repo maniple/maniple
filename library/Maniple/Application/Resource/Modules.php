@@ -253,29 +253,42 @@ class Maniple_Application_Resource_Modules extends Zend_Application_Resource_Res
 
     protected function _setupViewPaths()
     {
-        $bootstrap = $this->getBootstrap();
+        $view = $this->_getBootstrapResource('View');
 
-        try {
-            $bootstrap->bootstrap('view');
-            $view = $bootstrap->getResource('view');
-            if (!$view instanceof Zend_View_Abstract) {
-                $view = null;
-            }
-        } catch (Zend_Application_Bootstrap_Exception $e) {
-            // view resource not found
-            $view = null;
-        }
-
-        foreach ($this->_modules as $module => $moduleInfo) {
-            // TODO plugins?
-            if ($view && is_dir($moduleInfo['path'] . '/views/helpers')) {
-                $view->addHelperPath(
-                    $moduleInfo['path'] . '/views/helpers/',
-                    $moduleInfo['prefix'] . '_View_Helper_'
-                );
+        if ($view instanceof Zend_View_Abstract) {
+            foreach ($this->_modules as $module => $moduleInfo) {
+                // TODO plugins?
+                if (is_dir($moduleInfo['path'] . '/views/helpers')) {
+                    $view->addHelperPath(
+                        $moduleInfo['path'] . '/views/helpers/',
+                        $moduleInfo['prefix'] . '_View_Helper_'
+                    );
+                }
             }
         }
     }
+
+    /**
+     * Get a resource from bootstrap, initialize it if necessary.
+     *
+     * @param  string $name
+     * @return mixed
+     */
+    protected function _getBootstrapResource($name) // {{{
+    {
+        $bootstrap = $this->getBootstrap();
+
+        if ($bootstrap->hasResource($name)) {
+            $resource = $bootstrap->getResource($name);
+        } elseif ($bootstrap->hasPluginResource($name) || method_exists($bootstrap, '_init' . $name)) {
+            $bootstrap->bootstrap($name);
+            $resource = $bootstrap->getResource($name);
+        } else {
+            $resource = null;
+        }
+
+        return $resource;
+    } // }}}
 
     /**
      * Format a module name to the module class prefix
