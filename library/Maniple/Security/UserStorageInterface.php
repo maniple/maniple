@@ -12,4 +12,9 @@ interface Maniple_Security_UserStorageInterface
      * @return mixed
      */
     public function setUser(Maniple_Security_UserInterface $user);
+
+    /**
+     * @return mixed
+     */
+    public function clearUser();
 }
