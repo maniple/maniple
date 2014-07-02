@@ -85,6 +85,16 @@ abstract class Maniple_Security_ContextAbstract implements Maniple_Security_Cont
     } // }}}
 
     /**
+     * Check whether the current user is authenticated.
+     *
+     * @return bool
+     */
+    public function isAuthenticated() // {{{
+    {
+        return (bool) $this->getUserStorage()->getUser();
+    } // }}}
+
+    /**
      * Is user with given ID or, if none given, currently authenticated user
      * a super-user.
      *

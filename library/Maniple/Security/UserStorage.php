@@ -100,13 +100,13 @@ class Maniple_Security_UserStorage implements Maniple_Security_UserStorageInterf
 
     /**
      * @param Maniple_Security_UserInterface $user
-     * @param array $context OPTIONAL
+     * @param array $state OPTIONAL
      * @return bool
      */
-    public function setUser(Maniple_Security_UserInterface $user, array $context = null) // {{{
+    public function setUser(Maniple_Security_UserInterface $user, array $state = null) // {{{
     {
         $_SESSION[self::SESSION_KEY] = array(
-            'context' => $context,
+            'state' => $state,
             'token' => $this->_createToken(),
         );
 
@@ -114,16 +114,16 @@ class Maniple_Security_UserStorage implements Maniple_Security_UserStorageInterf
     } // }}}
 
     /**
-     * @return mixed context attached to user upon authentication
+     * @return mixed state attached to user upon authentication
      * @throws Maniple_Security_Exception_AuthenticationException
      */
     public function clearUser() // {{{
     {
         if ($this->isAuthenticated()) {
-            if (isset($_SESSION[self::SESSION_KEY]['context'])) {
-                $context = $_SESSION[self::SESSION_KEY]['context'];
+            if (isset($_SESSION[self::SESSION_KEY]['state'])) {
+                $state = $_SESSION[self::SESSION_KEY]['state'];
             } else {
-                $context = null;
+                $state = null;
             }
 
             if (isset($_SESSION[self::SESSION_KEY]['impersonation'])) {
@@ -154,7 +154,7 @@ class Maniple_Security_UserStorage implements Maniple_Security_UserStorageInterf
                 }
             }
 
-            return $context;
+            return $state;
         }
 
         throw new Maniple_Security_Exception_AuthenticationException(
@@ -166,16 +166,16 @@ class Maniple_Security_UserStorage implements Maniple_Security_UserStorageInterf
      * Impersonate as another user.
      *
      * @param  Maniple_Security_UserInterface $user
-     * @param  array $context OPTIONAL
+     * @param  array $state OPTIONAL
      */
-    public function impersonate(Maniple_Security_UserInterface $user, array $context = null) // {{{
+    public function impersonate(Maniple_Security_UserInterface $user, array $state = null) // {{{
     {
         $_SESSION[self::SESSION_KEY] = array(
             'impersonation' => array(
                 'security' => $_SESSION[self::SESSION_KEY],
                 'identity' => $this->getStorage()->read(),
             ),
-            'context' => $context,
+            'state' => $state,
             'token' => $this->_createToken(),
         );
 
