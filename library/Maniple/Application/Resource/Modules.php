@@ -255,14 +255,20 @@ class Maniple_Application_Resource_Modules extends Zend_Application_Resource_Res
     {
         $view = $this->_getBootstrapResource('View');
 
+        $helperPaths = array(
+            '/library/View/Helper',
+            '/views/helpers',
+        );
+
         if ($view instanceof Zend_View_Abstract) {
             foreach ($this->_modules as $module => $moduleInfo) {
-                // TODO plugins?
-                if (is_dir($moduleInfo['path'] . '/views/helpers')) {
-                    $view->addHelperPath(
-                        $moduleInfo['path'] . '/views/helpers/',
-                        $moduleInfo['prefix'] . '_View_Helper_'
-                    );
+                foreach ($helperPaths as $path) {
+                    if (is_dir($moduleInfo['path'] . $path)) {
+                        $view->addHelperPath(
+                            $moduleInfo['path'] . $path,
+                            $moduleInfo['prefix'] . '_View_Helper_'
+                        );
+                    }
                 }
             }
         }
