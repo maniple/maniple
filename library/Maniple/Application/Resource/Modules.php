@@ -4,15 +4,18 @@
  * Existing module is not loaded / executed if the corresponding
  * resources.modules.moduleName settings is FALSE.
  *
+ * Modules can depend on other modules via calls to bootstrapModule().
+ *
  * Settings from resources.modules.moduleName.resourcesConfig override settings
  * from module's getResourcesConfig().
  *
  * Settings from resources.modules.moduleName.routesConfig override settings
  * from module's getRoutesConfig().
  *
- * @version 2014-05-20
+ * @version 2014-07-13
  */
 class Maniple_Application_Resource_Modules extends Zend_Application_Resource_ResourceAbstract
+    implements Maniple_Application_ModuleBootstrapper
 {
     /**
      * @var Zend_Loader_StandardAutoloader
@@ -125,6 +128,7 @@ class Maniple_Application_Resource_Modules extends Zend_Application_Resource_Res
         // TODO sort modules by stackIndex
 
         $this->_modules = $bootstraps;
+        $this->_bootstraps = new ArrayObject(array(), ArrayObject::ARRAY_AS_PROPS);
     }
 
     /**
@@ -159,96 +163,140 @@ class Maniple_Application_Resource_Modules extends Zend_Application_Resource_Res
     } // }}}
 
     /**
+     * @var array
+     */
+    protected $_whileBootstrapping;
+
+    /**
+     * @param  string $moduleName
+     * @return Zend_Application_Module_Bootstrap
+     * @throws Exception
+     */
+    public function bootstrapModule($moduleName)
+    {
+        if (empty($this->_modules[$moduleName])) {
+            throw new InvalidArgumentException("Module {$moduleName} was not found");
+        }
+
+        if (isset($this->_bootstraps->{$moduleName})) {
+            return $this->_bootstraps->{$moduleName};
+        }
+
+        if (isset($this->_whileBootstrapping[$moduleName])) {
+            throw new Exception('Cyclic module dependency detected; module ' . $moduleName . ' is during bootstrap process');
+        }
+
+        $moduleInfo = $this->_modules[$moduleName];
+        $this->_whileBootstrapping[$moduleName] = true;
+
+        $bootstrap = $this->getBootstrap();
+
+        $options = $this->getOptions();
+
+        if (isset($options[$moduleName])) {
+            $moduleOptions = $options[$moduleName];
+        } else {
+            $moduleOptions = null;
+        }
+
+        $moduleBootstrap = new $moduleInfo['bootstrapClass']($bootstrap);
+
+        // get resources defined via getResourcesConfig() method
+        // (to be lazy-loaded or arbitrarily named)
+        if (method_exists($moduleBootstrap, 'getResourcesConfig')) {
+            $resourcesConfig = $moduleBootstrap->getResourcesConfig();
+        } else {
+            $resourcesConfig = array();
+        }
+
+        // legacy setup
+        foreach (array('getResources', 'onResources', 'onServices') as $legacy) {
+            if (method_exists($moduleBootstrap, $legacy)) {
+                $resourcesConfig = $this->mergeOptions($resourcesConfig, $moduleBootstrap->$legacy($bootstrap));
+            }
+        }
+
+        // echo '<div style="border:1px solid">', $module, '<pre>OPTIONS BEFORE:', print_r($resourcesConfig, 1);
+        // echo 'Override with: ', print_r(@$moduleOptions['resourcesConfig'], 1), '<br/>';
+
+        // override existing options with settings from application config
+        if (isset($moduleOptions['resourcesConfig'])) {
+            $resourcesConfig = $this->mergeOptions(
+                $resourcesConfig,
+                array_intersect_key($moduleOptions['resourcesConfig'], $resourcesConfig)
+            );
+        }
+
+        foreach ($resourcesConfig as $resourceName => $resource) {
+            $bootstrap->setResource($resourceName, $resource);
+        }
+
+        // echo '<br/><br/>OPTIONS AFTER:',print_r($resourcesConfig, 1), '</pre></div>';
+
+        // get routes defined by getRoutesConfig()
+        if (method_exists($moduleBootstrap, 'getRoutesConfig')) {
+            $routesConfig = $moduleBootstrap->getRoutesConfig();
+        } else {
+            $routesConfig = array();
+        }
+        foreach (array('getRoutes', 'onRoutes') as $legacy) {
+            if (method_exists($moduleBootstrap, $legacy)) {
+                $routesConfig = $this->mergeOptions($routesConfig, $moduleBootstrap->$legacy());
+            }
+        }
+        // override existing options with settings from application config
+        if (isset($options[$moduleName]['routesConfig'])) {
+            $routesConfig = $this->mergeOptions(
+                $routesConfig,
+                array_intersect_key($options[$module]['routesConfig'], $routesConfig)
+            );
+        }
+        if (is_array($routesConfig)) {
+            $routesConfig = new Zend_Config($routesConfig);
+        }
+        if (!$routesConfig instanceof Zend_Config) {
+            throw new InvalidArgumentException('Route config must be an instance of Zend_Config');
+        }
+
+        $router = $bootstrap->getResource('frontController')->getRouter();
+        $router->addConfig($routesConfig);
+
+        // bootstrap any built-in / plugin resources, they will be stored in
+        // the common resource container
+        $moduleBootstrap->bootstrap();
+
+        // notify bootstrapping is complete
+        if (method_exists($moduleBootstrap, 'onBootstrap')) {
+            $moduleBootstrap->onBootstrap($this);
+        }
+
+        unset($this->_whileBootstrapping[$moduleName]);
+        $this->_bootstraps->{$moduleName} = $moduleBootstrap;
+
+        return $moduleBootstrap;
+    }
+
+    /**
      * @param  array $bootstraps
      * @return ArrayObject
      */
     protected function _executeBootstraps()
     {
-        $options = $this->getOptions();
         $bootstrap = $this->getBootstrap();
 
-        $router = $bootstrap->getResource('frontController')->getRouter();
-
-        $result = new ArrayObject(array(), ArrayObject::ARRAY_AS_PROPS);
-
         foreach ($this->_modules as $module => $moduleInfo) {
-            if (isset($options[$module])) {
-                $moduleOptions = $options[$module];
-            } else {
-                $moduleOptions = null;
-            }
-
-            $moduleBootstrap = new $moduleInfo['bootstrapClass']($bootstrap);
-
-            // bootstrap any built-in / plugin resources, they will be stored in
-            // the common resource container
-            $moduleBootstrap->bootstrap();
-
-            // get resources defined via getResourcesConfig() method
-            // (to be lazy-loaded or arbitrarily named)
-            if (method_exists($moduleBootstrap, 'getResourcesConfig')) {
-                $resourcesConfig = $moduleBootstrap->getResourcesConfig($bootstrap);
-            } else {
-                $resourcesConfig = array();
-            }
-
-            // legacy setup
-            foreach (array('getResources', 'onResources', 'onServices') as $legacy) {
-                if (method_exists($moduleBootstrap, $legacy)) {
-                    $resourcesConfig = $this->mergeOptions($resourcesConfig, $moduleBootstrap->$legacy($bootstrap));
-                }
-            }
-
-            // echo '<div style="border:1px solid">', $module, '<pre>OPTIONS BEFORE:', print_r($resourcesConfig, 1);
-            // echo 'Override with: ', print_r(@$moduleOptions['resourcesConfig'], 1), '<br/>';
-
-            // override existing options with settings from application config
-            if (isset($moduleOptions['resourcesConfig'])) {
-                $resourcesConfig = $this->mergeOptions(
-                    $resourcesConfig,
-                    array_intersect_key($moduleOptions['resourcesConfig'], $resourcesConfig)
-                );
-            }
-
-            foreach ($resourcesConfig as $name => $resource) {
-                $bootstrap->setResource($name, $resource);
-            }
-
-            // echo '<br/><br/>OPTIONS AFTER:',print_r($resourcesConfig, 1), '</pre></div>';
-
-            // get routes defined by getRoutesConfig()
-            if (method_exists($moduleBootstrap, 'getRoutesConfig')) {
-                $routesConfig = $moduleBootstrap->getRoutesConfig();
-            } else {
-                $routesConfig = array();
-            }
-            foreach (array('getRoutes', 'onRoutes') as $legacy) {
-                if (method_exists($moduleBootstrap, $legacy)) {
-                    $routesConfig = $this->mergeOptions($routesConfig, $moduleBootstrap->$legacy());
-                }
-            }
-            // override existing options with settings from application config
-            if (isset($options[$module]['routesConfig'])) {
-                $routesConfig = $this->mergeOptions(
-                    $routesConfig,
-                    array_intersect_key($options[$module]['routesConfig'], $routesConfig)
-                );
-            }
-            if (is_array($routesConfig)) {
-                $routesConfig = new Zend_Config($routesConfig);
-            }
-            if (!$routesConfig instanceof Zend_Config) {
-                throw new InvalidArgumentException('Route config must be an instance of Zend_Config');
-            }
-            $router->addConfig($routesConfig);
-
-            $result[$module] = $moduleBootstrap;
+            $this->bootstrapModule($module);
         }
 
         // Ok, all modules loaded successfully, add search paths
         $this->_setupViewPaths();
 
-        $this->_bootstraps = $result;
+        // great, all modules are loaded, notify of module loading completion
+        foreach ($this->_bootstraps as $moduleBootstrap) {
+            if (method_exists($moduleBootstrap, 'onModulesLoaded')) {
+                $moduleBootstrap->onModulesLoaded($this);
+            }
+        }
     }
 
     protected function _setupViewPaths()
