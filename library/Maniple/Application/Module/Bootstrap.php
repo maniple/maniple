@@ -6,7 +6,7 @@
  * @version 2014-07-16
  * @author xemlock
  */
-class Maniple_Application_Module_Bootstrap extends Zend_Application_Module_Bootstrap
+abstract class Maniple_Application_Module_Bootstrap extends Zend_Application_Module_Bootstrap
 {
     /**
      * @var string
@@ -32,18 +32,40 @@ class Maniple_Application_Module_Bootstrap extends Zend_Application_Module_Boots
     protected $_moduleDepsBootstrapped = false;
 
     /**
-     * Set parent bootstrap.
+     * {@inheritdoc}
      *
-     * @param  Maniple_Application_Bootstrap_Bootstrap $application
+     * @param  Zend_Application|Zend_Application_Bootstrap_Bootstrapper $application
      * @return Maniple_Application_Module_Bootstrap
-     * @throws Zend_Application_Bootstrap_Exception
      */
     public function setApplication($application) // {{{
     {
-        if (!$application instanceof Maniple_Application_Bootstrap_Bootstrap) {
-            throw new Zend_Application_Bootstrap_Exception('Invalid application provided, expected an instance of Maniple_Application_Bootstrap_Bootstrap, received ' . get_class($application));
+        parent::setApplication($application);
+
+        // use same resource container as parent bootstrap
+        $bootstrap = $this->getParentBootstrap();
+        if ($bootstrap instanceof Zend_Application_Bootstrap_BootstrapAbstract) {
+            $this->setContainer($bootstrap->getContainer());
         }
-        return parent::setApplication($application);
+
+        return $this;
+    } // }}}
+
+    /**
+     * Retrieves parent bootstrap.
+     *
+     * @return Zend_Application_Bootstrap_Bootstrapper|null
+     */
+    public function getParentBootstrap() // {{{
+    {
+        if ($this->_application instanceof Zend_Application) {
+            $bootstrap = $this->_application->getBootstrap();
+        } else {
+            $bootstrap = $this->_application;
+        }
+        if ($bootstrap === $this) {
+            return null;
+        }
+        return $bootstrap;
     } // }}}
 
     /**
@@ -63,7 +85,7 @@ class Maniple_Application_Module_Bootstrap extends Zend_Application_Module_Boots
     /**
      * Sets module manager.
      *
-     * @param Maniple_Application_ModuleBootstrapper $moduleManager
+     * @param  Maniple_Application_ModuleBootstrapper $moduleManager
      * @return Maniple_Application_Module_Bootstrap
      */
     public function setModuleManager(Maniple_Application_ModuleBootstrapper $moduleManager) // {{{
