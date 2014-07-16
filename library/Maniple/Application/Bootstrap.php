@@ -4,44 +4,9 @@
  * @version 2014-05-19
  * @author xemlock
  */
-class Maniple_Application_Bootstrap extends Zend_Application_Bootstrap_Bootstrap
+class Maniple_Application_Bootstrap extends Maniple_Application_Bootstrap_Bootstrap
     implements ArrayAccess
 {
-    /**
-     * Get the plugin loader for resources
-     *
-     * @return Zend_Loader_PluginLoader_Interface
-     */
-    public function getPluginLoader() // {{{
-    {
-        if ($this->_pluginLoader === null) {
-            $prefixPaths = array(
-                'Zefram_Application_Resource_' => 'Zefram/Application/Resource/',
-                'Maniple_Application_Resource_' => 'Maniple/Application/Resource/',
-            );
-            foreach ($prefixPaths as $prefix => $path) {
-                parent::getPluginLoader()->addPrefixPath($prefix, $path);
-            }
-        }
-        return $this->_pluginLoader;
-    } // }}}
-
-    /**
-     * Retrieve resource container.
-     *
-     * @return object
-     */
-    public function getContainer() // {{{
-    {
-        if (null === $this->_container) {
-            $serviceLocator = new Maniple_Application_ServiceLocator(array(
-                'bootstrap' => $this,
-            ));
-            $this->setContainer($serviceLocator);
-        }
-        return $this->_container;
-    } // }}}
-
     /**
      * Initialize resource of a given name, if it's not already initialized
      * and return the result.
@@ -56,28 +21,6 @@ class Maniple_Application_Bootstrap extends Zend_Application_Bootstrap_Bootstrap
         if (null !== $resource && $this->hasResource($resource)) {
             return $this->getResource($resource);
         }
-    } // }}}
-
-    /**
-     * Save given resource using a custom name without involving _init method
-     * or plugin mechanism.
-     *
-     * @param  string $name
-     * @param  mixed $value
-     * @return Maniple_Application_Bootstrap
-     */
-    public function setResource($name, $value) // {{{
-    {
-        $resource = strtolower($name);
-
-        if ($this->hasResource($resource)) {
-            throw new Zend_Application_Bootstrap_Exception(sprintf(
-                "Resource '%s' already exists", $resource
-            ));
-        }
-
-        $this->getContainer()->{$resource} = $value;
-        return $this;
     } // }}}
 
     /**

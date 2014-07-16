@@ -104,7 +104,7 @@ class Maniple_Application_ResourceContainer
                 case $resource instanceof Maniple_Application_ResourceAlias:
                     // resolve resource alias
                     // TODO cycle detection
-                    return $this->_resources[$resourceName] = $this->getResource($resource->getTarget());
+                    return $this->getResource($resource->getTarget());
 
                 case is_array($resource) && isset($resource['class']):
                     return $this->_resources[$resourceName] = $this->_loadResource($resource);

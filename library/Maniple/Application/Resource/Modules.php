@@ -14,7 +14,7 @@
  *
  * @version 2014-07-13
  */
-class Maniple_Application_Resource_Modules extends Zend_Application_Resource_ResourceAbstract
+class Maniple_Application_Resource_Modules extends Maniple_Application_Resource_ResourceAbstract
     implements Maniple_Application_ModuleBootstrapper
 {
     /**
@@ -32,6 +32,13 @@ class Maniple_Application_Resource_Modules extends Zend_Application_Resource_Res
      */
     protected $_bootstraps;
 
+    public function __construct($options = null)
+    {
+        parent::__construct($options);
+        $this->_initModules();
+        $this->_initAutoloader();        
+    }
+
     /**
      * Initialize modules
      *
@@ -39,8 +46,6 @@ class Maniple_Application_Resource_Modules extends Zend_Application_Resource_Res
      */
     public function init() // {{{
     {
-        $this->_initModules();
-        $this->_initAutoloader();
         $this->_executeBootstraps();
         return $this->_bootstraps;
     } // }}}
@@ -201,6 +206,10 @@ class Maniple_Application_Resource_Modules extends Zend_Application_Resource_Res
 
         $moduleBootstrap = new $moduleInfo['bootstrapClass']($bootstrap);
 
+        if ($moduleBootstrap instanceof Maniple_Application_Module_Bootstrap) {
+            $moduleBootstrap->setModuleManager($this);
+        }
+
         // get resources defined via getResourcesConfig() method
         // (to be lazy-loaded or arbitrarily named)
         if (method_exists($moduleBootstrap, 'getResourcesConfig')) {
@@ -235,7 +244,7 @@ class Maniple_Application_Resource_Modules extends Zend_Application_Resource_Res
 
         // get routes defined by getRoutesConfig()
         if (method_exists($moduleBootstrap, 'getRoutesConfig')) {
-            $routesConfig = $moduleBootstrap->getRoutesConfig();
+            $routesConfig = (array) $moduleBootstrap->getRoutesConfig();
         } else {
             $routesConfig = array();
         }
@@ -321,28 +330,6 @@ class Maniple_Application_Resource_Modules extends Zend_Application_Resource_Res
             }
         }
     }
-
-    /**
-     * Get a resource from bootstrap, initialize it if necessary.
-     *
-     * @param  string $name
-     * @return mixed
-     */
-    protected function _getBootstrapResource($name) // {{{
-    {
-        $bootstrap = $this->getBootstrap();
-
-        if ($bootstrap->hasResource($name)) {
-            $resource = $bootstrap->getResource($name);
-        } elseif ($bootstrap->hasPluginResource($name) || method_exists($bootstrap, '_init' . $name)) {
-            $bootstrap->bootstrap($name);
-            $resource = $bootstrap->getResource($name);
-        } else {
-            $resource = null;
-        }
-
-        return $resource;
-    } // }}}
 
     /**
      * Format a module name to the module class prefix
