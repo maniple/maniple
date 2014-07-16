@@ -4,7 +4,8 @@
  * @version 2014-05-19
  * @author xemlock
  */
-class Maniple_Application_Bootstrap extends Maniple_Application_Bootstrap_Bootstrap
+class Maniple_Application_Bootstrap
+    extends Maniple_Application_Bootstrap_Bootstrap
     implements ArrayAccess
 {
     /**

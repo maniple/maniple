@@ -4,7 +4,8 @@
  * @version 2014-07-16
  * @author xemlock
  */
-class Maniple_Application_Bootstrap_Bootstrap extends Zend_Application_Bootstrap_Bootstrap
+class Maniple_Application_Bootstrap_Bootstrap
+    extends Zend_Application_Bootstrap_Bootstrap
     implements Maniple_Application_Bootstrap_Bootstrapper
 {
     /**

@@ -1,6 +1,7 @@
 <?php
 
-abstract class Maniple_Application_Resource_ResourceAbstract extends Zend_Application_Resource_ResourceAbstract
+abstract class Maniple_Application_Resource_ResourceAbstract
+    extends Zend_Application_Resource_ResourceAbstract
 {
     /**
      * Get a resource from bootstrap, initialize it if necessary.

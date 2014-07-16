@@ -14,7 +14,8 @@
  *
  * @version 2014-07-13
  */
-class Maniple_Application_Resource_Modules extends Maniple_Application_Resource_ResourceAbstract
+class Maniple_Application_Resource_Modules
+    extends Maniple_Application_Resource_ResourceAbstract
     implements Maniple_Application_ModuleBootstrapper
 {
     /**
@@ -355,4 +356,50 @@ class Maniple_Application_Resource_Modules extends Maniple_Application_Resource_
     {
         return $this->_bootstraps;
     } // }}}
+
+    /**
+     * @var Zend_Loader_PluginLoader_Interface
+     */
+    protected $_taskLoader;
+
+    /**
+     * @var Maniple_Application_Module_Task_TaskInterface[]
+     */
+    protected $_taskRegistry;
+
+    /**
+     * @return Zend_Loader_PluginLoader_Interface
+     */
+    public function getTaskLoader()
+    {
+        if (empty($this->_taskLoader)) {
+            $prefixes = array(
+                'Maniple_Application_Module_Task_' => 'Maniple/Application/Module/Task/',
+            );
+            $this->_taskLoader = new Zend_Loader_PluginLoader($prefixes);
+        }
+        return $this->_taskLoader;
+    }
+
+    /**
+     * @param  string|Maniple_Application_Module_Task_TaskInterface $task
+     * @param  Maniple_Application_Module_Bootstrap $module
+     */
+    public function runTask($task, Maniple_Application_Module_Bootstrap $module)
+    {
+        if (!$task instanceof Maniple_Application_Module_Task_TaskInterface) {
+            $taskName = (string) $task;
+            if (isset($this->_taskRegistry[$taskName])) {
+                $task = $this->_taskRegistry[$taskName];
+            } else {
+                $taskClass = $this->getTaskLoader()->load($taskName);
+                $task = new $taskClass();
+                if (!$task instanceof Maniple_Application_Module_Task_TaskInterface) {
+                    throw new InvalidArgumentException('Task must be an instance of Maniple_Application_Module_Task_TaskInterface, received ' . get_class($task));
+                }
+                $this->_taskRegistry[$taskName] = $task;
+            }
+        }
+        return $task->run($module);
+    }
 }

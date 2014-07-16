@@ -1,6 +1,7 @@
 <?php
 
-interface Maniple_Application_Bootstrap_Bootstrapper extends Zend_Application_Bootstrap_Bootstrapper
+interface Maniple_Application_Bootstrap_Bootstrapper
+    extends Zend_Application_Bootstrap_Bootstrapper
 {
     /**
      * Is the requested class resource registered?

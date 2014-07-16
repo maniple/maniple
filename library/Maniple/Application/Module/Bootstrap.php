@@ -6,7 +6,9 @@
  * @version 2014-07-16
  * @author xemlock
  */
-abstract class Maniple_Application_Module_Bootstrap extends Zend_Application_Module_Bootstrap
+abstract class Maniple_Application_Module_Bootstrap
+    extends Zend_Application_Module_Bootstrap
+    implements Maniple_Application_Bootstrap_Bootstrapper
 {
     /**
      * @var string
@@ -20,7 +22,7 @@ abstract class Maniple_Application_Module_Bootstrap extends Zend_Application_Mod
     protected $_moduleManager;
 
     /**
-     * Array of module names this module depends on
+     * Names of modules this module depends on
      * @var string[]
      */
     protected $_moduleDeps;
@@ -30,6 +32,27 @@ abstract class Maniple_Application_Module_Bootstrap extends Zend_Application_Mod
      * @var bool
      */
     protected $_moduleDepsBootstrapped = false;
+
+    /**
+     * Names of module tasks to be executed after all local resources are bootstrapped
+     * @var string[]
+     */
+    protected $_moduleTasks;
+
+    /**
+     * Constructor.
+     *
+     * @param  Zend_Application|Zend_Application_Bootstrap_Bootstrapper $application
+     * @return void
+     */
+    public function __construct($application) // {{{
+    {
+        parent::__construct($application);
+
+        // front controller will be registered when neccessary, as it
+        // may be already present in the resource container
+        $this->unregisterPluginResource('FrontController');
+    } // }}}
 
     /**
      * {@inheritdoc}
@@ -71,13 +94,21 @@ abstract class Maniple_Application_Module_Bootstrap extends Zend_Application_Mod
     /**
      * Retrieves path to directory this bootstrap class resides in.
      *
+     * @param  string $path OPTIONAL
      * @return string
      */
-    public function getPath() // {{{
+    public function getPath($path = null) // {{{
     {
         if (empty($this->_path)) {
             $ref = new ReflectionClass($this);
             $this->_path = dirname($ref->getFileName());
+        }
+        if ($path !== null) {
+            $path = str_replace(array('\\', '/'), DIRECTORY_SEPARATOR, $path);
+            $path = ltrim($path, DIRECTORY_SEPARATOR);
+            if (strlen($path)) {
+                return $this->_path . DIRECTORY_SEPARATOR . $path;
+            }
         }
         return $this->_path;
     } // }}}
@@ -120,15 +151,53 @@ abstract class Maniple_Application_Module_Bootstrap extends Zend_Application_Mod
     } // }}}
 
     /**
+     * Is class resource available.
+     *
+     * @param  string $resource
+     * @return bool
+     */
+    public function hasClassResource($resource) // {{{
+    {
+        return method_exists($this, '_init' . $resource);
+    } // }}}
+
+    /**
      * {@inheritdoc}
      *
      * Additionally this method ensures that all module dependencies are
      * resolved and bootstrapped prior to bootstrapping local resources.
      *
+     * As the last stage of module bootstrapping all registered helpers
+     * are executed.
+     *
      * @param  null|string|array $resource
      * @return void
      */
     protected function _bootstrap($resource = null) // {{{
+    {
+        // ensure all dependencies are bootstrapped before bootstrapping
+        // any local resources
+        $this->_bootstrapModuleDeps();
+
+        // ensure front controller resource is registered
+        if ($resource === null && !$this->hasResource('FrontController')) {
+            $this->registerPluginResource('FrontController');
+        }
+
+        parent::_bootstrap($resource);
+
+        // run initialization tasks after all resources are bootstrapped
+        if ($resource === null) {
+            $this->_runModuleTasks();
+        }
+    } // }}}
+
+    /**
+     * Bootstrap module dependencies.
+     *
+     * @return void
+     */
+    protected function _bootstrapModuleDeps() // {{{
     {
         if (!$this->_moduleDepsBootstrapped) {
             foreach ((array) $this->_moduleDeps as $module) {
@@ -136,6 +205,17 @@ abstract class Maniple_Application_Module_Bootstrap extends Zend_Application_Mod
             }
             $this->_moduleDepsBootstrapped = true;
         }
-        parent::_bootstrap($resource);
+    } // }}}
+
+    /**
+     * Run module tasks.
+     *
+     * @return void
+     */
+    protected function _runModuleTasks() // {{{
+    {
+        foreach ((array) $this->_moduleTasks as $task) {
+            $this->getModuleManager()->runTask($task, $this);
+        }
     } // }}}
 }
