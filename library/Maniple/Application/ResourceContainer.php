@@ -119,6 +119,27 @@ class Maniple_Application_ResourceContainer
         throw new Exception("No resource is registered for key '$name'");
     } // }}}
 
+    protected function _prepareParams(array $params)
+    {
+        foreach ($params as $key => $value) {
+            if (is_string($value) && !strncasecmp($value, 'resource:', 9)) {
+                $params[$key] = $this->getResource(substr($value, 9));
+            }
+            // recursively replace arrays with 'class' key with instances of
+            // matching classes
+            if (is_array($value)) {
+                if (isset($value['class'])) {
+                    $valueClass = $value['class'];
+                    $valueParams = isset($value['params']) ? $value['params'] : null;
+                    $params[$key] = $this->createInstance($valueClass, $valueParams);
+                } else {
+                    $params[$key] = $this->_prepareParams($value);
+                }
+            }
+        }
+        return $params;
+    }
+
     /**
      * Create an instance of a given class and setup its parameters.
      *
@@ -133,22 +154,7 @@ class Maniple_Application_ResourceContainer
             $params = $params->toArray();
         }
 
-        $params = (array) $params;
-
-        // @TODO maybe some cycle check when instantiating resources?
-        foreach ($params as $key => $value) {
-            if (is_string($value) && !strncasecmp($value, 'resource:', 9)) {
-                $params[$key] = $this->getResource(substr($value, 9));
-            }
-            // recursively replace arrays with 'class' key with instances of
-            // matching classes
-            if (is_array($value) && isset($value['class'])) {
-                $valueClass = $value['class'];
-                $valueParams = isset($value['params']) ? $value['params'] : null;
-                $params[$key] = $this->createInstance($valueClass, $valueParams);
-            }
-        }
-
+        $params = $this->_prepareParams((array) $params);
         $instance = new $class();
 
         // Set parameters using setter methods, try camel-cased versions
