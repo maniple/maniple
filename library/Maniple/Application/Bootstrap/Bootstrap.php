@@ -105,8 +105,10 @@ class Maniple_Application_Bootstrap_Bootstrap
     /**
      * Loads a plugin resource.
      *
-     * If the options contain a truthy 'lazyResource' value, no plugin lookup
-     * is performed and a lazy resource is instantiated instead.
+     * If a 'class' option is provided, a lazy resource is instantiated
+     * instead of a plugin resource. To override this behavior (e.g. when
+     * 'class' is a valid option for a plugin resource), add 'plugin' option
+     * with a truthy value.
      *
      * Lazy resources, in order to work as intended, must be supported by
      * the resource container the bootstrap operates on.
@@ -122,11 +124,12 @@ class Maniple_Application_Bootstrap_Bootstrap
         }
         $options = (array) $options;
 
-        if (empty($options['lazyResource'])) {
-            $result = parent::_loadPluginResource($resource, $options);
-        } else {
+        if (isset($options['class']) && empty($options['plugin'])) {
             $result = strtolower($resource);
             $this->_pluginResources[$result] = new Maniple_Application_Resource_LazyResource($options);
+        } else {
+            unset($options['plugin']);
+            $result = parent::_loadPluginResource($resource, $options);
         }
 
         return $result;
