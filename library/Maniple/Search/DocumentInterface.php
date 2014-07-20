@@ -3,76 +3,32 @@
 interface Maniple_Search_DocumentInterface
 {
     /**
-     * Adds a tokenized string value that will be stored and indexed.
+     * Adds field to document.
      *
-     * @param  string $key
-     * @param  string $value
+     * @param  Maniple_Search_FieldInterface $field
      * @return mixed
      */
-    public function addTokenized($key, $value);
+    public function addField(Maniple_Search_FieldInterface $field);
 
     /**
-     * Adds a non-tokenized string value that will be stored and indexed.
+     * Retrieves field corresponding to a given name.
      *
-     * @param  string $key
-     * @param  string $value
-     * @return mixed
+     * @param  string $name
+     * @return Maniple_Search_DocumentInterface|null
      */
-    public function addKeyword($key, $value);
+    public function getField($name);
 
     /**
-     * Adds a non-tokenized binary value that will be stored and indexed.
+     * Retrieves list of all fields in this document.
      *
-     * @param  string $key
-     * @param  string $value
-     * @return mixed
+     * @return Maniple_Search_FieldInterface[]
      */
-    public function addBinary($key, $value);
+    public function getFields();
 
     /**
-     * Adds a non-tokenized string value that will be indexed but not
-     * stored in the index.
+     * Retrieves list of names of all fields present in this document.
      *
-     * @param  string $key
-     * @param  string $value
-     * @return mixed
+     * @return string[]
      */
-    public function addUnstored($key, $value);
-
-    /**
-     * Adds a non-tokenized string value that will be indexed but not
-     * stored in the index.
-     *
-     * @param  string $key
-     * @param  string $value
-     * @return mixed
-     */
-    public function addUnindexed($key, $value);
-
-    /**
-     * Retrieves all tokenized string values.
-     *
-     * @return array
-     */
-    public function getTokenized();
-
-    /**
-     * @return array
-     */
-    public function getKeywords();
-
-    /**
-     * @return array
-     */
-    public function getBinary();
-
-    /**
-     * @return array
-     */
-    public function getUnstored();
-
-    /**
-     * @return array
-     */
-    public function getUnindexed();
+    public function getFieldNames();
 }

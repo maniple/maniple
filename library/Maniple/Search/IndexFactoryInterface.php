@@ -3,15 +3,15 @@
 interface Maniple_Search_IndexFactoryInterface
 {
     /**
-     * @param  string $index
+     * @param  string $name
      * @return Maniple_Search_IndexInterface|null
      */
-    public function getIndex($index);
+    public function getIndex($name);
 
     /**
-     * @param  string $index
+     * @param  string $name
      * @param  array $options OPTIONAL
      * @return Maniple_Search_IndexInterface
      */
-    public function createIndex($index, array $options = null);
+    public function createIndex($name);
 }

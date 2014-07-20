@@ -2,11 +2,11 @@
 
 interface Maniple_Search_IndexInterface
 {
-    public function add(Maniple_Search_DocumentInterface $document);
-
-    public function update($id, Maniple_Search_DocumentInterface $document);
-
-    public function optimize();
-
-    public function find($query, $limit = null, $offset = null);
+    /**
+     * @param  mixed $query
+     * @param  int $limit OPTIONAL
+     * @param  int $offset OPTIONAL
+     * @return Maniple_Search_SearchResultsInterface
+     */
+    public function search($query, $limit = null, $offset = null);
 }

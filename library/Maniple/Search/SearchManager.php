@@ -12,40 +12,48 @@ class Maniple_Search_SearchManager
      * @param  Maniple_Search_IndexFactoryInterface[] $factories
      * @return Maniple_Search_SearchManager
      */
-    public function addIndexFactories(array $factories) // {{{
+    public function setIndexFactories(array $factories) // {{{
     {
-        foreach ($factories as $id => $factory) {
-            $this->registerIndexFactory($id, $factory);
+        foreach ($factories as $factoryId => $factory) {
+            $this->registerIndexFactory($factoryId, $factory);
         }
         return $this;
     } // }}}
 
     /**
+     * @return Maniple_Search_IndexFactoryInterface[]
+     */
+    public function getIndexFactories() // {{{
+    {
+        return $this->_indexFactories;
+    } // }}}
+
+    /**
      * Register index factory at specified ID.
      *
-     * @param  string $id
+     * @param  string $factoryId
      * @param  Maniple_Search_IndexFactoryInterface $factory
      * @return Maniple_Search_SearchManager
      */
-    public function registerIndexFactory($id, Maniple_Search_IndexFactoryInterface $factory) // {{{
+    public function registerIndexFactory($factoryId, Maniple_Search_IndexFactoryInterface $factory) // {{{
     {
-        $this->_indexFactories[(string) $id] = $factory;
+        $this->_indexFactories[(string) $factoryId] = $factory;
         return $this;
     } // }}}
 
     /**
      * Retrieve index factory stored at specified ID.
      *
-     * @param  string $id
+     * @param  string $factoryId
      * @return Maniple_Search_IndexFactoryInterface
      * @throws DomainException
      */
-    public function getIndexFactory($id) // {{{
+    public function getIndexFactory($factoryId) // {{{
     {
-        $id = (string) $id;
-        if (empty($this->_indexFactories[$id])) {
-            throw new DomainException('Invalid index factory ID');
+        $factoryId = (string) $factoryId;
+        if (empty($this->_indexFactories[$factoryId])) {
+            throw new DomainException(sprintf('Invalid index factory ID (%s)', $factoryId));
         }
-        return $this->_indexFactories[$id];
+        return $this->_indexFactories[$factoryId];
     } // }}}
 }

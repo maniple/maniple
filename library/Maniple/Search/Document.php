@@ -3,93 +3,54 @@
 class Maniple_Search_Document
     implements Maniple_Search_DocumentInterface
 {
-    const DATA_SIZE      = 5;
-
-    const DATA_TOKENIZED = 0;
-    const DATA_KEYWORDS  = 1;
-    const DATA_BINARY    = 2;
-    const DATA_UNSTORED  = 3;
-    const DATA_UNINDEXED = 4;
-
     /**
-     * @var array
+     * @var Maniple_Search_FieldInterface[]
      */
-    protected $_data;
+    protected $_fields = array();
 
     /**
-     * @param  int $index
-     * @param  string $key
-     * @param  string $value
+     * Adds field to document.
+     *
+     * @param  Maniple_Search_FieldInterface $field
      * @return Maniple_Search_Document
      */
-    protected function _addData($index, $key, $value) // {{{
+    public function addField(Maniple_Search_FieldInterface $field) // {{{
     {
-        if ($index < 0 || $index >= self::DATA_SIZE) {
-            throw new OutOfBoundsException('Invalid data index');
-        }
-        $this->_data[$index][(string) $key] = (string) $value;
+        $this->_fields[(string) $field->getName()] = $field;
         return $this;
     } // }}}
 
     /**
-     * @param  int $index
-     * @return array
+     * Retrieves field corresponding to a given name.
+     *
+     * @param  string $name
+     * @return Maniple_Search_FieldInterface|null
      */
-    protected function _getData($index) // {{{
+    public function getField($name) // {{{
     {
-        if (isset($this->_data[$index])) {
-            return $this->_data[$index];
+        if (isset($this->_fields[$name])) {
+            return $this->_fields[$name];
         }
-        return array();
+        return null;
     } // }}}
 
-    public function addTokenized($key, $value) // {{{
+    /**
+     * Retrieves list of all fields in this document.
+     *
+     * @return Maniple_Search_FieldInterface[]
+     */
+    public function getFields() // {{{
     {
-        return $this->_addData(self::DATA_TOKENIZED, $key, $value);
+        return $this->_fields;
     } // }}}
 
-    public function addKeyword($key, $value) // {{{
+    /**
+     * Retrieves list of names of all fields present in this document.
+     *
+     * @return string[]
+     */
+    public function getFieldNames() // {{{
     {
-        return $this->_addData(self::DATA_KEYWORDS, $key, $value);
-    } // }}}
-
-    public function addBinary($key, $value) // {{{
-    {
-        return $this->_addData(self::DATA_BINARY, $key, $value);
-    } // }}}
-
-    public function addUnstored($key, $value) // {{{
-    {
-        return $this->_addData(self::DATA_UNSTORED, $key, $value);
-    } // }}}
-
-    public function addUnindexed($key, $value) // {{{
-    {
-        return $this->_addData(self::DATA_UNINDEXED, $key, $value);
-    } // }}}
-
-    public function getTokenized() // {{{
-    {
-        return $this->_getData(self::DATA_TOKENIZED);
-    } // }}}
-
-    public function getKeywords() // {{{
-    {
-        return $this->_getData(self::DATA_KEYWORDS);
-    } // }}}
-
-    public function getBinary() // {{{
-    {
-        return $this->_getData(self::DATA_BINARY);
-    } // }}}
-
-    public function getUnstored() // {{{
-    {
-        return $this->_getData(self::DATA_UNSTORED);
-    } // }}}
-
-    public function getUnindexed() // {{{
-    {
-        return $this->_getData(self::DATA_UNINDEXED);
+        return array_keys($this->_fields);
     } // }}}
 }

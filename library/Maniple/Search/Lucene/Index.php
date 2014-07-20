@@ -1,92 +1,133 @@
 <?php
 
-class ManipleCore_Search_Lucene_Index implements ManipleCore_Search_IndexInterface
+class Maniple_Search_Lucene_Index
+    implements Maniple_Search_WritableIndexInterface
 {
-    /**
-     * @var string
-     */
-    protected $_encoding = 'utf-8';
-
     /**
      * @var Zend_Search_Lucene_Interface
      */
     protected $_lucene;
 
-    public function __construct(Zend_Search_Lucene_Interface $lucene)
+    /**
+     * @var string
+     */
+    protected $_idField;
+
+    public function __construct(Zend_Search_Lucene_Interface $lucene, $idField = 'id')
     {
         $this->_lucene = $lucene;
+        $this->_idField = $idField;
     }
 
-    public function setEncoding($encoding)
-    {
-        $this->_encoding = (string) $encoding;
-        return $this;
-    }
-
-    public function getEncoding()
-    {
-        return $this->_encoding;
-    }
-
-    public function optimize()
+    public function rebuild()
     {
         $this->_lucene->optimize();
         return $this;
     }
 
-    public function find($query, $limit = null, $offset = null)
+    public function search($query, $limit = null, $offset = null)
     {
-        $limit  = max(0, (int) $limit);
-        $offset = max(0, (int) $offset);
-
         $oldLimit = Zend_Search_Lucene::getResultSetLimit();
-        $newLimit = $limit > 0 ? $limit + $offset : 0;
+        Zend_Search_Lucene::setResultSetLimit(0);
 
-        Zend_Search_Lucene::setResultSetLimit($newLimit);
-
-        
-
+        $hits = $this->_lucene->find($query);
 
         Zend_Search_Lucene::getResultSetLimit($oldLimit);
+
+        reset($hits);
+        if ($limit > 0 && $offset > 0) {
+            while (next($hits)) {
+                --$offset;
+            }
+        }
+
+        $h = array();
+        while ($hit = current($hits)) {
+            $h[] = $hit; // hit getDocument, getScore
+            if (count($h) === $limit) {
+                break;
+            }
+            next($hits);
+        }
+
+        foreach ($h as $x) {
+            echo '[';
+            echo $x->getDocument()->getFieldValue('file_id'), ', ';
+            echo $x->getDocument()->getFieldValue('name'), ', ';
+            echo $x->getDocument()->getFieldValue('md5sum'), ', ';
+            echo ']<br/>';
+        }
+
+        return $h;
     }
 
-    public function add(ManipleCore_Search_DocumentInterface $document)
+    public function insert(Maniple_Search_DocumentInterface $document)
     {
+        $idField = $document->getField($this->_idField);
+
+        if (empty($idField)) {
+            throw new Exception(sprintf('Document ID (%s) must be non-empty', $this->_idField));
+        }
+
+        $this->delete($idField->getValue());
+
         $doc = new Zend_Search_Lucene_Document();
-        $this->_populateLuceneDocument($doc, $document);
+        $this->setFields($doc, $document);
 
         $this->_lucene->addDocument($doc);
+
         return $this;
     }
 
-    public function update($id, ManipleCore_Search_DocumentInterface $document)
+    public function update($id, Maniple_Search_DocumentInterface $document)
     {
-        $term = new Zend_Search_Lucene_Index_Term($docId, $idFieldName);
-        $docIds  = $index->termDocs($term);
-        foreach ($docIds as $id) {
-            $doc = $index->getDocument($id);
-            $title    = $doc->title;
-            $contents = $doc->contents;
+        $term = new Zend_Search_Lucene_Index_Term($id, $this->_idField);
+        $docIds = $this->_lucene->termDocs($term);
+        $updated = false;
+
+        // update only first matched document, remove the rest (there should
+        // be no other documents, as ID field is expected to be unique)
+        foreach ($docIds as $docId) {
+            $doc = $index->getDocument($docId);
+            $this->_lucene->delete($docId);
+
+            if (!$updated) {
+                $this->setFields($doc, $document);
+                $this->_lucene->addDocument($doc);
+                $updated = true;
+            }
         }
+
+        if (!$updated) {
+            throw new Exception(sprintf('No document with given ID found (%s)', $id));
+        }
+
         return $this;
     }
 
-    protected function _populateLuceneDocument(Zend_Search_Lucene_Document $luceneDoc, ManipleCore_Search_DocumentInterface $doc)
+    public function delete($id)
     {
-        foreach ($doc->getTokenized() as $key => $value) {
-            $luceneDoc->addField(Zend_Search_Lucene_Field::Text($key, $value, $this->_encoding));
+        $term = new Zend_Search_Lucene_Index_Term($id, $this->_idField);
+        $docIds = $this->_lucene->termDocs($term);
+        foreach ($docIds as $docId) {
+            $this->_lucene->delete($docId);
         }
-        foreach ($doc->getKeywords() as $key => $value) {
-            $luceneDoc->addField(Zend_Search_Lucene_Field::Keyword($key, $value, $this->_encoding));
-        }
-        foreach ($doc->getBinary() as $key => $value) {
-            $luceneDoc->addField(Zend_Search_Lucene_Field::Binary($key, $value, $this->_encoding));
-        }
-        foreach ($doc->getUnstored() as $key => $value) {
-            $luceneDoc->addField(Zend_Search_Lucene_Field::UnStored($key, $value, $this->_encoding));
-        }
-        foreach ($doc->getUnindexed() as $key => $value) {
-            $luceneDoc->addField(Zend_Search_Lucene_Field::UnIndexed($key, $value, $this->_encoding));
+
+        return $this;
+    }
+
+    protected function setFields(Zend_Search_Lucene_Document $luceneDoc, Maniple_Search_DocumentInterface $doc)
+    {
+        foreach ($doc->getFields() as $field) {
+            if ($field->isTokenizable()) {
+                $luceneDoc->addField(Zend_Search_Lucene_Field::Text(
+                    $field->getName(), $field->getValue(), 'utf-8'
+                ));
+            } else {
+                $luceneDoc->addField(Zend_Search_Lucene_Field::Keyword(
+                    $field->getName(), $field->getValue(), 'utf-8'
+                ));
+            }
         }
     }
 }
