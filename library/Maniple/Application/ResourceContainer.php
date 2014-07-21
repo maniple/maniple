@@ -111,8 +111,7 @@ class Maniple_Application_ResourceContainer
 
                 case is_array($resource) && isset($resource['class']):
                     $resourceClass = $resource['class'];
-                    $resourceParams = isset($resource['params']) ? $resource['params'] : null;
-                    $resourceInstance = $this->createInstance($resourceClass, $resourceParams);
+                    $resourceInstance = $this->_createInstance($resource);
                     return $this->_resources[$resourceName] = $resourceInstance;
 
                 default:
@@ -123,6 +122,9 @@ class Maniple_Application_ResourceContainer
         throw new Exception("No resource is registered for key '$name'");
     } // }}}
 
+    /**
+     * @return array
+     */
     protected function _prepareParams($params)
     {
         if (is_object($params) && method_exists($params, 'toArray')) {
@@ -139,9 +141,7 @@ class Maniple_Application_ResourceContainer
             // matching classes
             if (is_array($value)) {
                 if (isset($value['class'])) {
-                    $valueClass = $value['class'];
-                    $valueParams = isset($value['params']) ? $value['params'] : null;
-                    $params[$key] = $this->createInstance($valueClass, $valueParams);
+                    $params[$key] = $this->_createInstance($value);
                 } else {
                     $params[$key] = $this->_prepareParams($value);
                 }
@@ -158,18 +158,23 @@ class Maniple_Application_ResourceContainer
      * @param  array $params OPTIONAL
      * @return object
      */
-    public function createInstance($class, $params = null) // {{{
+    protected function _createInstance(array $description) // {{{
     {
-        // replace service placeholders with service instances
-        $params = $this->_prepareParams($params);
+        if (empty($description['class'])) {
+            throw new InvalidArgumentException('No class name found in description');
+        }
+
+        $class = $description['class'];
+        $params = null;
+
+        if (isset($description['params'])) {
+            $params = $this->_prepareParams($description['params']);
+        }
+
         $instance = new $class();
 
-        // Set parameters using setter methods, try camel-cased versions
-        // first, then underscored. Because PHP is case-insensitive when
-        // it comes to function names, there is no need to appy some fancy
-        // underscore-to-camel-case filter. Removing all underscore is
-        // sufficient.
-        foreach ($params as $key => $value) {
+        // this is now deprecated. Params will be passed to constructor
+        foreach ((array) $params as $key => $value) {
             $methods = array(
                 'set' . str_replace('_', '', $key),
                 'set' . $key
@@ -178,6 +183,28 @@ class Maniple_Application_ResourceContainer
                 if (method_exists($instance, $method)) {
                     $instance->{$method}($value);
                     break;
+                }
+            }
+        }
+
+        // Set options using setter methods, try camel-cased versions
+        // first, then underscored. Because PHP is case-insensitive when
+        // it comes to function names, there is no need to appy some fancy
+        // underscore-to-camel-case filter. Removing all underscore is
+        // sufficient.
+        if (isset($description['options'])) {
+            $options = $this->_prepareParams($description['options']);
+
+            foreach ($options as $key => $value) {
+                $methods = array(
+                    'set' . str_replace('_', '', $key),
+                    'set' . $key
+                );
+                foreach ($methods as $method) {
+                    if (method_exists($instance, $method)) {
+                        $instance->{$method}($value);
+                        break;
+                    }
                 }
             }
         }
