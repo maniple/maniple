@@ -4,7 +4,10 @@ interface Maniple_Search_WritableIndexInterface
     extends Maniple_Search_IndexInterface
 {
     /**
-     * Inserts an entry into this index.
+     * Inserts a document into this index.
+     *
+     * If a document contains fields marked as unique, all documents
+     * with the same values of these fields are removed from index.
      *
      * @param  Maniple_Search_IndexableInterface $document
      * @return mixed
@@ -12,21 +15,12 @@ interface Maniple_Search_WritableIndexInterface
     public function insert(Maniple_Search_DocumentInterface $document);
 
     /**
-     * Updates an index entry at a given ID.
-     *
-     * @param  mixed $id
-     * @param  Maniple_Search_IndexableInterface $document
-     * @return mixed
-     */
-    public function update($id, Maniple_Search_DocumentInterface $document);
-
-    /**
-     * Removes an entry at a given ID from index.
+     * Removes from index a document matching given field value.
      *
      * @param  mixed $id
      * @return mixed
      */
-    public function delete($id);
+    public function delete(Maniple_Search_FieldInterface $field);
 
     /**
      * Rebuilds or optimizes index structure.

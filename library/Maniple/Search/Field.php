@@ -2,6 +2,10 @@
 
 class Maniple_Search_Field implements Maniple_Search_FieldInterface
 {
+    const FIELD_DEFAULT     = 0;
+    const FIELD_TOKENIZABLE = 1;
+    const FIELD_UNIQUE      = 2;
+
     /**
      * @var string
      */
@@ -13,23 +17,23 @@ class Maniple_Search_Field implements Maniple_Search_FieldInterface
     protected $_value;
 
     /**
-     * @var bool
+     * @var int
      */
-    protected $_isTokenizable = true;
+    protected $_flags = 0;
 
     /**
      * Constructor.
      *
      * @param  string $name
      * @param  mixed $value
-     * @param  bool $isTokenizable
+     * @param  int $flags
      * @return void
      */
-    public function __construct($name, $value, $isTokenizable) // {{{
+    public function __construct($name, $value, $flags = self::FIELD_DEFAULT) // {{{
     {
         $this->_name = (string) $name;
         $this->_value = $value;
-        $this->_isTokenizable = $isTokenizable;
+        $this->_flags = (int) $flags;
     } // }}}
 
     /**
@@ -59,7 +63,17 @@ class Maniple_Search_Field implements Maniple_Search_FieldInterface
      */
     public function isTokenizable() // {{{
     {
-        return $this->_isTokenizable;
+        return (bool) ($this->_flags & self::FIELD_TOKENIZABLE);
+    } // }}}
+
+    /**
+     * Is this field unique?
+     *
+     * @return bool
+     */
+    public function isUnique() // {{{
+    {
+        return (bool) ($this->_flags & self::FIELD_UNIQUE);
     } // }}}
 
     /**
@@ -71,11 +85,11 @@ class Maniple_Search_Field implements Maniple_Search_FieldInterface
      */
     public static function Text($name, $value) // {{{
     {
-        return new self($name, (string) $value, true);
+        return new self($name, (string) $value, self::FIELD_TOKENIZABLE);
     } // }}}
 
     /**
-     * Factory for non-tokenizable string fields (meta-fields).
+     * Factory for non-tokenizable fields (meta-fields).
      *
      * @param  string $name
      * @param  mixed $value
@@ -83,6 +97,18 @@ class Maniple_Search_Field implements Maniple_Search_FieldInterface
      */
     public static function Meta($name, $value) // {{{
     {
-        return new self($name, $value, false);
+        return new self($name, $value, self::FIELD_DEFAULT);
+    } // }}}
+
+    /**
+     * Factory for non-tokenizable, unique field (ID).
+     *
+     * @param  string $name
+     * @param  mixed $value
+     * @return Maniple_Search_Field
+     */
+    public static function Id($name, $value) // {{{
+    {
+        return new self($name, $value, self::FIELD_UNIQUE);
     } // }}}
 }

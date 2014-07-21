@@ -53,8 +53,7 @@ class Maniple_Search_Lucene_Index
         foreach ($h as $x) {
             echo '[';
             echo $x->getDocument()->getFieldValue('file_id'), ', ';
-            echo $x->getDocument()->getFieldValue('name'), ', ';
-            echo $x->getDocument()->getFieldValue('md5sum'), ', ';
+            echo $x->getDocument()->getFieldValue('text_content'), ', ';
             echo ']<br/>';
         }
 
@@ -63,13 +62,11 @@ class Maniple_Search_Lucene_Index
 
     public function insert(Maniple_Search_DocumentInterface $document)
     {
-        $idField = $document->getField($this->_idField);
-
-        if (empty($idField)) {
-            throw new Exception(sprintf('Document ID (%s) must be non-empty', $this->_idField));
+        foreach ($document->getFields() as $field) {
+            if ($field->isUnique()) {
+                $this->delete($field);
+            }
         }
-
-        $this->delete($idField->getValue());
 
         $doc = new Zend_Search_Lucene_Document();
         $this->setFields($doc, $document);
@@ -79,7 +76,7 @@ class Maniple_Search_Lucene_Index
         return $this;
     }
 
-    public function update($id, Maniple_Search_DocumentInterface $document)
+    public function update(Maniple_Search_DocumentInterface $document)
     {
         $term = new Zend_Search_Lucene_Index_Term($id, $this->_idField);
         $docIds = $this->_lucene->termDocs($term);
@@ -105,14 +102,13 @@ class Maniple_Search_Lucene_Index
         return $this;
     }
 
-    public function delete($id)
+    public function delete(Maniple_Search_FieldInterface $field)
     {
-        $term = new Zend_Search_Lucene_Index_Term($id, $this->_idField);
+        $term = new Zend_Search_Lucene_Index_Term($field->getValue(), $field->getName());
         $docIds = $this->_lucene->termDocs($term);
         foreach ($docIds as $docId) {
             $this->_lucene->delete($docId);
         }
-
         return $this;
     }
 

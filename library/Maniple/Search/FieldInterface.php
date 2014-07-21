@@ -17,9 +17,16 @@ interface Maniple_Search_FieldInterface
     public function getValue();
 
     /**
-     * Is this field tokenizable.
+     * Is this field tokenizable?
      *
      * @return bool
      */
     public function isTokenizable();
+
+    /**
+     * Is this field unique?
+     *
+     * @return bool
+     */
+    public function isUnique();
 }

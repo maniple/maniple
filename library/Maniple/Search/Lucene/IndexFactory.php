@@ -4,19 +4,10 @@ class Maniple_Search_Lucene_IndexFactory
     implements Maniple_Search_IndexFactoryInterface
 {
     /**
+     * Directory where Lucene indexes are stored.
      * @var string
      */
     protected $_storageDir;
-
-    /**
-     * @var Zend_Cache_Core
-     */
-    protected $_cache;
-
-    /**
-     * @var string
-     */
-    protected $_idField = 'id';
 
     /**
      * @param  string $storageDir
@@ -41,42 +32,6 @@ class Maniple_Search_Lucene_IndexFactory
     } // }}}
 
     /**
-     * @param  Zend_Cache_Core $cache
-     * @return Maniple_Search_IndexFactory
-     */
-    public function setCache(Zend_Cache_Core $cache) // {{{
-    {
-        $this->_cache = $cache;
-        return $this;
-    } // }}}
-
-    /**
-     * @return Zend_Cache_Core|null
-     */
-    public function getCache() // {{{
-    {
-        return $this->_cache;
-    } // }}}
-
-    /**
-     * @param  string $idField
-     * @return Maniple_Search_Lucene_IndexFactory
-     */
-    public function setIdField($idField) // {{{
-    {
-        $this->_idField = (string) $idField;
-        return $this;
-    } // }}}
-
-    /**
-     * @return string
-     */
-    public function getIdField() // {{{
-    {
-        return $this->_idField;
-    } // }}}
-
-    /**
      * @return string
      * @throws Exception
      */
@@ -91,38 +46,25 @@ class Maniple_Search_Lucene_IndexFactory
 
     /**
      * @param  string $name
-     * @return Maniple_Search_IndexInterface|null
+     * @return Maniple_Search_IndexInterface
+     * @throws Zend_Search_Lucene_Exception
      */
     public function getIndex($name) // {{{
     {
-        $index = null;
+        $path = $this->_getIndexDir($name);
 
         try {
-            $lucene = Zend_Search_Lucene::open($this->_getIndexDir($name));
-            $index = new Maniple_Search_Lucene_Index($lucene, $this->_idField);
-            $cache = $this->getCache();
-            if ($cache) {
-                // $index->setCache($cache);
-            }
+            $lucene = Zend_Search_Lucene::open($path);
+
         } catch (Zend_Search_Lucene_Exception $e) {
-            // index was not found or is unreadable
+            // Lucene index was not found or is unreadable
         }
 
-        return $index;
-    } // }}}
-
-    /**
-     * @param  string $name
-     * @return Maniple_Search_IndexInterface
-     */
-    public function createIndex($name) // {{{
-    {
-        $lucene = Zend_Search_Lucene::create($this->_getIndexDir($name));
-        $index = new Maniple_Search_Lucene_Index($lucene, $this->_idField);
-        $cache = $this->getCache();
-        if ($cache) {
-            // $index->setCache($cache);
+        if (empty($lucene)) {
+            $lucene = Zend_Search_Lucene::create($path);
         }
+
+        $index = new Maniple_Search_Lucene_Index($lucene);
         return $index;
     } // }}}
 }
