@@ -3,7 +3,7 @@
 /**
  * Resource container with lazy object initialization.
  *
- * @version 2014-05-20
+ * @version 2014-07-21
  */
 class Maniple_Application_ResourceContainer
 {
@@ -59,8 +59,9 @@ class Maniple_Application_ResourceContainer
                     // string not begining with 'resource:' is considered to be
                     // a class name
                     $resource = array(
-                        'class' => $resource,
-                        'params' => null,
+                        'class'   => $resource,
+                        'params'  => null,
+                        'options' => null,
                     );
                 }
                 break;
@@ -69,7 +70,10 @@ class Maniple_Application_ResourceContainer
                 // if a 'class' key is detected service is assumed to be
                 // a service definition
                 if (isset($resource['class'])) {
-                    $resource = array_merge(array('params' => null), $resource);
+                    $resource = array_merge(array(
+                        'params'  => null,
+                        'options' => null,
+                    ), $resource);
                 }
                 break;
         }
@@ -119,8 +123,14 @@ class Maniple_Application_ResourceContainer
         throw new Exception("No resource is registered for key '$name'");
     } // }}}
 
-    protected function _prepareParams(array $params)
+    protected function _prepareParams($params)
     {
+        if (is_object($params) && method_exists($params, 'toArray')) {
+            $params = $params->toArray();
+        }
+
+        $params = (array) $params;
+
         foreach ($params as $key => $value) {
             if (is_string($value) && !strncasecmp($value, 'resource:', 9)) {
                 $params[$key] = $this->getResource(substr($value, 9));
@@ -137,6 +147,7 @@ class Maniple_Application_ResourceContainer
                 }
             }
         }
+
         return $params;
     }
 
@@ -150,11 +161,7 @@ class Maniple_Application_ResourceContainer
     public function createInstance($class, $params = null) // {{{
     {
         // replace service placeholders with service instances
-        if (is_object($params) && method_exists($params, 'toArray')) {
-            $params = $params->toArray();
-        }
-
-        $params = $this->_prepareParams((array) $params);
+        $params = $this->_prepareParams($params);
         $instance = new $class();
 
         // Set parameters using setter methods, try camel-cased versions

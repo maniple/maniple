@@ -1,39 +1,32 @@
 <?php
 
+/**
+ * @version 2014-07-21
+ */
 class Maniple_Application_Resource_LazyResource
     extends Maniple_Application_Resource_ResourceAbstract
 {
     /**
-     * @var string
-     */
-    protected $_class;
-
-    /**
      * @var array
      */
-    protected $_params;
+    protected $_options = array(
+        'class'   => null,
+        'params'  => null,
+        'options' => null,
+    );
 
     /**
-     * Sets resource class.
+     * Sets lazy resource configuration.
      *
-     * @param  string $class
-     * @return Maniple_Application_Resource_DeferredResource
+     * @param  array $options
+     * @return Maniple_Application_Resource_LazyResource
      */
-    public function setClass($class)
+    public function setOptions(array $options)
     {
-        $this->_class = (string) $class;
-        return $this;
-    }
-
-    /**
-     * Sets initialization parameters.
-     *
-     * @param  mixed $params
-     * @return Maniple_Application_Resource_DeferredResource
-     */
-    public function setParams($params)
-    {
-        $this->_params = $params;
+        $this->_options = array_merge(
+            $this->_options,
+            array_intersect_key($options, $this->_options)
+        );
         return $this;
     }
 
@@ -45,12 +38,9 @@ class Maniple_Application_Resource_LazyResource
      */
     public function init()
     {
-        if (empty($this->_class)) {
+        if (empty($this->_options['class'])) {
             throw new Exception('Class name of a lazy resource must not be empty upon initialization');
         }
-        return array(
-            'class' => $this->_class,
-            'params' => $this->_params,
-        );
+        return $this->_options;
     }
 }
