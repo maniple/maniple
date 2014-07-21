@@ -110,9 +110,7 @@ class Maniple_Application_ResourceContainer
                     return $this->_resources[$resourceName] = $this->getResource($resource->getTarget());
 
                 case is_array($resource) && isset($resource['class']):
-                    $resourceClass = $resource['class'];
-                    $resourceInstance = $this->_createInstance($resource);
-                    return $this->_resources[$resourceName] = $resourceInstance;
+                    return $this->_resources[$resourceName] = $this->_createInstance($resource);
 
                 default:
                     return $resource;
