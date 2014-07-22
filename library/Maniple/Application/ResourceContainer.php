@@ -51,31 +51,14 @@ class Maniple_Application_ResourceContainer
      */
     public function addResource($name, $resource) // {{{
     {
-        switch (true) {
-            case is_string($resource):
-                if (!strncasecmp($resource, 'resource:', 9)) {
-                    $resource = new Maniple_Application_ResourceAlias(substr($resource, 9));
-                } else {
-                    // string not begining with 'resource:' is considered to be
-                    // a class name
-                    $resource = array(
-                        'class'   => $resource,
-                        'params'  => null,
-                        'options' => null,
-                    );
-                }
-                break;
-
-            case is_array($resource):
-                // if a 'class' key is detected service is assumed to be
-                // a service definition
-                if (isset($resource['class'])) {
-                    $resource = array_merge(array(
-                        'params'  => null,
-                        'options' => null,
-                    ), $resource);
-                }
-                break;
+        if (is_string($resource)) {
+            if (!strncasecmp($resource, 'resource:', 9)) {
+                $resource = new Maniple_Application_ResourceAlias(substr($resource, 9));
+            } else {
+                // string not begining with 'resource:' is considered to be
+                // a class name
+                $resource = array('class' => $resource);
+            }
         }
 
         $resourceName = strtolower($name);
@@ -169,7 +152,22 @@ class Maniple_Application_ResourceContainer
             $params = $this->_prepareParams($description['params']);
         }
 
-        $instance = new $class();
+        // instantiate object, pass 'args' to constructor
+        $args = null;
+        if (isset($description['args'])) {
+            $args = $this->_prepareParams($description['args']);
+        }
+
+        if ($args) {
+            $ref = new ReflectionClass($class);
+            if ($ref->hasMethod('__construct')) {
+                $instance = $ref->newInstanceArgs($args);
+            } else {
+                $instance = $ref->newInstance();
+            }
+        } else {
+            $instance = new $class();
+        }
 
         // this is now deprecated. Params will be passed to constructor
         foreach ((array) $params as $key => $value) {

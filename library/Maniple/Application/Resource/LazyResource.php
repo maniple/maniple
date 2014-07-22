@@ -11,8 +11,10 @@ class Maniple_Application_Resource_LazyResource
      */
     protected $_options = array(
         'class'   => null,
+        'args'    => null,
         'params'  => null,
         'options' => null,
+        'calls'   => null,
     );
 
     /**
