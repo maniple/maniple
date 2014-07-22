@@ -8,21 +8,19 @@ class Maniple_Search_Lucene_Index
      */
     protected $_lucene;
 
-    protected $_analyzer;
-
     public function __construct($path)
     {
         $path = $this->_checkIndexStorageDir(dirname($path)) . '/' . basename($path);
 
         try {
-            $lucene = Zend_Search_Lucene::open($path);
+            $lucene = Zefram_Search_Lucene::open($path);
 
         } catch (Zend_Search_Lucene_Exception $e) {
             // Lucene index was not found or is unreadable
         }
 
         if (empty($lucene)) {
-            $lucene = Zend_Search_Lucene::create($path);
+            $lucene = Zefram_Search_Lucene::create($path);
         }
 
         $this->_lucene = $lucene;
@@ -30,7 +28,7 @@ class Maniple_Search_Lucene_Index
 
     public function setAnalyzer(Zend_Search_Lucene_Analysis_Analyzer $analyzer = null)
     {
-        $this->_analyzer = $analyzer;
+        $this->_lucene->setAnalyzer($analyzer);
         return $this;
     }
 
@@ -55,11 +53,6 @@ class Maniple_Search_Lucene_Index
      */
     public function search($query, $limit = null, $offset = null)
     {
-        if ($this->_analyzer) {
-            $oldAnalyzer = Zend_Search_Lucene_Analysis_Analyzer::getDefault();
-            Zend_Search_Lucene_Analysis_Analyzer::setDefault($this->_analyzer);
-        }
-
         $oldLimit = Zend_Search_Lucene::getResultSetLimit();
         Zend_Search_Lucene::setResultSetLimit(0);
 
@@ -70,10 +63,6 @@ class Maniple_Search_Lucene_Index
         $hits = $this->_lucene->find($query);
 
         Zend_Search_Lucene::getResultSetLimit($oldLimit);
-
-        if ($this->_analyzer) {
-            Zend_Search_Lucene_Analysis_Analyzer::setDefault($oldAnalyzer);
-        }
 
         reset($hits);
         if ($limit > 0 && $offset > 0) {
@@ -113,16 +102,7 @@ class Maniple_Search_Lucene_Index
         $doc = new Zend_Search_Lucene_Document();
         $this->setFields($doc, $document);
 
-        if ($this->_analyzer) {
-            $oldAnalyzer = Zend_Search_Lucene_Analysis_Analyzer::getDefault();
-            Zend_Search_Lucene_Analysis_Analyzer::setDefault($this->_analyzer);
-        }
-
         $this->_lucene->addDocument($doc);
-
-        if ($this->_analyzer) {
-            Zend_Search_Lucene_Analysis_Analyzer::setDefault($oldAnalyzer);
-        }
 
         return $this;
     }
@@ -134,6 +114,7 @@ class Maniple_Search_Lucene_Index
         foreach ($docIds as $docId) {
             $this->_lucene->delete($docId);
         }
+        $this->_lucene->commit();
         return $this;
     }
 
