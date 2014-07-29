@@ -65,7 +65,7 @@ class Maniple_View_Helper_RenderScript extends Zend_View_Helper_Abstract
         }
 
         // ensure script has proper suffix (extension)
-        if (strpos($viewRenderer->getViewBasePathSpec(), ':suffix') !== false) {
+        if (strpos($viewRenderer->getViewScriptPathSpec(), ':suffix') !== false) {
             $suffix = '.' . ltrim($viewRenderer->getViewSuffix(), '.');
             if (substr($script, -strlen($suffix)) !== $suffix) {
                 $script .= $suffix;
