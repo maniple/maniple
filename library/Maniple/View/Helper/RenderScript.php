@@ -10,7 +10,7 @@
  *   by using a hard-coded directory name
  *
  * @package Maniple_View
- * @version 2014-01-14
+ * @version 2014-07-29
  * @author  xemlock
  */
 class Maniple_View_Helper_RenderScript extends Zend_View_Helper_Abstract
@@ -64,7 +64,17 @@ class Maniple_View_Helper_RenderScript extends Zend_View_Helper_Abstract
             $this->view->assign($vars);
         }
 
+        // ensure script has proper suffix (extension)
+        if (strpos($viewRenderer->getViewBasePathSpec(), ':suffix') !== false) {
+            $suffix = '.' . ltrim($viewRenderer->getViewSuffix(), '.');
+            if (substr($script, -strlen($suffix)) !== $suffix) {
+                $script .= $suffix;
+            }
+        }
+
         $result = $this->view->render($script);
+
+        // TODO cleanup assigned variables, restore variables
 
         // restore original script paths
         $this->view->setScriptPath(null);
