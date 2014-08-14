@@ -66,6 +66,7 @@ function maniple_vendor_update($vendor_path = null) {
         if (is_dir('.git')) {
             echo "Updating GIT repository: ", $dir, "\n";
             echo `git pull`;
+            echo `git submodule foreach git pull`; // requires Git 1.6.1+
             echo "\n";
         } elseif (is_dir('.svn')) {
             echo "Updating SVN repository: ", $dir, "\n";
