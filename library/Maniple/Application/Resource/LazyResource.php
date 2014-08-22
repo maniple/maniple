@@ -14,7 +14,7 @@ class Maniple_Application_Resource_LazyResource
         'args'    => null,
         'params'  => null,
         'options' => null,
-        'calls'   => null,
+        'invoke'  => null,
     );
 
     /**
