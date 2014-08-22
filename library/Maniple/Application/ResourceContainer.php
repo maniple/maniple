@@ -205,6 +205,18 @@ class Maniple_Application_ResourceContainer
             }
         }
 
+        // invoke arbitrary methods
+        if (isset($description['invoke'])) {
+            foreach ($description['invoke'] as $invoke) {
+                if (!is_array($invoke)) {
+                    throw new InvalidArgumentException('Invoke value must be an array');
+                }
+                $method = array_shift($invoke);
+                $args = (array) array_shift($invoke);
+                call_user_func_array(array($instance, $method), $args);
+            }
+        }
+
         return $instance;
     } // }}}
 
