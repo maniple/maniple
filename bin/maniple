@@ -13,7 +13,7 @@ $action = $args[1];
 switch ($action) {
     case 'init':
         // maniple init
-        maniple_init();
+        maniple_init(isset($args[2]) ? $args[2] : null);
         break;
 
     case 'vendor-update':
@@ -29,21 +29,58 @@ switch ($action) {
         }
         maniple_module_install($args[2]);
         break;
+
+    case 'set-baseurl':
+        // maniple set-baseurl [base_url]
+        break;
 }
 
-function maniple_init() {
-    mkdir('application/configs', 0644, true);
-    mkdir('application/modules', 0644, true);
+function set_baseurl($baseUrl)
+{
+    
+}
 
-    mkdir('vendor');
-    mkdir('storage', 0777);
-    mkdir('variable');
-    mkdir('variable/cache', 0777);
-    mkdir('variable/logs', 0777);
-    mkdir('variable/mail', 0777);
-    mkdir('variable/sessions', 0777);
-    mkdir('variable/temp', 0777);
-    mkdir('variable/twig', 0777);
+function maniple_init($baseDir = null) {
+    if ($baseDir !== null) {
+        if (!is_dir($baseDir)) {
+            echo "not a directory: ", $baseDir, "\n";
+            exit(1);
+        }
+        $baseDir = realpath($baseDir);
+    } else {
+        $baseDir = getcwd();
+    }
+
+    $dirs = array(
+        'application/configs' => false,
+        'application/modules' => false,
+
+        'vendor'            => false,
+
+        'storage'           => true,
+
+        'variable'          => false,
+        'variable/cache'    => true,
+        'variable/logs'     => true,
+        'variable/mail'     => true,
+        'variable/sessions' => true,
+        'variable/temp'     => true,
+        'variable/twig'     => true,
+    );
+    foreach ($dirs as $name => $writable) {
+        $dirpath = $baseDir . DS . $name;
+        echo substr(str_pad($dirpath, 70, '.'), -70);
+        if (!file_exists($dirpath)) {
+            if (@mkdir($dirpath, 0755, true)) {
+                echo ' [  OK  ]', "\n";
+            } else {
+                echo ' [ FAIL ]', "\n";
+            }
+        } else {
+            echo  ' [  OK  ]', "\n";
+        }
+        @chmod($dirpath, $writable ? 0777 : 0755);
+    }
 }
 
 function maniple_vendor_update($vendor_path = null) {
