@@ -86,6 +86,16 @@ class Maniple_Application_Resource_Modules
             }
 
             $modulePath = realpath($modulePath);
+            // modules should reside in the module/ subdirectory
+            // if controllers directory exists, add it to front controller, as
+            // otherwise it would not be found by the dispatcher
+            if (file_exists($modulePath . '/module')) {
+                $modulePath .= '/module';
+                if (file_exists($modulePath . '/controllers')) {
+                    $front->addControllerDirectory($modulePath . '/controllers', $module);
+                }
+            }
+
             $modulePrefix = $this->_formatModuleName($module);
             $bootstrapClass = $modulePrefix . '_Bootstrap';
 

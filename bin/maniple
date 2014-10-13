@@ -129,7 +129,7 @@ function maniple_module_install($path)
     $module_name = empty($module_config['name']) ? dirname($path) : basename($module_config['name']);
 
     $module_dir_name = empty($module_config['moduleDirName']) ? $module_name : basename($module_config['moduleDirName']);
-    $module_path = $path . '/module';
+    $module_path = $path;
 
     if (is_dir($module_path)) {
         @mkdir('application/modules', 0644, true);
@@ -140,14 +140,22 @@ function maniple_module_install($path)
     }
 
     $assets_dir_name = empty($module_config['assetsDirName']) ? $module_dir_name : basename($module_config['assetsDirName']);
-    $assets_path = $path . '/assets';
 
+    $assets_path = $path . '/public';
     if (is_dir($assets_path)) {
         @mkdir('public/assets', 0644, true);
         echo "Linking assets\n";
         maniple_symlink(realpath($assets_path), "public/assets/{$assets_dir_name}");
     } else {
-        echo "assets directory not found: $assets_path\n";
+        $assets_path = $path . '/assets';
+
+        if (is_dir($assets_path)) {
+            @mkdir('public/assets', 0644, true);
+            echo "Linking assets\n";
+            maniple_symlink(realpath($assets_path), "public/assets/{$assets_dir_name}");
+        } else {
+            echo "assets directory not found: $assets_path\n";
+        }
     }
 }
 
