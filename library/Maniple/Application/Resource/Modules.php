@@ -91,9 +91,11 @@ class Maniple_Application_Resource_Modules
             // otherwise it would not be found by the dispatcher
             if (file_exists($modulePath . '/module')) {
                 $modulePath .= '/module';
-                if (file_exists($modulePath . '/controllers')) {
-                    $front->addControllerDirectory($modulePath . '/controllers', $module);
-                }
+                // add controllers directory without checking if it exists
+                // - the way a module directory is retrieved from front controller
+                // depends on whether module's controller directory is added to
+                // dispatcher (not the module directory itself)
+                $front->addControllerDirectory($modulePath . '/controllers', $module);
             }
 
             $modulePrefix = $this->_formatModuleName($module);
