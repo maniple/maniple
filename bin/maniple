@@ -33,6 +33,44 @@ switch ($action) {
     case 'set-baseurl':
         // maniple set-baseurl [base_url]
         break;
+
+    case 'install':
+        maniple_install();
+        break;
+}
+
+function maniple_install()
+{
+    if (!is_file('maniple.json')) {
+        echo "maniple.json file not found, exiting.\n";
+        exit;
+    }
+    $config = (array) json_decode(file_get_contents('maniple.json'), true);
+    $wd = getcwd();
+    foreach (@$config['modules'] as $module) {
+        if ($module['type'] === 'git') {
+            if (substr($module['url'], -4) !== '.git') {
+                $module['url'] .= '.git';
+                echo '[ DEBUG ] appended .git suffix to incomplete GIT clone url', "\n";
+            }
+
+            $repo = substr(basename($module['url']), 0, -4);
+            $repo_path = $wd . '/application/modules/' . $repo;
+            if (file_exists($repo_path) && !maniple_rm($repo_path)) {
+                echo "[ FAIL ] Unable to remove existing file $repo\n";
+                continue;
+            }
+
+            $url = escapeshellarg($module['url']);
+            $r = escapeshellarg($repo_path);
+            echo "[ DEBUG ] Cloning repository to $r\n";
+            `git clone $url $r`;
+            maniple_module_install($repo_path, false);
+
+        } else {
+            echo "[ FAIL ] Unrecognized module type: ", $module['type'], "\n";
+        }
+    }
 }
 
 function set_baseurl($baseUrl)
@@ -114,13 +152,13 @@ function maniple_vendor_update($vendor_path = null) {
     chdir($cwd);
 }
 
-function maniple_module_install($path)
+function maniple_module_install($path, $symlink = true)
 {
     $module_config_path = $path . '/module.json';
 
     if (!file_exists($module_config_path)) {
-        printf("Config file module.json not found in: %s\n", $path);
-        return;
+        printf("[ FAIL ] Config file module.json not found in: %s\n", $path);
+        return false;
     }
 
     $module_config = (array) @json_decode(file_get_contents($module_config_path), true);
@@ -133,10 +171,12 @@ function maniple_module_install($path)
 
     if (is_dir($module_path)) {
         @mkdir('application/modules', 0644, true);
-        echo "Linking module ...\n";
-        maniple_symlink(realpath($module_path), "application/modules/{$module_dir_name}");
+        if ($symlink) {
+            echo "Linking module ...\n";
+            maniple_symlink(realpath($module_path), "application/modules/{$module_dir_name}");
+        }
     } else {
-        echo "module directory not found: $module_path\n";
+        echo "[ FAIL ] Module directory not found: $module_path\n";
     }
 
     $assets_dir_name = empty($module_config['assetsDirName']) ? $module_dir_name : basename($module_config['assetsDirName']);
@@ -171,4 +211,31 @@ function maniple_symlink($source, $dest)
         `rm "$dest" 2>/dev/null`;
         `ln -s "$source" "$dest"`;
     }
+}
+
+function maniple_rm($path)
+{
+    if (is_link($path)) {
+        return unlink($path);
+    }
+    if (is_dir($path)) { // is_dir resolves symlinks
+        $dh = opendir($path);
+        while ($de = readdir($dh)) {
+            if ($de == '.' || $de == '..') {
+                continue;
+            }
+            $p = $path . '/' . $de;
+            if (is_dir($p)) {
+                maniple_rm($p);
+            } else {
+                @unlink($p);
+            }
+        }
+        closedir($dh);
+        return rmdir($path);
+    }
+    if (file_exists($path)) {
+        return unlink($path);
+    }
+    return false;
 }
