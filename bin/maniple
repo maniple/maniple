@@ -164,16 +164,24 @@ function maniple_module_install($path, $symlink = true)
     $module_config = (array) @json_decode(file_get_contents($module_config_path), true);
     print_R($module_config);
 
-    $module_name = empty($module_config['name']) ? dirname($path) : basename($module_config['name']);
+    $module_name = empty($module_config['name']) ? basename($path) : basename($module_config['name']);
 
     $module_dir_name = empty($module_config['moduleDirName']) ? $module_name : basename($module_config['moduleDirName']);
+
+    echo "Module:\n";
+    echo "  name: ", $module_name, "\n";
+    echo "  moduleDirName: ", $module_dir_name, "\n";
+    echo "\n";
+
     $module_path = $path;
 
     if (is_dir($module_path)) {
         @mkdir('application/modules', 0644, true);
         if ($symlink) {
-            echo "Linking module ...\n";
-            maniple_symlink(realpath($module_path), "application/modules/{$module_dir_name}");
+            if (realpath($module_path) !== realpath("application/modules/{$module_dir_name}")) {
+                echo "Linking module ...\n";
+                maniple_symlink(realpath($module_path), "application/modules/{$module_dir_name}");
+            }
         }
     } else {
         echo "[ FAIL ] Module directory not found: $module_path\n";
