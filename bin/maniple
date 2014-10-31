@@ -2,6 +2,7 @@
 <?php
 
 define('DS', DIRECTORY_SEPARATOR);
+define('WD', getcwd());
 
 $args = $_SERVER['argv'];
 if (count($args) < 2) {
@@ -70,6 +71,13 @@ function maniple_install()
         } else {
             echo "[ FAIL ] Unrecognized module type: ", $module['type'], "\n";
         }
+    }
+
+    // cleanup
+    sleep(2);
+    $wd = WD . '/.maniple/' . getmypid();
+    if (is_dir($wd)) {
+        file_put_contents($wd . '/.done', date('Y-m-d H:i:s'), LOCK_EX);
     }
 }
 
@@ -221,10 +229,26 @@ function maniple_symlink($source, $dest)
     }
 }
 
-function maniple_rm($path)
+function maniple_unlink($path, $nomove = false)
+{
+    if ($nomove) {
+        $tmppath = $path;
+    } else {
+        $tmp = WD . '/.maniple/' . getmypid();
+        if (!is_dir($tmp)) {
+            mkdir($tmp, 0666, true);
+        }
+        $tmppath = $tmp . '/' . md5(mt_rand() . microtime(true));
+        rename($path, $tmppath);
+    }
+    return @unlink(realpath($tmppath)); // under Windows unlink does not indicate removal,
+                              // but rather if delete operation is pending
+}
+
+function maniple_rm($path, $nomove = false)
 {
     if (is_link($path)) {
-        return unlink($path);
+        return maniple_unlink($path, $nomove);
     }
     if (is_dir($path)) { // is_dir resolves symlinks
         $dh = opendir($path);
@@ -234,16 +258,16 @@ function maniple_rm($path)
             }
             $p = $path . '/' . $de;
             if (is_dir($p)) {
-                maniple_rm($p);
+                maniple_rm($p, $nomove);
             } else {
-                @unlink($p);
+                maniple_unlink($p, $nomove);
             }
         }
         closedir($dh);
         return rmdir($path);
     }
     if (file_exists($path)) {
-        return unlink($path);
+        return maniple_unlink($path, $nomove);
     }
     return false;
 }
