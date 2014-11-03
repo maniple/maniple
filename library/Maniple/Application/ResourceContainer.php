@@ -14,6 +14,12 @@ class Maniple_Application_ResourceContainer
      */
     protected $_resources = array();
 
+    protected $_aliases = array();
+
+    protected $_definitions = array();
+
+    protected $_readyCallbacks = array();
+
     /**
      * @param array|object $options
      */
@@ -51,16 +57,6 @@ class Maniple_Application_ResourceContainer
      */
     public function addResource($name, $resource) // {{{
     {
-        if (is_string($resource)) {
-            if (!strncasecmp($resource, 'resource:', 9)) {
-                $resource = new Maniple_Application_ResourceAlias(substr($resource, 9));
-            } else {
-                // string not begining with 'resource:' is considered to be
-                // a class name
-                $resource = array('class' => $resource);
-            }
-        }
-
         $resourceName = strtolower($name);
 
         if (isset($this->_resources[$resourceName])) {
@@ -69,7 +65,23 @@ class Maniple_Application_ResourceContainer
             ));
         }
 
-        $this->_resources[$resourceName] = $resource;
+        if (is_string($resource)) {
+            if (!strncasecmp($resource, 'resource:', 9)) {
+                $this->_aliases[$resourceName] = substr($resource, 9);
+                return $this;
+            }
+
+            // string not begining with 'resource:' is considered to be
+            // a class name only definition
+            $resource = array('class' => $resource);
+        }
+
+        if (is_array($resource) && isset($resource['class'])) {
+            $this->_definitions[$resourceName] = $resource;
+        } else {
+            $this->_resources[$resourceName] = $resource;
+        }
+
         return $this;
     } // }}}
 
@@ -84,29 +96,139 @@ class Maniple_Application_ResourceContainer
     {
         $resourceName = strtolower($name);
 
-        if (isset($this->_resources[$resourceName])) {
-            $resource = $this->_resources[$resourceName];
+        if (isset($this->_resources[$resourceName]) ||
+            array_key_exists($resourceName, $this->_resources)
+        ) {
+            return $this->_resources[$resourceName];
+        }
 
-            switch (true) {
-                case $resource instanceof Maniple_Application_ResourceAlias:
-                    // resolve resource alias
-                    return $this->_resources[$resourceName] = $this->getResource($resource->getTarget());
+        // when resolving new resources, check for definitions first,
+        // then aliases.
 
-                case is_array($resource) && isset($resource['class']):
-                    return $this->_resources[$resourceName] = $this->_createInstance($resource);
+        // After a resource is instantiated from definition, the definition
+        // is removed
 
-                default:
-                    return $resource;
-            }
+        if (isset($this->_definitions[$resourceName])) {
+            $resource = $this->_resources[$resourceName] = $this->_createInstance($this->_definitions[$resourceName]);
+            unset($this->_definitions[$resourceName]);
+            $this->_fireReadyCallbacks($resourceName, $resource);
+            return $resource;
+        }
+
+        if (isset($this->_aliases[$resourceName])) {
+            $resource = $this->_resources[$resourceName] = $this->getResource($this->_aliases[$resourceName]);
+            unset($this->_aliases[$resourceName]);
+            return $resource;
         }
 
         throw new Exception("No resource is registered for key '$name'");
     } // }}}
 
     /**
+     * Remove resource from container.
+     *
+     * @param  string $resourceName
+     * @return Maniple_Application_ResourceContainer
+     */
+    public function removeResource($name) // {{{
+    {
+        $resourceName = strtolower($name);
+        unset(
+            $this->_resources[$resourceName],
+            $this->_definitions[$resourceName],
+            $this->_aliases[$resourceName]
+        );
+    } // }}}
+
+    /**
+     * Is given resource registered in the container?
+     *
+     * @param  string $resourceName
+     * @return bool
+     */
+    public function hasResource($name) // {{{
+    {
+        $resourceName = strtolower($name);
+        return isset($this->_resources[$resourceName])
+            || isset($this->_definitions[$resourceName])
+            || isset($this->_aliases[$resourceName]);
+    } // }}}
+
+    /**
+     * @param  string $resourceName
+     * @param  mixed $resource
+     * @return void
+     */
+    protected function _fireReadyCallbacks($resourceName, $resource) // {{{
+    {
+        if (isset($this->_readyCallbacks[$resourceName])) {
+            foreach ($this->_readyCallbacks[$resourceName] as $callback) {
+                call_user_func($callback, $resource, $this);
+            }
+            unset($this->_readyCallbacks[$resourceName]);
+        }
+    } // }}}
+
+    /**
+     * Is resource of a given name initialized?
+     *
+     * @param  string $resourceName
+     * @return bool
+     */
+    public function isReady($resourceName) // {{{
+    {
+        if (isset($this->_resources[$resourceName]) ||
+            array_key_exists($resourceName, $this->_resources)
+        ) {
+            return true;
+        }
+
+        if (isset($this->_aliases[$resourceName])) {
+            return $this->isReady($this->_aliases[$resourceName]);
+        }
+
+        return false;
+    } // }}}
+
+    /**
+     * Register initialization callback for given resource.
+     *
+     * @param  string $resourceName
+     * @param  callable $callback
+     * @return Maniple_Application_ResourceContainer
+     * @throws InvalidArgumentException
+     */
+    public function onReady($resourceName, $callback) // {{{
+    {
+        if (!is_callable($callback)) {
+            throw new InvalidArgumentException('Invalid callable provided');
+        }
+        $this->_readyCallbacks[$resourceName][] = $callback;
+        return $this;
+    } // }}}
+
+    /**
+     * Fire callback upon gived resource initialization, or fire immediately
+     * if the resource is already initialized.
+     *
+     * @param  string $resourceName
+     * @param  callable $callback
+     * @return Maniple_Application_ResourceContainer
+     */
+    public function whenReady($resourceName, $callback) // {{{
+    {
+        if ($this->isReady($resourceName)) {
+            call_user_func($callback, $this->_resources[$resourceName], $this);
+        } else {
+            $this->onReady($resourceName, $callback);
+        }
+        return $this;
+    } // }}}
+
+    /**
      * @return array
      */
-    protected function _prepareParams($params)
+    protected function _prepareParams($params) // {{{
     {
         if (is_object($params) && method_exists($params, 'toArray')) {
             $params = $params->toArray();
@@ -130,7 +252,7 @@ class Maniple_Application_ResourceContainer
         }
 
         return $params;
-    }
+    } // }}}
 
     /**
      * Create an instance of a given class and setup its parameters.
@@ -247,25 +369,23 @@ class Maniple_Application_ResourceContainer
     } // }}}
 
     /**
-     * Is resource of a given name defined.
-     *
-     * This function is expected to called by Bootstrap.
+     * Proxy to {@link hasResource()}.
      *
      * @param  string $name
      * @return bool
      */
     public function __isset($name) // {{{
     {
-        return isset($this->_resources[strtolower($name)]);
+        return $this->hasResource($name);
     } // }}}
 
     /**
-     * Unregister resource of a given name.
+     * Proxy to {@link removeResource()}.
      *
      * @param string $name
      */
     public function __unset($name) // {{{
     {
-        unset($this->_resources[strtolower($name)]);
+        return $this->removeResource($name);
     } // }}}
 }
