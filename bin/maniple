@@ -57,7 +57,8 @@ function maniple_install()
 
             $repo = substr(basename($module['url']), 0, -4);
             $repo_path = $wd . '/application/modules/' . $repo;
-            if (file_exists($repo_path) && !maniple_rm($repo_path)) {
+
+            if ((file_exists($repo_path) || is_link($repo_path)) && !maniple_rm($repo_path)) {
                 echo "[ FAIL ] Unable to remove existing file $repo\n";
                 continue;
             }
@@ -236,7 +237,7 @@ function maniple_unlink($path, $nomove = false)
     } else {
         $tmp = WD . '/.maniple/' . getmypid();
         if (!is_dir($tmp)) {
-            mkdir($tmp, 0666, true);
+            mkdir($tmp, 0755, true);
         }
         $tmppath = $tmp . '/' . md5(mt_rand() . microtime(true));
         rename($path, $tmppath);
