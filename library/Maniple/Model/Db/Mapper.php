@@ -109,7 +109,8 @@ abstract class Maniple_Model_Db_Mapper
             $table = $this->_getTable($table);
         }
 
-        $cols = $table->info(Zend_Db_Table_Abstract::COLS);
+        $info = $table->info(Zend_Db_Table_Abstract::COLS);
+        $cols = array_combine($info, $info);
 
         if (isset($options['exclude'])) {
             $exclude = array_filter((array) $options['exclude'], 'is_string');
