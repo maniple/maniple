@@ -1,50 +1,22 @@
 <?php
 
 /**
- * UserStorage is a container for currently authenticated user.
+ * UserStorage is a session-based container for currently authenticated user.
  *
- * @uses Zend_Auth_Storage
- * @version 2014-05-27
+ * @version 2015-03-09 / 2014-05-27
+ *
+ * @TODO Base everything on Zend_Session_Namespace, no need to directly access $_SESSION
  */
 class Maniple_Security_UserStorage implements Maniple_Security_UserStorageInterface
 {
     const SESSION_KEY = '__security';
 
     /**
-     * @var Zend_Auth_Storage_Interface
-     */
-    protected $_storage;
-
-    /**
-     * Set authentication storage.
-     *
-     * @param Zend_Auth_Storage_Interface $storage
-     */
-    public function setStorage(Zend_Auth_Storage_Interface $storage) // {{{
-    {
-        $this->_storage = $storage;
-        return $this;
-    } // }}}
-
-    /**
-     * Retrieve authentication storage.
-     *
-     * @return Zend_Auth_Storage_Interface
-     */
-    public function getStorage() // {{{
-    {
-        if (empty($this->_storage)) {
-            $this->setStorage(new Zend_Auth_Storage_Session());
-        }
-        return $this->_storage;
-    } // }}}
-
-    /**
      * @return bool
      */
     public function isAuthenticated() // {{{
     {
-        return !$this->getStorage()->isEmpty();
+        return !empty($_SESSION[self::SESSION_KEY]['user']);
     } // }}}
 
     /**
@@ -68,10 +40,10 @@ class Maniple_Security_UserStorage implements Maniple_Security_UserStorageInterf
             return null;
         }
 
-        $identity = $this->getStorage()->read();
+        $identity = $_SESSION[self::SESSION_KEY]['user'];
 
         if (!$identity instanceof Maniple_Security_UserInterface) {
-            $this->getStorage()->clear();
+            unset($_SESSION[self::SESSION_KEY]['user']);
             throw new Maniple_Security_Exception_InvalidStateException(
                 'Invalid session state'
             );
@@ -100,42 +72,27 @@ class Maniple_Security_UserStorage implements Maniple_Security_UserStorageInterf
 
     /**
      * @param Maniple_Security_UserInterface $user
-     * @param array $state OPTIONAL
      * @return bool
      */
-    public function setUser(Maniple_Security_UserInterface $user, array $state = null) // {{{
+    public function setUser(Maniple_Security_UserInterface $user) // {{{
     {
         $_SESSION[self::SESSION_KEY] = array(
-            'state' => $state,
+            'user'  => $user,
             'token' => $this->_createToken(),
         );
-
-        $this->getStorage()->write($user);
     } // }}}
 
     /**
-     * @return mixed state attached to user upon authentication
+     * @return Maniple_Security_UserStorage
      * @throws Maniple_Security_Exception_AuthenticationException
      */
     public function clearUser() // {{{
     {
         if ($this->isAuthenticated()) {
-            if (isset($_SESSION[self::SESSION_KEY]['state'])) {
-                $state = $_SESSION[self::SESSION_KEY]['state'];
-            } else {
-                $state = null;
-            }
-
             if (isset($_SESSION[self::SESSION_KEY]['impersonation'])) {
                 // impersontaion frame detected, restore previous security data
                 // and identity
                 $impersonation = $_SESSION[self::SESSION_KEY]['impersonation'];
-
-                if (isset($impersonation['identity'])) {
-                    $identity = $impersonation['identity'];
-                } else {
-                    $identity = null;
-                }
 
                 if (isset($impersonation['security'])) {
                     $security = $impersonation['security'];
@@ -143,18 +100,15 @@ class Maniple_Security_UserStorage implements Maniple_Security_UserStorageInterf
                     $security = null;
                 }
 
-                $this->getStorage()->write($identity);
                 $_SESSION[self::SESSION_KEY] = $security;
 
             } else {
-                $this->getStorage()->clear();
-
                 if (isset($_SESSION[self::SESSION_KEY])) {
                     unset($_SESSION[self::SESSION_KEY]);
                 }
             }
 
-            return $state;
+            return $this;
         }
 
         throw new Maniple_Security_Exception_AuthenticationException(
@@ -166,21 +120,43 @@ class Maniple_Security_UserStorage implements Maniple_Security_UserStorageInterf
      * Impersonate as another user.
      *
      * @param  Maniple_Security_UserInterface $user
-     * @param  array $state OPTIONAL
      */
-    public function impersonate(Maniple_Security_UserInterface $user, array $state = null) // {{{
+    public function impersonate(Maniple_Security_UserInterface $user) // {{{
     {
         $_SESSION[self::SESSION_KEY] = array(
             'impersonation' => array(
                 'security' => $_SESSION[self::SESSION_KEY],
-                'identity' => $this->getStorage()->read(),
             ),
-            'state' => $state,
+            'user'  => $user,
             'token' => $this->_createToken(),
         );
-
-        $this->getStorage()->write($user);
     } // }}}
+
+    /**
+     * Get custom data associated with this storage.
+     *
+     * @param  string $name
+     * @return mixed
+     */
+    public function get($name)
+    {
+        if (isset($_SESSION[self::SESSION_KEY]['data'][$name])) {
+            return $_SESSION[self::SESSION_KEY]['data'][$name];
+        }
+    }
+
+    /**
+     * Set custom data associated with this storage.
+     *
+     * @param  string $name
+     * @param  mixed $value
+     * @return Maniple_Security_UserStorage
+     */
+    public function set($name, $value)
+    {
+        $_SESSION[self::SESSION_KEY]['data'][$name] = $value;
+        return $this;
+    }
 
     /**
      * Generate anti-CSRF token to be stored in session.
