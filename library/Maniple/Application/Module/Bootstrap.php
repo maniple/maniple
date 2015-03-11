@@ -8,7 +8,7 @@
  */
 abstract class Maniple_Application_Module_Bootstrap
     extends Zend_Application_Module_Bootstrap
-    implements Maniple_Application_Bootstrap_Bootstrapper
+    implements Zefram_Application_Bootstrap_Bootstrapper
 {
     /**
      * @var string
@@ -135,7 +135,7 @@ abstract class Maniple_Application_Module_Bootstrap
     public function getModuleManager() // {{{
     {
         if (empty($this->_moduleManager)) {
-            throw new Exception('ModuleManager is not configured');
+            throw new Exception('Module manager is not configured');
         }
         return $this->_moduleManager;
     } // }}}
