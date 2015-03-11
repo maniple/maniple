@@ -14,7 +14,7 @@
     },
     "autoload": {
         "psr-0": {
-            "Maniple_": "library/Maniple"
+            "Maniple_": "library"
         }
     }
 }
