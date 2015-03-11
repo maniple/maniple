@@ -8,6 +8,40 @@ class Maniple_Application_Bootstrap
     extends Maniple_Application_Bootstrap_Bootstrap
     implements ArrayAccess
 {
+    public function __construct($application)
+    {
+        self::setupEnvironment();
+        parent::__construct($application);
+    }
+
+    public static function setupEnvironment()
+    {
+        if (!extension_loaded('json')) {
+            throw new Exception('<a href="http://www.php.net/manual/en/book.json.php">JSON</a> extension required');
+        }
+
+        if (!extension_loaded('mbstring')) {
+            throw new Exception('<a href="http://www.php.net/manual/en/book.mbstring.php">Multibyte String</a> extension required');
+        }
+
+        if (!extension_loaded('fileinfo')) {
+            throw new Exception('<a href="http://www.php.net/manual/en/book.fileinfo.php">Fileinfo</a> extension required');
+        }
+
+        mb_internal_encoding('utf-8');
+        ini_set('iconv.internal_encoding', 'utf-8');
+
+        $temp_dir = realpath(APPLICATION_PATH . '/../variable/temp');
+
+        // determination of a temporary directory in ZF is inconsistent,
+        // temporary directory must be set via these Env variables
+        foreach (array('TMPDIR', 'TEMP', 'TMP') as $key) {
+            Zefram_Os::setEnv($key, $temp_dir);
+	}
+
+        Zend_Loader_PluginLoader::setIncludeFileCache(APPLICATION_PATH . '/../variable/cache/PluginLoader');
+    }
+
     /**
      * Initialize resource of a given name, if it's not already initialized
      * and return the result.

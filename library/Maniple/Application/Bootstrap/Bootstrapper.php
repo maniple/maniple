@@ -1,5 +1,8 @@
 <?php
 
+/**
+ * @deprecated usee Zefram_Application_Bootstrap_Bootstrapper instead
+ */
 interface Maniple_Application_Bootstrap_Bootstrapper
     extends Zend_Application_Bootstrap_Bootstrapper
 {

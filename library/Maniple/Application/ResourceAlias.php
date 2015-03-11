@@ -2,6 +2,7 @@
 
 /**
  * @internal
+ * @deprecated
  */
 class Maniple_Application_ResourceAlias
 {
