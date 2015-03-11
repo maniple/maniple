@@ -8,6 +8,8 @@ class Maniple_Application_Bootstrap
     extends Maniple_Application_Bootstrap_Bootstrap
     implements ArrayAccess
 {
+    protected $_containerClass = 'Maniple_Application_ResourceContainer';
+
     public function __construct($application)
     {
         self::setupEnvironment();
@@ -59,21 +61,15 @@ class Maniple_Application_Bootstrap
     } // }}}
 
     /**
-     * @deprecated
-     */
-    protected function _setResource($name, $value)
-    {
-        return $this->setResource($name, $value);
-    }
-
-    /**
      * Proxy to {@see getResource()}.
      *
      * @param  string $offset
      * @return mixed
+     * @deprecated
      */
     public function offsetGet($offset) // {{{
     {
+        trigger_error(__METHOD__ . ' is deprecated');
         return $this->getResource($offset);
     } // }}}
 
@@ -83,9 +79,11 @@ class Maniple_Application_Bootstrap
      * @param  string $offset
      * @param  mixed $value
      * @return void
+     * @deprecated
      */
     public function offsetSet($offset, $value) // {{{
     {
+        trigger_error(__METHOD__ . ' is deprecated');
         $this->setResource($offset, $value);
     } // }}}
 
@@ -94,9 +92,11 @@ class Maniple_Application_Bootstrap
      *
      * @param  string $offset
      * @return boolean
+     * @deprecated
      */
     public function offsetExists($offset) // {{{
     {
+        trigger_error(__METHOD__ . ' is deprecated');
         return isset($this->getContainer()->{$offset});
     } // }}}
 
@@ -105,10 +105,12 @@ class Maniple_Application_Bootstrap
      *
      * @param  string $offset
      * @return void
+     * @deprecated
      */
     public function offsetUnset($offset) // {{{
     {
-        // TODO does it initialize resource before removing it? Check!
+        trigger_error(__METHOD__ . ' is deprecated');
+        // no, this does not initialize resource before removing it
         unset($this->getContainer()->{$offset});
     } // }}}
 }
