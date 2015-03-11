@@ -1,9 +1,20 @@
 {
-    "name": "Maniple",
+    "name": "maniple/maniple",
     "type": "library",
+    "description": "",
+    "license": "MIT",
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/xemlock/zefram"
+        }
+    ],
+    "require": {
+        "xemlock/zefram": "dev-master"
+    },
     "autoload": {
         "psr-0": {
-            "Maniple_": "library/"
+            "Maniple_": "library/Maniple"
         }
     }
 }
