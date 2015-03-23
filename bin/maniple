@@ -178,12 +178,12 @@ function maniple_module_install($path, $symlink = true)
     $module_config_path = $path . '/module.json';
 
     if (!file_exists($module_config_path)) {
-        printf("[ FAIL ] Config file module.json not found in: %s\n", $path);
-        return false;
+        printf("[ WARN ] Config file module.json not found in: %s\n", $path);
+        $module_config = array();
+    } else {
+        $module_config = (array) @json_decode(file_get_contents($module_config_path), true);
+        print_R($module_config);
     }
-
-    $module_config = (array) @json_decode(file_get_contents($module_config_path), true);
-    print_R($module_config);
 
     $module_name = empty($module_config['name']) ? basename($path) : basename($module_config['name']);
 
