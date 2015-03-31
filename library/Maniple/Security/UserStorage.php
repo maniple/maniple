@@ -11,6 +11,11 @@ class Maniple_Security_UserStorage implements Maniple_Security_UserStorageInterf
 {
     const SESSION_KEY = '__security';
 
+    public function __construct()
+    {
+        Zend_Session::start();
+    }
+
     /**
      * @return bool
      */
