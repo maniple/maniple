@@ -185,6 +185,29 @@ class Maniple_Application_Resource_Modules
      */
     protected $_whileBootstrapping;
 
+    protected $_bootstrapResources;
+
+    protected function _hasBootstrapResource($resourceName)
+    {
+        $bootstrap = $this->getBootstrap();
+
+        if ($bootstrap->hasResource($resourceName)) {
+            // check if already initialized
+            return true;
+        }
+
+        if ($this->_bootstrapResources === null) {
+            $this->_bootstrapResources = array_flip(array_map('strtolower', $bootstrap->getClassResourceNames()));
+            return isset($this->_bootstrapResources[strtolower($resourceName)]);
+        }
+
+        if ($bootstrap instanceof Zend_Application_Bootstrap_ResourceBootstrapper) {
+            return $bootstrap->hasPluginResource($resourceName);
+        }
+
+        return false;
+    }
+
     /**
      * @param  string $moduleName
      * @return Zend_Application_Module_Bootstrap
@@ -250,6 +273,41 @@ class Maniple_Application_Resource_Modules
         }
 
         foreach ($resourcesConfig as $resourceName => $resource) {
+            $replaceResource = false;
+
+            if (is_array($resource)) {
+                // additional option-based configuration on resource
+                // merge any resources with current config state - this essentially
+                // allows configuration of module resources in main application config
+                if ($this->_hasBootstrapResource($resourceName)) {
+                    $options = $bootstrap->getResource($resourceName);
+                    if (is_array($options)) {
+                        $resource['options'] = is_array(@$resource['options'])
+                            ? array_merge($resource['options'], $options)
+                            : $resource['options'];
+                        $replaceResource = true;
+                    }
+                }
+            } elseif (is_object($resource)) {
+                // already initialized object, set options
+                if ($this->_hasBootstrapResource($resourceName)) {
+                    $options = $bootstrap->getResource($resourceName);
+                    if (is_array($options)) {
+                        foreach ($options as $key => $value) {
+                            $method = 'set' . $key;
+                            if (method_exists($resource, $method)) {
+                                $resource->{$method}($value);
+                            }
+                        }
+                        $replaceResource = true;
+                    }
+                }
+            }
+
+            if ($replaceResource) {
+                unset($bootstrap->getContainer()->{$resourceName});
+            }
+
             $bootstrap->setResource($resourceName, $resource);
         }
 
@@ -305,6 +363,7 @@ class Maniple_Application_Resource_Modules
     protected function _executeBootstraps()
     {
         $bootstrap = $this->getBootstrap();
+        $this->_bootstrapResources = null;
 
         foreach ($this->_modules as $module => $moduleInfo) {
             $this->bootstrapModule($module);
