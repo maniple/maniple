@@ -175,6 +175,18 @@ function maniple_vendor_update($vendor_path = null) {
 
 function maniple_module_install($path, $symlink = true)
 {
+    $path = str_replace('\\', '/', $path);
+
+    if (strpos($path, '/') === false) {
+        // module name given, use default location
+        $path = 'application/modules/' . $path;
+    }
+
+    if (!file_exists($path)) {
+        printf("[ ERROR ] Module directory not found: %s\n", $path);
+        return false;
+    }
+
     $module_config_path = $path . '/module.json';
 
     if (!file_exists($module_config_path)) {
