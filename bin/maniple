@@ -115,6 +115,7 @@ function maniple_init($baseDir = null) {
         'variable/twig'     => true,
 
         'public'            => false,
+        'public/assets'     => false,
     );
     foreach ($dirs as $name => $writable) {
         $dirpath = $baseDir . DS . $name;
