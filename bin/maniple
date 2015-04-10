@@ -141,7 +141,42 @@ function maniple_init($baseDir = null) {
     if (!is_file($index_path)) {
         file_put_contents($index_path, maniple_generate_index());
     }
+
+    maniple_generate_configs($baseDir . '/application/configs');
 }
+
+function maniple_generate_configs($dir) {
+    $configs = array(
+        'development' =>
+            "phpSettings.display_startup_errors = 1\n" .
+            "phpSettings.display_errors = 1\n" .
+            "\n" .
+            "resources.frontController.params.displayExceptions = 1\n"
+        ,
+        'staging' =>
+            "phpSettings.display_startup_errors = 0\n" .
+            "phpSettings.display_errors = 0\n" .
+            "\n" .
+            "resources.frontController.params.displayExceptions = 0\n"
+        ,
+        'production' =>
+            "phpSettings.display_startup_errors = 0\n" .
+            "phpSettings.display_errors = 0\n" .
+            "\n" .
+            "resources.frontController.params.displayExceptions = 0\n"
+        ,
+    );
+    foreach ($configs as $env => $config) {
+        $path = $dir . '/application.' . $env . '.ini';
+        if (!is_file($path)) {
+            echo 'Creating application config file ', basename($path), ' ... ';
+            file_put_contents($path, "[$env]\n\n" . $config);
+            echo 'done.', "\n";
+        }
+    }
+}
+
+
 
 function maniple_vendor_update($vendor_path = null) {
     $cwd = getcwd(); // absolute
