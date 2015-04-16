@@ -137,8 +137,8 @@ class Maniple_Application_Resource_Modules
                 'prefix' => $modulePrefix,
                 'path' => $modulePath,
                 'bootstrapClass' => $bootstrapClass,
-                'stackIndex' => isset($options[$module['stackIndex']]) ?
-                    (int) $options[$module['stackIndex']]
+                'stackIndex' => isset($options['stackIndex']) ?
+                    (int) $options['stackIndex']
                     : 0,
             );
         }
