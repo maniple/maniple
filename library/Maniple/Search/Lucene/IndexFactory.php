@@ -11,7 +11,7 @@ class Maniple_Search_Lucene_IndexFactory
 
     /**
      * @param  string $storageDir
-     * @return Maniple_Search_IndexFactory
+     * @return Maniple_Search_Lucene_IndexFactory
      * @throws InvalidArgumentException
      */
     public function setStorageDir($storageDir) // {{{
@@ -52,19 +52,7 @@ class Maniple_Search_Lucene_IndexFactory
     public function getIndex($name) // {{{
     {
         $path = $this->_getIndexDir($name);
-
-        try {
-            $lucene = Zend_Search_Lucene::open($path);
-
-        } catch (Zend_Search_Lucene_Exception $e) {
-            // Lucene index was not found or is unreadable
-        }
-
-        if (empty($lucene)) {
-            $lucene = Zend_Search_Lucene::create($path);
-        }
-
-        $index = new Maniple_Search_Lucene_Index($lucene);
+        $index = new Maniple_Search_Lucene_Index($path);
         return $index;
     } // }}}
 }

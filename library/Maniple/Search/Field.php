@@ -27,7 +27,6 @@ class Maniple_Search_Field implements Maniple_Search_FieldInterface
      * @param  string $name
      * @param  mixed $value
      * @param  int $flags
-     * @return void
      */
     public function __construct($name, $value, $flags = self::FIELD_DEFAULT) // {{{
     {

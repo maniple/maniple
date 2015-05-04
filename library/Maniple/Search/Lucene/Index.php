@@ -8,9 +8,18 @@ class Maniple_Search_Lucene_Index
      */
     protected $_lucene;
 
-    public function __construct($path)
+    /**
+     * @param string $path
+     * @param array $options
+     */
+    public function __construct($path, array $options = array())
     {
         $path = $this->_checkIndexStorageDir(dirname($path)) . '/' . basename($path);
+
+        $defaultAnalyzer = Zend_Search_Lucene_Analysis_Analyzer::getDefault();
+        $analyzer = isset($options['analyzer']) ? $options['analyzer'] : $defaultAnalyzer;
+
+        Zend_Search_Lucene_Analysis_Analyzer::setDefault($analyzer);
 
         try {
             $lucene = Zefram_Search_Lucene::open($path);
@@ -23,13 +32,9 @@ class Maniple_Search_Lucene_Index
             $lucene = Zefram_Search_Lucene::create($path);
         }
 
-        $this->_lucene = $lucene;
-    }
+        Zend_Search_Lucene_Analysis_Analyzer::setDefault($defaultAnalyzer);
 
-    public function setAnalyzer(Zend_Search_Lucene_Analysis_Analyzer $analyzer = null)
-    {
-        $this->_lucene->setAnalyzer($analyzer);
-        return $this;
+        $this->_lucene = $lucene;
     }
 
     protected function _checkIndexStorageDir($dir)
@@ -50,6 +55,7 @@ class Maniple_Search_Lucene_Index
      * @param  string|Maniple_Search_Document|Maniple_Search_Field $query
      * @param  int $limit OPTIONAL
      * @param  int $offset OPTIONAL
+     * @return stdClass
      */
     public function search($query, $limit = null, $offset = null)
     {
@@ -62,7 +68,7 @@ class Maniple_Search_Lucene_Index
 
         $hits = $this->_lucene->find($query);
 
-        Zend_Search_Lucene::getResultSetLimit($oldLimit);
+        Zend_Search_Lucene::setResultSetLimit($oldLimit);
 
         reset($hits);
         if ($limit > 0 && $offset > 0) {
@@ -122,11 +128,11 @@ class Maniple_Search_Lucene_Index
     {
         foreach ($doc->getFields() as $field) {
             if ($field->isTokenizable()) {
-                $luceneDoc->addField(Zend_Search_Lucene_Field::Text(
+                $luceneDoc->addField(Zend_Search_Lucene_Field::text(
                     $field->getName(), $field->getValue(), 'utf-8'
                 ));
             } else {
-                $luceneDoc->addField(Zend_Search_Lucene_Field::Keyword(
+                $luceneDoc->addField(Zend_Search_Lucene_Field::keyword(
                     $field->getName(), $field->getValue(), 'utf-8'
                 ));
             }
