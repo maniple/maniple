@@ -19,5 +19,8 @@
     },
     "include-path": [
         "library/"
+    ],
+    "bin": [
+        "bin/maniple"
     ]
 }
