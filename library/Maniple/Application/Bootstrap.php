@@ -6,7 +6,6 @@
  */
 class Maniple_Application_Bootstrap
     extends Maniple_Application_Bootstrap_Bootstrap
-    implements ArrayAccess
 {
     protected $_containerClass = 'Maniple_Application_ResourceContainer';
 
@@ -30,8 +29,15 @@ class Maniple_Application_Bootstrap
             throw new Exception('<a href="http://www.php.net/manual/en/book.fileinfo.php">Fileinfo</a> extension required');
         }
 
-        mb_internal_encoding('utf-8');
-        ini_set('iconv.internal_encoding', 'utf-8');
+        mb_internal_encoding('UTF-8');
+
+        if (PHP_VERSION_ID < 50600) {
+            iconv_set_encoding('input_encoding', 'UTF-8');
+            iconv_set_encoding('output_encoding', 'UTF-8');
+            iconv_set_encoding('internal_encoding', 'UTF-8');
+        } else {
+            ini_set('default_charset', 'UTF-8');
+        }
 
         $temp_dir = realpath(APPLICATION_PATH . '/../variable/temp');
 
@@ -39,7 +45,7 @@ class Maniple_Application_Bootstrap
         // temporary directory must be set via these Env variables
         foreach (array('TMPDIR', 'TEMP', 'TMP') as $key) {
             Zefram_Os::setEnv($key, $temp_dir);
-	}
+	    }
 
         Zend_Loader_PluginLoader::setIncludeFileCache(APPLICATION_PATH . '/../variable/cache/PluginLoader');
     }
@@ -58,59 +64,5 @@ class Maniple_Application_Bootstrap
         if (null !== $resource && $this->hasResource($resource)) {
             return $this->getResource($resource);
         }
-    } // }}}
-
-    /**
-     * Proxy to {@see getResource()}.
-     *
-     * @param  string $offset
-     * @return mixed
-     * @deprecated
-     */
-    public function offsetGet($offset) // {{{
-    {
-        trigger_error(__METHOD__ . ' is deprecated');
-        return $this->getResource($offset);
-    } // }}}
-
-    /**
-     * Proxy to {@see setResource()}.
-     *
-     * @param  string $offset
-     * @param  mixed $value
-     * @return void
-     * @deprecated
-     */
-    public function offsetSet($offset, $value) // {{{
-    {
-        trigger_error(__METHOD__ . ' is deprecated');
-        $this->setResource($offset, $value);
-    } // }}}
-
-    /**
-     * Does resource of given name exist.
-     *
-     * @param  string $offset
-     * @return boolean
-     * @deprecated
-     */
-    public function offsetExists($offset) // {{{
-    {
-        trigger_error(__METHOD__ . ' is deprecated');
-        return isset($this->getContainer()->{$offset});
-    } // }}}
-
-    /**
-     * Removes resource from container.
-     *
-     * @param  string $offset
-     * @return void
-     * @deprecated
-     */
-    public function offsetUnset($offset) // {{{
-    {
-        trigger_error(__METHOD__ . ' is deprecated');
-        // no, this does not initialize resource before removing it
-        unset($this->getContainer()->{$offset});
     } // }}}
 }
