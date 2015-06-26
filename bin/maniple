@@ -4,6 +4,21 @@
 define('DS', DIRECTORY_SEPARATOR);
 define('WD', getcwd());
 
+// search for vendor/autoload.php in all parent directories
+$dir = dirname(__FILE__);
+$autoload = null;
+while ($dir !== ($parent = dirname($dir))) {
+    if (is_file($autoload = $dir . '/vendor/autoload.php')) {
+        require_once $autoload;
+        break;
+    }
+    $dir = $parent;
+}
+if ($autoload === null) {
+    echo "Unable to locate autoloader, please reinstall this application.";
+    exit(1);
+}
+
 $args = $_SERVER['argv'];
 if (count($args) < 2) {
     echo "maniple [action] [args...]\n";
@@ -11,34 +26,47 @@ if (count($args) < 2) {
 }
 
 $action = $args[1];
-switch ($action) {
-    case 'init':
-        // maniple init
-        maniple_init(isset($args[2]) ? $args[2] : null);
-        break;
+$action_args = array_slice($args, 2);
 
-    case 'vendor-update':
-        // maniple vendor-update [vendor_path]
-        maniple_vendor_update(isset($args[2]) ? $args[2] : null);
-        break;
+try {
+    switch ($action) {
+        case 'init':
+            // maniple init
+            maniple_init(isset($args[2]) ? $args[2] : null);
+            break;
 
-    case 'module-install':
-        // maniple module-install [module_path]
-        if (empty($args[2])) {
-            echo "maniple module-install: module_path required\n";
-            exit(1);
-        }
-        maniple_module_install($args[2]);
-        break;
+        case 'vendor-update':
+            // maniple vendor-update [vendor_path]
+            maniple_vendor_update(isset($args[2]) ? $args[2] : null);
+            break;
 
-    case 'set-baseurl':
-        // maniple set-baseurl [base_url]
-        break;
+        case 'module-install':
+            // maniple module-install [module_path]
+            if (empty($args[2])) {
+                echo "maniple module-install: module_path required\n";
+                exit(1);
+            }
+            maniple_module_install($args[2]);
+            break;
 
-    case 'install':
-        maniple_install();
-        break;
+        case 'set-baseurl':
+            // maniple set-baseurl [base_url]
+            break;
+
+        case 'install':
+            maniple_install();
+            break;
+
+        case 'create-module':
+            $action = new Maniple_Cli_Action_CreateModuleAction();
+            $action->run($action_args);
+            break;
+    }
+} catch (Maniple_Cli_Action_Exception $e) {
+    echo "[ FAIL ] ", $e->getAction()->getName(), ": ", $e->getMessage(), "\n";
 }
+
+echo "\n";
 
 function maniple_install()
 {
