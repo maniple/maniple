@@ -4,7 +4,8 @@ class Maniple_Cli_Action_CreateModuleAction extends Maniple_Cli_Action_Abstract
 {
     protected function _run($moduleName = null)
     {
-        if (empty($moduleName)) {
+        $moduleName = trim($moduleName);
+        if (!strlen($moduleName)) {
             throw new Maniple_Cli_Action_Exception($this, 'Module name must not be empty');
         }
         if (!preg_match('/^[a-z][-a-z0-9]*$/', $moduleName)) {
@@ -19,7 +20,8 @@ class Maniple_Cli_Action_CreateModuleAction extends Maniple_Cli_Action_Abstract
         $moduleDir = realpath($dir);
 
         // generate module bootstrap class
-        $modulePrefix = ucfirst(ucwords(str_replace('-', ' ', $moduleName)));
+        $modulePrefix = str_replace(' ', '', ucfirst(ucwords(str_replace('-', ' ', $moduleName))));
+
         if (!file_exists($moduleDir . '/Bootstrap.php')) {
 
             $bootstrapImpl = "<?php
