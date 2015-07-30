@@ -30,12 +30,12 @@ class {$modulePrefix}_Bootstrap extends Maniple_Application_Module_Bootstrap
 {
     public function getResourcesConfig()
     {
-        return dirname(__FILE__) . '/configs/resources.config.php';
+        return require dirname(__FILE__) . '/configs/resources.config.php';
     }
 
     public function getRoutesConfig()
     {
-        return dirname(__FILE__) . '/configs/resources.routes.php';
+        return require dirname(__FILE__) . '/configs/resources.routes.php';
     }
 }
 ";
