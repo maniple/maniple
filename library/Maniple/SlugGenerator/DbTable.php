@@ -1,47 +1,28 @@
 <?php
 
-class Maniple_SlugGenerator_DbTable extends Maniple_SlugGenerator_Abstract
+class Maniple_SlugGenerator_DbTable extends Maniple_SlugGenerator_Db
 {
-    /**
-     * @var Zend_Db_Table_Abstract
-     */
-    protected $_dbTable;
-
-    /**
-     * @var string
-     */
-    protected $_colName;
-
     /**
      * @param Zend_Db_Table_Abstract $dbTable
      * @param string $colName
      */
-    public function __construct(Zend_Db_Table_Abstract $dbTable, $colName = 'slug')
+    public function __construct(Zend_Db_Table_Abstract $table, $colName = 'slug')
     {
-        $this->_dbTable = $dbTable;
-        $this->_colName = $colName;
+        $this->setFromTable($table);
+        $this->setColName($colName);
     }
 
     /**
-     * @param string $slug
-     * @return bool
+     * @param Zend_Db_Table_Abstract $table
+     * @return $this
      */
-    public function slugExists($slug)
+    public function setFromTable(Zend_Db_Table_Abstract $table)
     {
-        $table = $this->_dbTable;
         $tableName = method_exists($table, 'getName') ? $table->getName() : $table->info(Zend_Db_Table::NAME);
 
-        $db = $table->getAdapter();
+        $this->_db = $table->getAdapter();
+        $this->_tableName = $tableName;
 
-        $select = $db->select();
-        $select->from(
-            array('tbl' => $tableName),
-            array('cnt' => new Zend_Db_Expr('COUNT(1)'))
-        );
-        $select->where($db->quoteIdentifier($this->_colName) . ' = ?', (string) $slug);
-
-        $count = (int) $select->query()->fetchColumn('cnt');
-        return (bool) $count;
+        return $this;
     }
-
 }

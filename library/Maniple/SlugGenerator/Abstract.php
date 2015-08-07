@@ -8,12 +8,16 @@
 abstract class Maniple_SlugGenerator_Abstract
 {
     /**
+     * Tests whether a given slug already exists in the data source.
+     *
      * @param string $slug
      * @return bool
      */
     abstract public function slugExists($slug);
 
     /**
+     * Creates a unique (within the data source) slug based on a given string
+     *
      * @param string $string
      * @return string
      * @throws Exception
@@ -34,6 +38,8 @@ abstract class Maniple_SlugGenerator_Abstract
     }
 
     /**
+     * Creates a slug from given string
+     *
      * @param string $string
      * @return string
      */
