@@ -2,10 +2,13 @@
 
 interface Maniple_Security_ContextInterface
 {
+    public function getIdentity();
+
     /**
      * Retrieves currently authenticated user.
      *
      * @return Maniple_Security_UserInterface
+     * @deprecated Use getIdentity() to retrieve ID and user mapper for entity retrieval
      */
     public function getUser();
 

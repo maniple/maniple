@@ -124,6 +124,12 @@ abstract class Maniple_Security_ContextAbstract implements Maniple_Security_Cont
         return $this->getUserStorage()->getUser();
     } // }}}
 
+    public function getIdentity()
+    {
+        $user = $this->getUserStorage()->getUser();
+        return $user ? $user->getId() : null;
+    }
+
     /**
      * Create representation of given ID suitable for storing and checking if
      * it belongs to superusers.
