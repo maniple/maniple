@@ -248,7 +248,9 @@ class Maniple_Application_Resource_Modules
 
         // get resources defined via getResourcesConfig() method
         // (to be lazy-loaded or arbitrarily named)
-        if (method_exists($moduleBootstrap, 'getResourcesConfig')) {
+        if (method_exists($moduleBootstrap, 'getResourceConfig')) {
+            $resourcesConfig = $moduleBootstrap->getResourceConfig();
+        } elseif (method_exists($moduleBootstrap, 'getResourcesConfig')) {
             $resourcesConfig = $moduleBootstrap->getResourcesConfig();
         } else {
             $resourcesConfig = array();
@@ -314,7 +316,9 @@ class Maniple_Application_Resource_Modules
         // echo '<br/><br/>OPTIONS AFTER:',print_r($resourcesConfig, 1), '</pre></div>';
 
         // get routes defined by getRoutesConfig()
-        if (method_exists($moduleBootstrap, 'getRoutesConfig')) {
+        if (method_exists($moduleBootstrap, 'getRouteConfig')) {
+            $routesConfig = (array) $moduleBootstrap->getRouteConfig();
+        } elseif (method_exists($moduleBootstrap, 'getRoutesConfig')) {
             $routesConfig = (array) $moduleBootstrap->getRoutesConfig();
         } else {
             $routesConfig = array();
