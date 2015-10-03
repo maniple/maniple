@@ -18,6 +18,10 @@ class Maniple_Application_Resource_Modules
     extends Maniple_Application_Resource_ResourceAbstract
     implements Maniple_Application_ModuleBootstrapper
 {
+    const STATE_DEFAULT       = 0;
+    const STATE_BOOTSTRAPPING = 1;
+    const STATE_BOOTSTRAPPED  = 2;
+
     /**
      * @var Zend_Loader_StandardAutoloader
      */
@@ -33,13 +37,6 @@ class Maniple_Application_Resource_Modules
      */
     protected $_bootstraps;
 
-    public function __construct($options = null)
-    {
-        parent::__construct($options);
-        $this->_initModules();
-        $this->_initAutoloader();        
-    }
-
     /**
      * Initialize modules
      *
@@ -47,6 +44,9 @@ class Maniple_Application_Resource_Modules
      */
     public function init() // {{{
     {
+        $this->_initModules();
+        $this->_initAutoloader();
+
         $this->_executeBootstraps();
         return $this->_bootstraps;
     } // }}}
@@ -183,7 +183,7 @@ class Maniple_Application_Resource_Modules
     /**
      * @var array
      */
-    protected $_whileBootstrapping;
+    protected $_moduleState;
 
     protected $_bootstrapResources;
 
@@ -209,11 +209,13 @@ class Maniple_Application_Resource_Modules
     }
 
     /**
+     * Reads module configuration and merges it with global config
+     *
      * @param  string $moduleName
      * @return Zend_Application_Module_Bootstrap
      * @throws Exception
      */
-    public function bootstrapModule($moduleName)
+    public function configModule($moduleName)
     {
         if (empty($this->_modules[$moduleName])) {
             throw new InvalidArgumentException("Module {$moduleName} was not found");
@@ -223,12 +225,7 @@ class Maniple_Application_Resource_Modules
             return $this->_bootstraps->{$moduleName};
         }
 
-        if (isset($this->_whileBootstrapping[$moduleName])) {
-            throw new Exception('Cyclic module dependency detected; module ' . $moduleName . ' is during bootstrap process');
-        }
-
         $moduleInfo = $this->_modules[$moduleName];
-        $this->_whileBootstrapping[$moduleName] = true;
 
         $bootstrap = $this->getBootstrap();
 
@@ -273,6 +270,12 @@ class Maniple_Application_Resource_Modules
                 array_intersect_key($moduleOptions['resourcesConfig'], $resourcesConfig)
             );
         }
+
+        // merge resources with application config
+        // ideally modules resources should be added as the first resource
+        // in application config, otherwise this will have no action
+        $bootstrap = $this->getBootstrap();
+        $bootstrap->setOptions($resourcesConfig);
 
         foreach ($resourcesConfig as $resourceName => $resource) {
             $replaceResource = false;
@@ -332,7 +335,7 @@ class Maniple_Application_Resource_Modules
         if (isset($options[$moduleName]['routesConfig'])) {
             $routesConfig = $this->mergeOptions(
                 $routesConfig,
-                array_intersect_key($options[$module]['routesConfig'], $routesConfig)
+                array_intersect_key($options[$moduleName]['routesConfig'], $routesConfig)
             );
         }
         if (is_array($routesConfig)) {
@@ -345,6 +348,31 @@ class Maniple_Application_Resource_Modules
         $router = $bootstrap->getResource('frontController')->getRouter();
         $router->addConfig($routesConfig);
 
+        $this->_bootstraps->{$moduleName} = $moduleBootstrap;
+        $this->_moduleState[$moduleName] = self::STATE_DEFAULT;
+
+        return $moduleBootstrap;
+    }
+
+    public function bootstrapModule($moduleName)
+    {
+        if (!isset($this->_bootstraps->{$moduleName})) {
+            throw new Exception('Invalid module name: ' . $moduleName);
+        }
+
+        /** @var Zend_Application_Module_Bootstrap $moduleBootstrap */
+        $moduleBootstrap = $this->_bootstraps->{$moduleName};
+
+        if ($this->_moduleState[$moduleName] === self::STATE_BOOTSTRAPPED) {
+            return $moduleBootstrap;
+        }
+
+        if ($this->_moduleState[$moduleName] === self::STATE_BOOTSTRAPPING) {
+            throw new Exception('Cyclic module dependency detected; module ' . $moduleName . ' is during bootstrap process');
+        }
+
+        $this->_moduleState[$moduleName] = self::STATE_BOOTSTRAPPING;
+
         // bootstrap any built-in / plugin resources, they will be stored in
         // the common resource container
         $moduleBootstrap->bootstrap();
@@ -354,8 +382,7 @@ class Maniple_Application_Resource_Modules
             $moduleBootstrap->onBootstrap($this);
         }
 
-        unset($this->_whileBootstrapping[$moduleName]);
-        $this->_bootstraps->{$moduleName} = $moduleBootstrap;
+        $this->_moduleState[$moduleName] = self::STATE_BOOTSTRAPPED;
 
         return $moduleBootstrap;
     }
@@ -368,6 +395,11 @@ class Maniple_Application_Resource_Modules
     {
         $bootstrap = $this->getBootstrap();
         $this->_bootstrapResources = null;
+
+        // prepare modules
+        foreach ($this->_modules as $module => $moduleInfo) {
+            $this->configModule($module);
+        }
 
         foreach ($this->_modules as $module => $moduleInfo) {
             $this->bootstrapModule($module);
