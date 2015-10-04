@@ -277,12 +277,48 @@ class Maniple_Application_Resource_Modules
         // in application config, otherwise this will have no action
         // 'resources' key is hardcoded in Zend_Application_Bootstrap_BootstrapAbstract
 
-        // bootstrap options have greater priority than module options
+        $this->_mergeResources($resources);
+    }
+
+    protected function _mergeResources(array $resources)
+    {
+        $bootstrap = $this->getBootstrap();
 
         // retrieve existing resources options from bootstrap and merge
         // them with module resource options
-        $resources = $this->mergeOptions($resources, (array) $bootstrap->getOption('resources'));
-        $bootstrap->setOptions(array('resources' => $resources));
+        // Nope, Zend_Application_Bootstrap_Bootstrapper has no getOptions() method.
+        // but Zend_Application_Bootstrap_BootstrapAbstract has
+        if (method_exists($bootstrap, 'getOptions')) {
+            $options = $bootstrap->getOptions();
+            $bootstrapResources = isset($options['resources']) ? (array) $options['resources'] : array();
+        } else {
+            $bootstrapResources = array();
+        }
+
+        // FrontController won't be modified this way, as it is already
+        // bootstrapped, due to retrieval of paths
+
+        // Don't re-register resources already existing in bootstrap. Register
+        // only those, that has been changed.
+        // Make sure that 'modules' resource is bootstrapped before all other
+        // resources, so that updating the 'resources' config can be taken into
+        // account during the bootstrapping process.
+        foreach ($resources as $name => $options) {
+            if (isset($bootstrapResources[$name]) && is_array($bootstrapResources[$name])) {
+                // bootstrap options have greater priority than module options
+                $mergedResource = $this->mergeOptions($options, $bootstrapResources[$name]);
+                if ($mergedResource != $bootstrapResources[$name]) {
+                    $resources[$name] = $mergedResource;
+                } else {
+                    unset($resources[$name]);
+                }
+            }
+        }
+
+        if ($resources) {
+            // echo '<pre>';print_r($resources);exit;
+            $bootstrap->setOptions(array('resources' => $resources));
+        }
     }
 
     /**
