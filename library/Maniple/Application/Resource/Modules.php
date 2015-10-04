@@ -44,14 +44,14 @@ class Maniple_Application_Resource_Modules
      */
     public function init() // {{{
     {
-        $this->configureModules(); // this may be called externally
+        $this->preInit(); // this may be called externally
         $this->_executeBootstraps();
         return $this->_bootstraps;
     } // }}}
 
     protected $_configured = false;
 
-    public function configureModules()
+    public function preInit()
     {
         if ($this->_configured) {
             return;
@@ -514,5 +514,4 @@ class Maniple_Application_Resource_Modules
 
         return false;
     }
-
 }
