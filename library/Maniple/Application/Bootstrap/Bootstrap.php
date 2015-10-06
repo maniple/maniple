@@ -17,7 +17,7 @@ class Maniple_Application_Bootstrap_Bootstrap
         if ($this->_pluginLoader === null) {
             parent::getPluginLoader()->addPrefixPath(
                 'Maniple_Application_Resource_',
-                'Maniple/Application/Resource/'
+                realpath(dirname(__FILE__) . '/../Resource/')
             );
         }
         return $this->_pluginLoader;
