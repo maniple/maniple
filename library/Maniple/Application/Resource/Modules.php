@@ -395,6 +395,12 @@ class Maniple_Application_Resource_Modules
         // the common resource container
         $moduleBootstrap->bootstrap();
 
+        // notify bootstrapping is complete - here, not after all modules are bootstrapped
+        // due to BC
+        if (method_exists($moduleBootstrap, 'onBootstrap')) {
+            $moduleBootstrap->onBootstrap($this);
+        }
+
         $this->_modules[$moduleName]['state'] = self::STATE_BOOTSTRAPPED;
 
         return $moduleBootstrap;
@@ -411,13 +417,6 @@ class Maniple_Application_Resource_Modules
 
         foreach ($this->_modules as $module => $moduleInfo) {
             $this->bootstrapModule($module);
-        }
-
-        foreach ($this->_bootstraps as $moduleBootstrap) {
-            // notify bootstrapping is complete
-            if (method_exists($moduleBootstrap, 'onBootstrap')) {
-                $moduleBootstrap->onBootstrap($this);
-            }
         }
 
         // Ok, all modules loaded successfully, add search paths
