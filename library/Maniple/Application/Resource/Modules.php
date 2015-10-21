@@ -60,11 +60,6 @@ class Maniple_Application_Resource_Modules
         $this->_initModules();
         $this->_initAutoloader();
 
-        // instantiates modules, gets configs
-        foreach ($this->_modules as $module => $moduleInfo) {
-            $config = $this->configModule($module);
-        }
-
         $this->configResources();
 
         $this->_configured = true;
@@ -81,6 +76,7 @@ class Maniple_Application_Resource_Modules
         $bootstrap = $this->getBootstrap();
         $bootstrap->bootstrap('FrontController');
 
+        /** @var $front Zend_Controller_Front */
         $front = $bootstrap->getResource('FrontController');
 
         // Module detection (in Zend_Controller_Front::addModuleDirectory())
@@ -111,11 +107,6 @@ class Maniple_Application_Resource_Modules
             // otherwise it would not be found by the dispatcher
             if (file_exists($modulePath . '/module')) {
                 $modulePath .= '/module';
-                // add controllers directory without checking if it exists
-                // - the way a module directory is retrieved from front controller
-                // depends on whether module's controller directory is added to
-                // dispatcher (not the module directory itself)
-                $front->addControllerDirectory($modulePath . '/controllers', $module);
             }
 
             $modulePrefix = $this->_formatModuleName($module);
@@ -153,9 +144,22 @@ class Maniple_Application_Resource_Modules
                 continue;
             }
 
+            $moduleBootstrap = new $bootstrapClass($this->getBootstrap());
+
+            if ($moduleBootstrap instanceof Maniple_Application_Module_Bootstrap) {
+                $moduleBootstrap->setModuleManager($this);
+            }
+
+            // add controllers directory without checking if it exists
+            // - the way a module directory is retrieved from front controller
+            // depends on whether module's controller directory is added to
+            // dispatcher (not the module directory itself)
+            $front->addControllerDirectory($modulePath . '/controllers', $module);
+
             $bootstraps[$module] = array(
                 'prefix' => $modulePrefix,
                 'path' => $modulePath,
+                'bootstrap' => $moduleBootstrap,
                 'bootstrapClass' => $bootstrapClass,
                 'state' => self::STATE_DEFAULT,
                 'stackIndex' => isset($options['stackIndex']) ?
@@ -201,44 +205,13 @@ class Maniple_Application_Resource_Modules
         }
     } // }}}
 
-    /**
-     * Reads module configuration and merges it with global config
-     *
-     * @param  string $moduleName
-     * @return Zend_Application_Module_Bootstrap
-     * @throws Exception
-     */
-    public function configModule($moduleName)
-    {
-        if (empty($this->_modules[$moduleName])) {
-            throw new InvalidArgumentException("Module {$moduleName} was not found");
-        }
-
-        if (isset($this->_bootstraps->{$moduleName})) {
-            return $this->_bootstraps->{$moduleName};
-        }
-
-        $moduleInfo = $this->_modules[$moduleName];
-
-        $bootstrap = $this->getBootstrap();
-
-        $moduleBootstrap = new $moduleInfo['bootstrapClass']($bootstrap);
-
-        if ($moduleBootstrap instanceof Maniple_Application_Module_Bootstrap) {
-            $moduleBootstrap->setModuleManager($this);
-        }
-
-        $this->_bootstraps->{$moduleName} = $moduleBootstrap;
-
-        return $moduleBootstrap;
-    }
-
     public function configResources()
     {
         $bootstrap = $this->getBootstrap();
         $resources = array();
 
-        foreach ($this->_bootstraps as $moduleName => $moduleBootstrap) {
+        foreach ($this->_modules as $moduleName => $moduleInfo) {
+            $moduleBootstrap = $moduleInfo['bootstrap'];
             $moduleOptions = $this->getOption($moduleName);
 
             // get resources defined via getResourcesConfig() method
@@ -338,7 +311,8 @@ class Maniple_Application_Resource_Modules
         $bootstrap = $this->getBootstrap();
         $router = $bootstrap->getResource('frontController')->getRouter();
 
-        foreach ($this->_bootstraps as $moduleName => $moduleBootstrap) {
+        foreach ($this->_modules as $moduleName => $moduleInfo) {
+            $moduleBootstrap = $moduleInfo['bootstrap'];
             $moduleOptions = $this->getOption($moduleName);
 
             // get routes defined by getRoutesConfig()
@@ -374,12 +348,12 @@ class Maniple_Application_Resource_Modules
 
     public function bootstrapModule($moduleName)
     {
-        if (!isset($this->_bootstraps->{$moduleName})) {
+        if (!isset($this->_modules[$moduleName])) {
             throw new Exception('Invalid module name: ' . $moduleName);
         }
 
         /** @var Zend_Application_Module_Bootstrap $moduleBootstrap */
-        $moduleBootstrap = $this->_bootstraps->{$moduleName};
+        $moduleBootstrap = $this->_modules[$moduleName]['bootstrap'];
 
         if ($this->_modules[$moduleName]['state'] === self::STATE_BOOTSTRAPPED) {
             return $moduleBootstrap;
@@ -402,6 +376,7 @@ class Maniple_Application_Resource_Modules
         }
 
         $this->_modules[$moduleName]['state'] = self::STATE_BOOTSTRAPPED;
+        $this->_bootstraps{$moduleName} = $moduleBootstrap;
 
         return $moduleBootstrap;
     }
