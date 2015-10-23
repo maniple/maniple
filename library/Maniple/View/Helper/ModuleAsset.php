@@ -12,11 +12,23 @@ class Maniple_View_Helper_ModuleAsset extends Zend_View_Helper_Abstract
 
         $modules = $frontController->getParam('bootstrap')->getResource('modules');
 
-        if (empty($modules->{$moduleName})) {
+        if (isset($modules->{$moduleName})) {
+            $module = $modules->{$moduleName};
+        } else {
+            /** @var $modules \Zend\ModuleManager\ModuleManager */
+            $modules = $frontController->getParam('bootstrap')->getResource('ModuleManager');
+
+            $name = str_replace(array('.', '-'), ' ', $moduleName);
+            $name = ucwords($name);
+            $name = str_replace(' ', '', $name);
+
+            $module = $modules->getModule($name);
+        }
+
+        if (empty($module)) {
             throw new InvalidArgumentException("Module {$moduleName} was not found");
         }
 
-        $module = $modules->{$moduleName};
         if (method_exists($module, 'getAssetsBaseDir')) {
             $baseDir = $module->getAssetsBaseDir();
         } else {
