@@ -10,19 +10,19 @@ class Maniple_View_Helper_ModuleAsset extends Zend_View_Helper_Abstract
             $moduleName = $frontController->getDefaultModule();
         }
 
-        $modules = $frontController->getParam('bootstrap')->getResource('modules');
-
-        if (isset($modules->{$moduleName})) {
-            $module = $modules->{$moduleName};
-        } else {
-            /** @var $modules \Zend\ModuleManager\ModuleManager */
-            $modules = $frontController->getParam('bootstrap')->getResource('ModuleManager');
-
+        /** @var $modules \Zend\ModuleManager\ModuleManager */
+        $modules = $frontController->getParam('bootstrap')->getResource('ModuleManager');
+        if ($modules) {
             $name = str_replace(array('.', '-'), ' ', $moduleName);
             $name = ucwords($name);
             $name = str_replace(' ', '', $name);
 
             $module = $modules->getModule($name);
+        } else {
+            $modules = $frontController->getParam('bootstrap')->getResource('modules');
+            if (isset($modules->{$moduleName})) {
+                $module = $modules->{$moduleName};
+            }
         }
 
         if (empty($module)) {
