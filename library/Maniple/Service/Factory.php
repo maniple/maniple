@@ -12,20 +12,28 @@ class Maniple_Service_Factory implements AbstractFactoryInterface
     {
         $config = $serviceLocator->has('Config') ? $serviceLocator->get('Config') : array();
 
-        return isset($config[$requestedName]) && (
-            is_string($config[$requestedName]) || isset($config[$requestedName]['class'])
-        );
+        if (empty($config[$requestedName])) {
+            return false;
+        }
+
+        $serviceConfig = $config[$requestedName];
+
+        // if non-empty 'plugin' key is set it means that bootstrap resource plugin
+        // should be used instead
+
+        return is_string($serviceConfig)
+            || (isset($serviceConfig['class']) && empty($serviceConfig['plugin']));
     }
 
     public function createServiceWithName(ServiceLocatorInterface $serviceLocator, $name, $requestedName)
     {
         $config = $serviceLocator->has('Config') ? $serviceLocator->get('Config') : array();
 
-        if (empty($config[$requestedName])) {
+        if (empty($config[$name])) {
             throw new Exception('Empty resource config');
         }
 
-        $resourceConfig = $config[$requestedName];
+        $resourceConfig = $config[$name];
 
         if (is_string($resourceConfig)) {
             if (substr($resourceConfig, 0, 9) === 'resource:') {
