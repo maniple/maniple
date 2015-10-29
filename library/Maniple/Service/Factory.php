@@ -29,12 +29,12 @@ class Maniple_Service_Factory implements AbstractFactoryInterface
     public function createServiceWithName(ServiceLocatorInterface $serviceLocator, $name, $requestedName)
     {
         $config = $serviceLocator->has('Config') ? $serviceLocator->get('Config') : array();
+        $configKey = $this->getConfigKey($requestedName);
 
-        if (empty($config[$requestedName])) {
-            throw new Exception('Empty resource config');
+        if (empty($config[$configKey])) {
+            throw new Exception(sprintf('Invalid config for resource: %s', $requestedName));
         }
 
-        $configKey = $this->getConfigKey($requestedName);
         $resourceConfig = $config[$configKey];
 
         if (is_string($resourceConfig)) {
@@ -53,7 +53,7 @@ class Maniple_Service_Factory implements AbstractFactoryInterface
 
     public function getConfigKey($serviceName)
     {
-        return strtolower($serviceName);
+        return $serviceName;
     }
 
     /**
