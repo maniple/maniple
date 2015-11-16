@@ -12,6 +12,8 @@
  * Settings from resources.modules.moduleName.routesConfig override settings
  * from module's getRoutesConfig().
  *
+ * Put this as the first resource, to achieve desired effect.
+ *
  * @version 2014-07-13
  */
 class Maniple_Application_Resource_Modules

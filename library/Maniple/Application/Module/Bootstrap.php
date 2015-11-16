@@ -61,15 +61,7 @@ abstract class Maniple_Application_Module_Bootstrap
      */
     public function getParentBootstrap() // {{{
     {
-        if ($this->_application instanceof Zend_Application) {
-            $bootstrap = $this->_application->getBootstrap();
-        } else {
-            $bootstrap = $this->_application;
-        }
-        if ($bootstrap === $this) {
-            return null;
-        }
-        return $bootstrap;
+        return $this->getApplication();
     } // }}}
 
     /**
