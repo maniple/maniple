@@ -35,4 +35,14 @@ class Maniple_Application_Bootstrap_Bootstrap
         $this->getPluginResource('modules')->bootstrapModule($module);
         return $this;
     } // }}}
+
+
+    protected function _bootstrap($resource = null)
+    {
+        if ($resource === null && $this->hasPluginResource('modules')) {
+            $modules = $this->getPluginResource('modules');
+            $modules->preInit(); // to powinno zaktualizować config
+        }
+        return parent::_bootstrap($resource);
+    }
 }

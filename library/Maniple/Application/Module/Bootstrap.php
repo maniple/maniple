@@ -137,14 +137,14 @@ abstract class Maniple_Application_Module_Bootstrap
      */
     protected function _bootstrap($resource = null) // {{{
     {
-        // ensure all dependencies are bootstrapped before bootstrapping
-        // any local resources
-        $this->_bootstrapModuleDeps();
-
         // ensure front controller resource is registered
         if ($resource === null && !$this->hasResource('FrontController')) {
             $this->registerPluginResource('FrontController');
         }
+
+        // ensure all dependencies are bootstrapped before bootstrapping
+        // any local resources
+        $this->_bootstrapModuleDeps();
 
         parent::_bootstrap($resource);
 
