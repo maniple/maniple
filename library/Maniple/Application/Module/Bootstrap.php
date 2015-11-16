@@ -7,8 +7,7 @@
  * @author xemlock
  */
 abstract class Maniple_Application_Module_Bootstrap
-    extends Zend_Application_Module_Bootstrap
-    implements Zefram_Application_Bootstrap_Bootstrapper
+    extends Zefram_Application_Module_Bootstrap
 {
     /**
      * @var string
@@ -55,28 +54,10 @@ abstract class Maniple_Application_Module_Bootstrap
     } // }}}
 
     /**
-     * {@inheritdoc}
-     *
-     * @param  Zend_Application|Zend_Application_Bootstrap_Bootstrapper $application
-     * @return Maniple_Application_Module_Bootstrap
-     */
-    public function setApplication($application) // {{{
-    {
-        parent::setApplication($application);
-
-        // use same resource container as parent bootstrap
-        $bootstrap = $this->getParentBootstrap();
-        if ($bootstrap instanceof Zend_Application_Bootstrap_BootstrapAbstract) {
-            $this->setContainer($bootstrap->getContainer());
-        }
-
-        return $this;
-    } // }}}
-
-    /**
      * Retrieves parent bootstrap.
      *
      * @return Zend_Application_Bootstrap_Bootstrapper|null
+     * @deprecated Use {@link getApplication()} instead
      */
     public function getParentBootstrap() // {{{
     {
@@ -148,17 +129,6 @@ abstract class Maniple_Application_Module_Bootstrap
     public function hasModuleManager() // {{{
     {
         return (bool) $this->_moduleManager;
-    } // }}}
-
-    /**
-     * Is class resource available.
-     *
-     * @param  string $resource
-     * @return bool
-     */
-    public function hasClassResource($resource) // {{{
-    {
-        return method_exists($this, '_init' . $resource);
     } // }}}
 
     /**
