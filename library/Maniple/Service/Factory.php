@@ -8,6 +8,8 @@ use Zend\ServiceManager\ServiceLocatorInterface;
  */
 class Maniple_Service_Factory implements AbstractFactoryInterface
 {
+    const BOOTSTRAP_KEY = 'Zf1Module\Bootstrap';
+
     /**
      * @var array
      */
@@ -21,8 +23,11 @@ class Maniple_Service_Factory implements AbstractFactoryInterface
     {
         $configKey = spl_object_hash($serviceLocator);
         if (!isset($this->_configs[$configKey])) {
-            $config = $serviceLocator->has('Config') ? $serviceLocator->get('Config') : array();
-            $config = array_change_key_case($config);
+            /** @var $modules \Maniple_Application_Resource_Modules */
+            $modules = $serviceLocator->get(self::BOOTSTRAP_KEY)->getPluginResource('modules');
+            $config = $modules->getResourceConfig();
+            $config = array_change_key_case($config, CASE_LOWER);
+
             $this->_configs[$configKey] = $config;
         }
         return $this->_configs[$configKey];
@@ -70,7 +75,7 @@ class Maniple_Service_Factory implements AbstractFactoryInterface
             if (substr($resourceConfig, 0, 9) === 'resource:') {
                 $resourceConfig = substr($resourceConfig, 9);
             }
-            return $serviceLocator->get('Bootstrap')->getResource($resourceConfig);
+            return $serviceLocator->get(self::BOOTSTRAP_KEY)->getResource($resourceConfig);
         }
 
         if (!is_array($resourceConfig) || !isset($resourceConfig['class'])) {
@@ -95,7 +100,7 @@ class Maniple_Service_Factory implements AbstractFactoryInterface
 
         foreach ($params as $key => $value) {
             if (is_string($value) && !strncasecmp($value, 'resource:', 9)) {
-                $params[$key] = $serviceLocator->get('Bootstrap')->getResource(substr($value, 9));
+                $params[$key] = $serviceLocator->get(self::BOOTSTRAP_KEY)->getResource(substr($value, 9));
             }
             // recursively replace arrays with 'class' key with instances of
             // matching classes
