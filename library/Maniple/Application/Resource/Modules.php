@@ -212,6 +212,7 @@ class Maniple_Application_Resource_Modules
         $bootstrap = $this->getBootstrap();
         $resources = array();
 
+        // TODO use module configs from bootstrap
         foreach ($this->_modules as $moduleName => $moduleInfo) {
             $moduleBootstrap = $moduleInfo['bootstrap'];
             $moduleOptions = $this->getOption($moduleName);
@@ -247,7 +248,16 @@ class Maniple_Application_Resource_Modules
             $resources = $this->mergeOptions($resources, $resourcesConfig);
         }
 
+        $resources = array_change_key_case($resources, CASE_LOWER);
+
         $this->_resourceConfig = $resources;
+        foreach ($resources as $resource => $resConfig) {
+            $container = $this->getBootstrap()->getContainer();
+            if (!isset($container->{$resource})) {
+                $container->{$resource} = $resConfig;
+            }
+        }
+
         // echo '<pre>';print_r($resources);exit;
     }
 
