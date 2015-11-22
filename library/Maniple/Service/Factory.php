@@ -25,10 +25,15 @@ class Maniple_Service_Factory implements AbstractFactoryInterface
         if (!isset($this->_configs[$configKey])) {
             /** @var $modules \Maniple_Application_Resource_Modules */
             $modules = $serviceLocator->get(self::BOOTSTRAP_KEY)->getPluginResource('modules');
-            $config = $modules->getResourceConfig();
+            $resourceConfig = $modules->getResourceConfig();
+            $resourceConfig = array_change_key_case($resourceConfig, CASE_LOWER);
+
+            $config = $serviceLocator->has('Config') ? $serviceLocator->get('Config') : array();
             $config = array_change_key_case($config, CASE_LOWER);
 
-            $this->_configs[$configKey] = $config;
+            $mergedConfig = \Zend\Stdlib\ArrayUtils::merge($resourceConfig, $config);
+
+            $this->_configs[$configKey] = $mergedConfig;
         }
         return $this->_configs[$configKey];
     }
