@@ -15,6 +15,12 @@ class Maniple_Application_Module_Task_Translations
             $parentBootstrap = $bootstrap;
         }
 
+        if (!$parentBootstrap->hasPluginResource('translate')
+            && !$parentBootstrap->hasClassResource('translate')
+        ) {
+            return;
+        }
+
         $translate = $parentBootstrap->bootstrap('translate')->getResource('translate');
         $locale = $translate->getLocale();
 
