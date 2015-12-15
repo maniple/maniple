@@ -25,11 +25,6 @@ class Maniple_Application_Resource_Modules
     const STATE_BOOTSTRAPPED  = 2;
 
     /**
-     * @var Zend_Loader_StandardAutoloader
-     */
-    protected $_autoloader;
-
-    /**
      * @var array
      */
     protected $_modules;
@@ -185,24 +180,19 @@ class Maniple_Application_Resource_Modules
      */
     protected function _initAutoloader() // {{{
     {
-        if ($this->_autoloader === null) {
-            // The default Zend_Application autoloader (Zend_Loader_Autoloader)
-            // is initialized in the Zend_Application constructor.
-            // This autoloader is a simple one, which only mapps _ and \\
-            // to directory separators and utilizes include paths.
-            // To load classes within modules we need something more sophisticated.
-            $this->_autoloader = new Zend_Loader_StandardAutoloader();
-            $this->_autoloader->register(); // add to autoload stack
-        }
-
         // add libary dir to include path, see:
         // http://stackoverflow.com/questions/13377983/zend-framework-module-library
         foreach ($this->_modules as $module => $moduleInfo) {
             $path = $moduleInfo['path'] . '/library';
 
             if (is_dir($path)) {
-                $this->_autoloader->registerPrefix($moduleInfo['prefix'] . '_', $path);
-                // set_include_path($path . PATH_SEPARATOR . get_include_path());
+                Zend_Loader_AutoloaderFactory::factory(array(
+                    'Zend_Loader_StandardAutoloader' => array(
+                        'prefixes' => array(
+                            $moduleInfo['prefix'] . '_' => $path,
+                        ),
+                    ),
+                ));
             }
         }
     } // }}}
