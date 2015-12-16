@@ -288,8 +288,12 @@ function maniple_module_install($path, $symlink = true)
 
     $assets_path = $path . '/public';
     if (is_dir($assets_path)) {
+        echo "Linking public assets\n";
+        @mkdir('public/modules', 0644, true);
+        maniple_symlink(realpath($assets_path), "public/modules/{$assets_dir_name}");
+
+        // deprecated
         @mkdir('public/assets', 0644, true);
-        echo "Linking assets\n";
         maniple_symlink(realpath($assets_path), "public/assets/{$assets_dir_name}");
     } else {
         $assets_path = $path . '/assets';
@@ -299,7 +303,17 @@ function maniple_module_install($path, $symlink = true)
             echo "Linking assets\n";
             maniple_symlink(realpath($assets_path), "public/assets/{$assets_dir_name}");
         } else {
-            echo "assets directory not found: $assets_path\n";
+            echo "[assets] public directory not found\n";
+        }
+    }
+
+    if (is_file($path . '/bower.json')) {
+        $bower = json_decode(file_get_contents($path . '/bower.json'), true);
+        if (isset($bower['dependencies'])) {
+            foreach ((array) $bower['dependencies'] as $package => $version) {
+                printf("[bower] Installing %s\n", "$package/$version");
+                `bower install "$package#$version"`;
+            }
         }
     }
 }
