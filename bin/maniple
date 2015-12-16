@@ -292,11 +292,24 @@ function maniple_module_install($path, $symlink = true)
     }
 
     if (is_file($path . '/bower.json')) {
+        static $installed_components;
+        if ($installed_components === null) {
+            foreach (glob('public/bower_components/*/bower.json') as $bower_json) {
+                $bower = json_decode(file_get_contents($bower_json), true);
+                $name = $bower['name'];
+                $installed_components[$name] = $name;
+            }
+        }
+
         $bower = json_decode(file_get_contents($path . '/bower.json'), true);
         if (isset($bower['dependencies'])) {
             foreach ((array) $bower['dependencies'] as $package => $version) {
-                printf("[bower] Installing %s\n", "$package/$version");
-                `bower install "$package#$version"`;
+                if (isset($installed_components[$package])) {
+                    printf("[bower] Package already installed %s\n", $package);
+                } else {
+                    printf("[bower] Installing %s\n", "$package/$version");
+                    `bower install "$package#$version"`;
+                }
             }
         }
     }
