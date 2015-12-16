@@ -307,8 +307,13 @@ function maniple_module_install($path, $symlink = true)
                 if (isset($installed_components[$package])) {
                     printf("[bower] Package already installed %s\n", $package);
                 } else {
-                    printf("[bower] Installing %s\n", "$package/$version");
-                    `bower install "$package#$version"`;
+                    if (preg_match('#^[a-z]+://#i', $version)) {
+                        $spec = $version; // url
+                    } else {
+                        $spec = "$package#$version";
+                    }
+                    printf("[bower] Installing %s\n", $spec);
+                    `bower install "$spec"`;
                 }
             }
         }
