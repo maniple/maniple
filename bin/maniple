@@ -85,7 +85,10 @@ function maniple_install()
         if (!is_dir($dirPath)) {
             continue;
         }
-        if (is_file($dirPath . '/Bootstrap.php') || is_file($dirPath . '/module/Bootstrap.php')) {
+        if (is_file($dirPath . '/Bootstrap.php') // ZF1 style module
+            || is_file($dirPath . '/module/Bootstrap.php')
+            || is_file($dirPath . '/Module.php') // ZF2 style module
+        ) {
             maniple_module_install($dirPath);
         }
     }
@@ -270,25 +273,26 @@ function maniple_module_install($path, $symlink = true)
 
     $assets_dir_name = empty($module_config['assetsDirName']) ? $module_dir_name : basename($module_config['assetsDirName']);
 
-    $assets_path = $path . '/public';
-    if (is_dir($assets_path)) {
-        echo "Linking public assets\n";
-        @mkdir('public/modules', 0755, true);
-        maniple_symlink(realpath($assets_path), "public/modules/{$assets_dir_name}");
-
-        // deprecated
-        @mkdir('public/assets', 0755, true);
-        maniple_symlink(realpath($assets_path), "public/assets/{$assets_dir_name}");
-    } else {
-        $assets_path = $path . '/assets';
+    $publicAssetsFound = false;
+    $publicAssetsDirs = array('resource/public', 'resources/public', 'public', 'assets');
+    foreach ($publicAssetsDirs as $publicAssetsDir) {
+        $assets_path = $path . '/' . $publicAssetsDir;
 
         if (is_dir($assets_path)) {
+            echo "Linking public assets\n";
+            @mkdir('public/modules', 0755, true);
+            maniple_symlink(realpath($assets_path), "public/modules/{$assets_dir_name}");
+
+            // deprecated
             @mkdir('public/assets', 0755, true);
-            echo "Linking assets\n";
             maniple_symlink(realpath($assets_path), "public/assets/{$assets_dir_name}");
-        } else {
-            echo "[assets] public directory not found\n";
+
+            $publicAssetsFound = true;
+            break;
         }
+    }
+    if (!$publicAssetsFound) {
+        echo "[assets] public directory not found\n";
     }
 
     if (is_file($path . '/bower.json')) {
