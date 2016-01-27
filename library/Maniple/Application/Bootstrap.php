@@ -39,14 +39,6 @@ class Maniple_Application_Bootstrap
             ini_set('default_charset', 'UTF-8');
         }
 
-        $temp_dir = realpath(APPLICATION_PATH . '/../variable/temp');
-
-        // determination of a temporary directory in ZF is inconsistent,
-        // temporary directory must be set via these Env variables
-        foreach (array('TMPDIR', 'TEMP', 'TMP') as $key) {
-            Zefram_Os::setEnv($key, $temp_dir);
-	    }
-
         Zend_Loader_PluginLoader::setIncludeFileCache(APPLICATION_PATH . '/../variable/cache/PluginLoader');
     }
 
