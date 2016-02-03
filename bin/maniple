@@ -1,3 +1,4 @@
+
 #!/usr/bin/env php
 <?php
 
@@ -70,6 +71,8 @@ echo "\n";
 
 function maniple_install()
 {
+    maniple_init();
+
     if (is_file('maniple.json')) {
         $config = (array) json_decode(file_get_contents('maniple.json'), true);
         if (isset($config['modules'])) {
@@ -114,20 +117,17 @@ function maniple_init($baseDir = null) {
         'application/configs' => false,
         'application/modules' => false,
 
-        'vendor'            => false,
+        'data'          => false,
+        'data/cache'    => true,
+        'data/doctrine' => true,
+        'data/logs'     => true,
+        'data/mail'     => true,
+        'data/sessions' => true,
+        'data/temp'     => true,
+        'data/twig'     => true,
+        'data/storage'  => true,
 
-        'storage'           => true,
-
-        'variable'          => false,
-        'variable/cache'    => true,
-        'variable/logs'     => true,
-        'variable/mail'     => true,
-        'variable/sessions' => true,
-        'variable/temp'     => true,
-        'variable/twig'     => true,
-
-        'public'            => false,
-        'public/assets'     => false,
+        'public'        => false,
     );
     foreach ($dirs as $name => $writable) {
         $dirpath = $baseDir . DS . $name;
