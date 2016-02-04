@@ -33,9 +33,57 @@ class {$modulePrefix}_Bootstrap extends Maniple_Application_Module_Bootstrap
         return require dirname(__FILE__) . '/configs/resource.config.php';
     }
 
-    public function getRouteConfig()
+    /**
+     * Register autoloader paths
+     */
+    protected function _initAutoloader()
     {
-        return require dirname(__FILE__) . '/configs/route.config.php';
+        Zend_Loader_AutoloaderFactory::factory(array(
+            'Zend_Loader_StandardAutoloader' => array(
+                'prefixes' => array(
+                    '{$modulePrefix}_' => dirname(__FILE__) . '/library/',
+                ),
+            ),
+        ));
+    }
+
+    /**
+     * Register module routes
+     */
+    protected function _initRouter()
+    {
+        /** @var Zend_Application_Bootstrap_BootstrapAbstract \$bootstrap */
+        \$bootstrap = \$this->getApplication();
+        \$bootstrap->bootstrap('FrontController');
+
+        /** @var Zend_Controller_Router_Rewrite \$router */
+        \$router = \$bootstrap->getResource('FrontController')->getRouter();
+        \$router->addConfig(new Zend_Config(require dirname(__FILE__) . '/configs/routes.config.php'));
+    }
+
+    /**
+     * Register view helper paths
+     */
+    protected function _initView()
+    {
+        /** @var Zend_Application_Bootstrap_BootstrapAbstract \$bootstrap */
+        \$bootstrap = \$this->getApplication();
+        \$bootstrap->bootstrap('View');
+
+        /** @var Zend_View_Abstract \$view */
+        \$view = \$bootstrap->getResource('View');
+        \$view->addHelperPath(dirname(__FILE__) . '/library/View/Helper/', '{$modulePrefix}_View_Helper_');
+    }
+
+    /**
+     * Setup view path spec
+     */
+    protected function _initViewRenderer()
+    {
+        /** @var Zefram_Controller_Action_Helper_ViewRenderer \$viewRenderer */
+        \$viewRenderer = Zend_Controller_Action_HelperBroker::getStaticHelper('ViewRenderer');
+        \$viewRenderer->setViewScriptPathSpec(':module/:controller/:action.:suffix', '{$moduleName}');
+        \$viewRenderer->setViewSuffix('twig', '{$moduleName}');
     }
 }
 ";
@@ -46,11 +94,11 @@ class {$modulePrefix}_Bootstrap extends Maniple_Application_Module_Bootstrap
         // generate empty config files
         @mkdir($moduleDir . '/configs');
 
+        if (!file_exists($moduleDir .'/configs/routes.config.php')) {
+            file_put_contents($moduleDir .'/configs/routes.config.php', "<?php return array(\n    // Module routes config\n);");
+        }
         if (!file_exists($moduleDir .'/configs/resource.config.php')) {
             file_put_contents($moduleDir .'/configs/resource.config.php', "<?php return array(\n    // Module resources config\n);");
-        }
-        if (!file_exists($moduleDir .'/configs/route.config.php')) {
-            file_put_contents($moduleDir .'/configs/route.config.php', "<?php return array(\n    // Module routes config\n);");
         }
 
         // generate library/ here all autoload classes will be stored
@@ -87,13 +135,47 @@ class {$modulePrefix}_Bootstrap extends Maniple_Application_Module_Bootstrap
         </whitelist>
     </filter>
 </phpunit>
+
 END;
-
-        @mkdir($dir . '/tests');
-
         $configPath = $dir . '/phpunit.xml.dist';
         if (!file_exists($configPath)) {
             file_put_contents($configPath, $xml);
+        }
+
+        @mkdir($dir . '/tests');
+
+        // prepare tests bootstrap file
+        $testsBootstrap = $dir . '/tests/bootstrap.php';
+        if (!file_exists($testsBootstrap)) {
+            file_put_contents($testsBootstrap, <<<END
+<?php
+
+error_reporting(E_ALL | E_STRICT);
+ini_set('display_startup_errors', 1);
+ini_set('display_errors', 1);
+
+// find autoload.php moving upwards, so that tests can be executed
+// even if the library itself lies in the vendor/ directory of another
+// project
+
+\$dir = dirname(__FILE__);
+\$autoload = null;
+
+while (\$parent = \$dir . '/..') {
+    if (file_exists(\$path = \$parent . '/vendor/autoload.php')) {
+        \$autoload = \$path;
+        break;
+    }
+    \$dir = \$parent;
+}
+if (empty(\$autoload)) {
+    die('Unable to find autoload.php');
+}
+
+require_once \$autoload;
+
+END
+            );
         }
     }
 }
