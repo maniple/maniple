@@ -28,7 +28,13 @@ abstract class Maniple_Security_ContextAbstract implements Maniple_Security_Cont
                 'Superuser ID must not be empty'
             );
         }
-        $this->_superUserIds[] = $this->_transformId($superUserId);
+        if (is_array($superUserId) || $superUserId instanceof Traversable) {
+            foreach ($superUserId as $userId) {
+                $this->addSuperUserId($userId);
+            }
+        } else {
+            $this->_superUserIds[] = $this->_transformId($superUserId);
+        }
         return $this;
     } // }}}
 
@@ -139,9 +145,6 @@ abstract class Maniple_Security_ContextAbstract implements Maniple_Security_Cont
      */
     protected function _transformId($id) // {{{
     {
-        if (is_array($id)) {
-            return array_map(array($this, __FUNCTION__), $id);
-        }
         if (is_float($id)) {
             $id = sprintf('%F', $id);
         }
