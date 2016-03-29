@@ -63,10 +63,16 @@ class Maniple_Application_Resource_Modules
         return $this;
     }
 
+    public function getModulesDirectory()
+    {
+        /** @var Zend_Controller_Front $front */
+        $front = $this->getBootstrap()->getResource('FrontController');
+        $modulesDir = array_values(array_unique(array_map('dirname', array_map('dirname', $front->getControllerDirectory()))));
+        return $modulesDir;
+    }
+
     /**
      * Builds a list of available modules.
-     *
-     * @return void
      */
     protected function _initModules()
     {
@@ -76,40 +82,51 @@ class Maniple_Application_Resource_Modules
         /** @var $front Zend_Controller_Front */
         $front = $bootstrap->getResource('FrontController');
 
-        // Module detection (in Zend_Controller_Front::addModuleDirectory())
-        // requires that each module contains controllers/ directory.
-        $modules = array_map('dirname', $front->getControllerDirectory());
+
+        $modulePaths = array();
+
+        foreach ($this->getOptions() as $key => $value) {
+            if (is_string($value)) {
+                $modulePaths[$value] = null;
+            } elseif (is_string($key)) {
+                $modulePaths[$key] = null;
+            }
+        }
+        if (!$modulePaths) {
+            // Module detection (in Zend_Controller_Front::addModuleDirectory())
+            // requires that each module contains controllers/ directory.
+            $modulePaths = array_map('dirname', $front->getControllerDirectory());
+        }
 
         $default = $front->getDefaultModule();
-
         $curBootstrapClass = get_class($bootstrap);
-
         $bootstraps = array();
 
-        foreach ($modules as $module => $modulePath) {
-            if (!is_dir($modulePath)) {
-                throw new Exception(sprintf(
-                    'Module directory "%s" does not exist', $modulePath
-                ));
-            }
-
-            // Do not initialize module if module options are set to FALSE
-            if (isset($options[$module]) && ($options[$module] === false)) {
-                continue;
-            }
-
-            $modulePath = realpath($modulePath);
-            // modules should reside in the module/ subdirectory
-            // if controllers directory exists, add it to front controller, as
-            // otherwise it would not be found by the dispatcher
-            if (file_exists($modulePath . '/module')) {
-                $modulePath .= '/module';
-            }
-
+        foreach ($modulePaths as $module => $modulePath) {
             $modulePrefix = $this->_formatModuleName($module);
             $bootstrapClass = $modulePrefix . '_Bootstrap';
 
-            if (!class_exists($bootstrapClass, false)) {
+            if (class_exists($bootstrapClass, false)) {
+                if ($modulePath === null) {
+                    $ref = new ReflectionClass($bootstrapClass);
+                    $modulePaths[$module] = $modulePath = dirname($ref->getFileName());
+                }
+            } else {
+                if ($modulePath === null) {
+                    foreach ($this->getModulesDirectory() as $dir) {
+                        if (is_dir($dir . '/' . $module)) {
+                            $modulePath = $dir . '/' . $module;
+                            $modulePaths[$module] = $modulePath;
+                            break;
+                        }
+                    }
+                }
+                if (!is_dir($modulePath)) {
+                    throw new Exception(sprintf(
+                        'Unable to find directory for module "%s"', $module
+                    ));
+                }
+
                 $bootstrapPath  = $modulePath . '/Bootstrap.php';
                 if (file_exists($bootstrapPath)) {
                     $eMsgTpl = 'Bootstrap file found for module "%s" but bootstrap class "%s" not found';
@@ -120,7 +137,7 @@ class Maniple_Application_Resource_Modules
                         throw new Zend_Application_Resource_Exception(sprintf(
                             $eMsgTpl, $module, $bootstrapClass
                         ));
-                    } elseif ($default == $module) {
+                    } elseif ($default === $module) {
                         if (!class_exists($bootstrapClass, false)) {
                             $bootstrapClass = 'Bootstrap';
                             if (!class_exists($bootstrapClass, false)) {
@@ -159,13 +176,8 @@ class Maniple_Application_Resource_Modules
                 'bootstrap' => $moduleBootstrap,
                 'bootstrapClass' => $bootstrapClass,
                 'state' => self::STATE_DEFAULT,
-                'stackIndex' => isset($options['stackIndex']) ?
-                    (int) $options['stackIndex']
-                    : 0,
             );
         }
-
-        // TODO sort modules by stackIndex
 
         $this->_modules = $bootstraps;
         $this->_bootstraps = new ArrayObject(array(), ArrayObject::ARRAY_AS_PROPS);
