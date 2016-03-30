@@ -106,7 +106,9 @@ class Maniple_Application_Resource_Modules
             $modulePrefix = $this->_formatModuleName($module);
             $bootstrapClass = $modulePrefix . '_Bootstrap';
 
-            if (class_exists($bootstrapClass, false)) {
+            // use autoloading - so that modules residing in other locations, but accessible
+            // to autoloader can be taken into account
+            if (class_exists($bootstrapClass, true)) {
                 if ($modulePath === null) {
                     $ref = new ReflectionClass($bootstrapClass);
                     $modulePaths[$module] = $modulePath = dirname($ref->getFileName());
