@@ -61,6 +61,10 @@ try {
             $action = new Maniple_Cli_Action_CreateModuleAction();
             $action->run($action_args);
             break;
+
+        case 'db:dump':
+            maniple_db_dump(@$args[2]);
+            break;
     }
 } catch (Maniple_Cli_Action_Exception $e) {
     echo "[ FAIL ] ", $e->getAction()->getName(), ": ", $e->getMessage(), "\n";
@@ -414,4 +418,46 @@ require_once VENDOR_PATH . '/autoload.php';
 );
 \$application->bootstrap()->run();
 ";
+}
+
+function maniple_db_dump($output)
+{
+    $config = require './application/configs/config.php';
+
+    $host = $config['db']['params']['host'];
+    $dbname = $config['db']['params']['dbname'];
+    $username = $config['db']['params']['username'];
+    $password = $config['db']['params']['password'];
+
+    if (empty($output)) {
+        $output = 'data/db_dumps';
+        if (!is_dir($output)) {
+            mkdir($output, 0777, true);
+        }
+    }
+
+    if (is_dir($output)) {
+        $output = sprintf('%s/%s-%s.sql', rtrim($output, '/'), $dbname, date('Ymd-His'));
+    }
+
+    switch ($config['db']['adapter']) {
+        case 'PDO_MYSQL':
+            $cnf = Zefram_Os::getTempDir() . '/' . md5(mt_rand()) . '.cnf';
+            file_put_contents($cnf, "[client]\nhost=$host\nuser=$username\npassword=$password\n[mysqldump]\ncomplete-insert\ndefault-character-set=utf8\nset-charset\n");
+
+            $outputEscaped = escapeshellarg($output);
+            $result = system("mysqldump --defaults-extra-file=$cnf --no-create-db=TRUE $dbname > $outputEscaped", $retval);
+            unlink($cnf);
+
+            if (!$retval) {
+                echo '[  OK  ] Output written to: ', $output, "\n";
+            } else {
+                echo '[ FAIL ] Dumping database failed.', "\n", $result;
+            }
+            break;
+
+        default:
+            die('Unsupported database adapter');
+    }
+    exit;    
 }
