@@ -25,9 +25,22 @@ class Maniple_Application_Resource_Modules
     const STATE_BOOTSTRAPPED  = 2;
 
     /**
+     * Module paths registered in front controller
      * @var array
      */
-    protected $_modules;
+    protected $_modulePaths;
+
+    /**
+     * Loaded modules data
+     * @var array
+     */
+    protected $_loadedModules;
+
+    /**
+     * Used for resolving bootstraping order
+     * @var array
+     */
+    protected $_stackIndexCounter = 0;
 
     /**
      * @var ArrayObject
@@ -51,7 +64,7 @@ class Maniple_Application_Resource_Modules
     public function preInit()
     {
         if ($this->_configured) {
-            return;
+            return $this;
         }
 
         $this->_initModules();
@@ -65,8 +78,10 @@ class Maniple_Application_Resource_Modules
 
     public function getModulesDirectory()
     {
+        /** @var Zend_Application_Bootstrap_BootstrapAbstract $bootstrap */
+        $bootstrap = $this->getBootstrap();
         /** @var Zend_Controller_Front $front */
-        $front = $this->getBootstrap()->getResource('FrontController');
+        $front = $bootstrap->getResource('FrontController');
         $modulesDir = array_values(array_unique(array_map('dirname', array_map('dirname', $front->getControllerDirectory()))));
         return $modulesDir;
     }
@@ -76,114 +91,196 @@ class Maniple_Application_Resource_Modules
      */
     protected function _initModules()
     {
+        /** @var Zend_Application_Bootstrap_BootstrapAbstract $bootstrap */
         $bootstrap = $this->getBootstrap();
         $bootstrap->bootstrap('FrontController');
 
         /** @var $front Zend_Controller_Front */
         $front = $bootstrap->getResource('FrontController');
 
+        // Module detection (in Zend_Controller_Front::addModuleDirectory())
+        // requires that each module contains controllers/ directory.
+        $this->_modulePaths = array_map('dirname', $front->getControllerDirectory());
 
-        $modulePaths = array();
+        // Prepare a list of modules to load
+        // If no explicit list is provided load all modules detected in front controller's
+        // controller directories
+        $toLoad = array();
 
         foreach ($this->getOptions() as $key => $value) {
             if (is_string($value)) {
-                $modulePaths[$value] = null;
+                $toLoad[] = $value;
             } elseif (is_string($key)) {
-                $modulePaths[$key] = null;
+                // legacy feature, will be removed, module options must be provided
+                // directly under module prefix key in config
+                $toLoad[] = $key;
             }
         }
-        if (!$modulePaths) {
-            // Module detection (in Zend_Controller_Front::addModuleDirectory())
-            // requires that each module contains controllers/ directory.
-            $modulePaths = array_map('dirname', $front->getControllerDirectory());
+        if (!$toLoad) {
+            $toLoad = array_keys($this->_modulePaths);
         }
 
-        $default = $front->getDefaultModule();
-        $curBootstrapClass = get_class($bootstrap);
-        $bootstraps = array();
-
-        foreach ($modulePaths as $module => $modulePath) {
-            $modulePrefix = $this->_formatModuleName($module);
-            $bootstrapClass = $modulePrefix . '_Bootstrap';
-
-            // use autoloading - so that modules residing in other locations, but accessible
-            // to autoloader can be taken into account
-            if (class_exists($bootstrapClass, true)) {
-                if ($modulePath === null) {
-                    $ref = new ReflectionClass($bootstrapClass);
-                    $modulePaths[$module] = $modulePath = dirname($ref->getFileName());
-                }
-            } else {
-                if ($modulePath === null) {
-                    foreach ($this->getModulesDirectory() as $dir) {
-                        if (is_dir($dir . '/' . $module)) {
-                            $modulePath = $dir . '/' . $module;
-                            $modulePaths[$module] = $modulePath;
-                            break;
-                        }
-                    }
-                }
-                if (!is_dir($modulePath)) {
-                    throw new Exception(sprintf(
-                        'Unable to find directory for module "%s"', $module
-                    ));
-                }
-
-                $bootstrapPath  = $modulePath . '/Bootstrap.php';
-                if (file_exists($bootstrapPath)) {
-                    $eMsgTpl = 'Bootstrap file found for module "%s" but bootstrap class "%s" not found';
-                    include_once $bootstrapPath;
-                    if (($default != $module)
-                        && !class_exists($bootstrapClass, false)
-                    ) {
-                        throw new Zend_Application_Resource_Exception(sprintf(
-                            $eMsgTpl, $module, $bootstrapClass
-                        ));
-                    } elseif ($default === $module) {
-                        if (!class_exists($bootstrapClass, false)) {
-                            $bootstrapClass = 'Bootstrap';
-                            if (!class_exists($bootstrapClass, false)) {
-                                throw new Zend_Application_Resource_Exception(sprintf(
-                                    $eMsgTpl, $module, $bootstrapClass
-                                ));
-                            }
-                        }
-                    }
-                } else {
-                    continue;
-                }
-            }
-
-            if ($bootstrapClass === $curBootstrapClass) {
-                // If the found bootstrap class matches the one calling this
-                // resource, don't re-execute.
-                continue;
-            }
-
-            $moduleBootstrap = new $bootstrapClass($this->getBootstrap());
-
-            if ($moduleBootstrap instanceof Maniple_Application_Module_Bootstrap) {
-                $moduleBootstrap->setModuleManager($this);
-            }
-
-            // add controllers directory without checking if it exists
-            // - the way a module directory is retrieved from front controller
-            // depends on whether module's controller directory is added to
-            // dispatcher (not the module directory itself)
-            $front->addControllerDirectory($modulePath . '/controllers', $module);
-
-            $bootstraps[$module] = array(
-                'prefix' => $modulePrefix,
-                'path' => $modulePath,
-                'bootstrap' => $moduleBootstrap,
-                'bootstrapClass' => $bootstrapClass,
-                'state' => self::STATE_DEFAULT,
-            );
+        // load modules
+        foreach ($toLoad as $module) {
+            $this->loadModule($module);
         }
 
-        $this->_modules = $bootstraps;
+        $this->_sortLoadedModules();
+
         $this->_bootstraps = new ArrayObject(array(), ArrayObject::ARRAY_AS_PROPS);
     }
+
+    /**
+     * List of module names not yet processed
+     * @var
+     */
+    protected $_queue;
+
+    protected function _sortLoadedModules()
+    {
+        while ($module = array_shift($this->_queue)) {
+            $this->_depVisitor($module);
+        }
+        uasort($this->_loadedModules, array($this, '_sortLoadedModulesCompare'));
+    }
+
+    /**
+     * @param $a
+     * @param $b
+     * @internal
+     */
+    protected function _sortLoadedModulesCompare($a, $b)
+    {
+        // sort descending by stackIndex
+        return $a->stackIndex - $b->stackIndex;
+    }
+
+    public function loadModule($module)
+    {
+        if (isset($this->_loadedModules[$module])) {
+            return $this->_loadedModules[$module];
+        }
+
+        /** @var Zend_Application_Bootstrap_BootstrapAbstract $bootstrap */
+        $bootstrap = $this->getBootstrap();
+        /** @var $front Zend_Controller_Front */
+        $front = $bootstrap->getResource('FrontController');
+        $default = $front->getDefaultModule();
+
+        $modulePrefix = $this->_formatModuleName($module);
+        $bootstrapClass = $modulePrefix . '_Bootstrap';
+
+        $curBootstrapClass = get_class($this->getBootstrap());
+
+        // use autoloading - so that modules residing in other locations, but accessible
+        // to autoloader can be taken into account
+        if (class_exists($bootstrapClass, true)) {
+            $ref = new ReflectionClass($bootstrapClass);
+            $modulePaths[$module] = $modulePath = dirname($ref->getFileName());
+
+        } else {
+            if (isset($this->_modulePaths[$module])) {
+                $modulePath = $this->_modulePaths[$module];
+            } else {
+                foreach ($this->getModulesDirectory() as $dir) {
+                    if (is_dir($dir . '/' . $module)) {
+                        $modulePath = $dir . '/' . $module;
+                        break;
+                    }
+                }
+            }
+            if (empty($modulePath) || !is_dir($modulePath)) {
+                throw new Exception(sprintf(
+                    'Unable to find directory for module "%s"', $module
+                ));
+            }
+
+            $bootstrapPath  = $modulePath . '/Bootstrap.php';
+            if (file_exists($bootstrapPath)) {
+                $eMsgTpl = 'Bootstrap file found for module "%s" but bootstrap class "%s" not found';
+                include_once $bootstrapPath;
+                if (($default != $module)
+                    && !class_exists($bootstrapClass, false)
+                ) {
+                    throw new Zend_Application_Resource_Exception(sprintf(
+                        $eMsgTpl, $module, $bootstrapClass
+                    ));
+                } elseif ($default === $module) {
+                    if (!class_exists($bootstrapClass, false)) {
+                        $bootstrapClass = 'Bootstrap';
+                        if (!class_exists($bootstrapClass, false)) {
+                            throw new Zend_Application_Resource_Exception(sprintf(
+                                $eMsgTpl, $module, $bootstrapClass
+                            ));
+                        }
+                    }
+                }
+            } else {
+                return null;
+            }
+        }
+
+        if ($bootstrapClass === $curBootstrapClass) {
+            // If the found bootstrap class matches the one calling this
+            // resource, don't re-execute.
+            return null;
+        }
+
+        $moduleBootstrap = new $bootstrapClass($this->getBootstrap());
+
+        if ($moduleBootstrap instanceof Maniple_Application_Module_Bootstrap) {
+            $moduleBootstrap->setModuleManager($this);
+        }
+
+        // TODO move this on bootstrap for proper ordering
+        // add controllers directory without checking if it exists
+        // - the way a module directory is retrieved from front controller
+        // depends on whether module's controller directory is added to
+        // dispatcher (not the module directory itself)
+        $front->addControllerDirectory($modulePath . '/controllers', $module);
+
+        $moduleData = (object) array(
+            'prefix'         => $modulePrefix,
+            'path'           => $modulePath,
+            'bootstrap'      => $moduleBootstrap,
+            'bootstrapClass' => $bootstrapClass,
+            'state'          => self::STATE_DEFAULT,
+            'stackIndex'     => null,
+            'dependencies'   => method_exists($moduleBootstrap, 'getModuleDependencies')
+                ? (array) $moduleBootstrap->getModuleDependencies()
+                : array(),
+        );
+
+        $this->_loadedModules[$module] = $moduleData;
+        $this->_queue[] = $module;
+
+        foreach ($moduleData->dependencies as $dep) {
+            $this->loadModule($dep);
+        }
+
+        return $moduleData;
+    }
+
+    function _depVisitor($module)
+    {
+        $moduleData = $this->loadModule($module);
+        if (!$moduleData) {
+            throw new Exception('Unable to load module: ' . $module);
+        }
+        if (@$moduleData->depSortState === 'done') {
+            return;
+        }
+        if (@$moduleData->depSortState === 'processing') {
+            throw new Exception('Circular module dependency detected on module: ' . $module);
+        }
+        $moduleData->depSortState = 'processing';
+        foreach ($moduleData->dependencies as $name) {
+            $this->_depVisitor($name);
+        }
+        $moduleData->depSortState = 'done';
+        $moduleData->stackIndex = ++$this->_stackIndexCounter;
+    }
+
 
     /**
      * Initializes autoloader for classes withing modules.
@@ -191,19 +288,20 @@ class Maniple_Application_Resource_Modules
      * This autoloader maps Module_ClassName to module/library/ClassName.php
      *
      * @return void
+     * @deprecated
      */
     protected function _initAutoloader() // {{{
     {
         // add libary dir to include path, see:
         // http://stackoverflow.com/questions/13377983/zend-framework-module-library
-        foreach ($this->_modules as $module => $moduleInfo) {
-            $path = $moduleInfo['path'] . '/library';
+        foreach ($this->_loadedModules as $module => $moduleInfo) {
+            $path = $moduleInfo->path . '/library';
 
             if (is_dir($path)) {
                 Zend_Loader_AutoloaderFactory::factory(array(
                     'Zend_Loader_StandardAutoloader' => array(
                         'prefixes' => array(
-                            $moduleInfo['prefix'] . '_' => $path,
+                            $moduleInfo->prefix . '_' => $path,
                         ),
                     ),
                 ));
@@ -213,12 +311,13 @@ class Maniple_Application_Resource_Modules
 
     public function configResources()
     {
+        /** @var Zend_Application_Bootstrap_BootstrapAbstract $bootstrap */
         $bootstrap = $this->getBootstrap();
         $resources = array();
 
         // TODO use module configs from bootstrap
-        foreach ($this->_modules as $moduleName => $moduleInfo) {
-            $moduleBootstrap = $moduleInfo['bootstrap'];
+        foreach ($this->_loadedModules as $moduleName => $moduleInfo) {
+            $moduleBootstrap = $moduleInfo->bootstrap;
             $moduleOptions = $this->getOption($moduleName);
 
             // get resources defined via getResourcesConfig() method
@@ -256,7 +355,7 @@ class Maniple_Application_Resource_Modules
 
         $this->_resourceConfig = $resources;
         foreach ($resources as $resource => $resConfig) {
-            $container = $this->getBootstrap()->getContainer();
+            $container = $bootstrap->getContainer();
             if (!isset($container->{$resource})) {
                 $container->{$resource} = $resConfig;
             }
@@ -289,11 +388,13 @@ class Maniple_Application_Resource_Modules
 
     public function configRoutes()
     {
+        /** @var Zend_Application_Bootstrap_BootstrapAbstract $bootstrap */
         $bootstrap = $this->getBootstrap();
+        /** @var Zend_Controller_Router_Rewrite $router */
         $router = $bootstrap->getResource('frontController')->getRouter();
 
-        foreach ($this->_modules as $moduleName => $moduleInfo) {
-            $moduleBootstrap = $moduleInfo['bootstrap'];
+        foreach ($this->_loadedModules as $moduleName => $moduleInfo) {
+            $moduleBootstrap = $moduleInfo->bootstrap;
             $moduleOptions = $this->getOption($moduleName);
 
             // get routes defined by getRoutesConfig()
@@ -329,22 +430,24 @@ class Maniple_Application_Resource_Modules
 
     public function bootstrapModule($moduleName)
     {
-        if (!isset($this->_modules[$moduleName])) {
+        if (!isset($this->_loadedModules[$moduleName])) {
             throw new Exception('Invalid module name: ' . $moduleName);
         }
 
-        /** @var Zend_Application_Module_Bootstrap $moduleBootstrap */
-        $moduleBootstrap = $this->_modules[$moduleName]['bootstrap'];
+        $moduleInfo = $this->_loadedModules[$moduleName];
 
-        if ($this->_modules[$moduleName]['state'] === self::STATE_BOOTSTRAPPED) {
+        /** @var Zend_Application_Module_Bootstrap $moduleBootstrap */
+        $moduleBootstrap = $moduleInfo->bootstrap;
+
+        if ($moduleInfo->state === self::STATE_BOOTSTRAPPED) {
             return $moduleBootstrap;
         }
 
-        if ($this->_modules[$moduleName]['state'] === self::STATE_BOOTSTRAPPING) {
+        if ($moduleInfo->state === self::STATE_BOOTSTRAPPING) {
             throw new Exception('Cyclic module dependency detected; module ' . $moduleName . ' is during bootstrap process');
         }
 
-        $this->_modules[$moduleName]['state'] = self::STATE_BOOTSTRAPPING;
+        $moduleInfo->state = self::STATE_BOOTSTRAPPING;
 
         // bootstrap any built-in / plugin resources, they will be stored in
         // the common resource container
@@ -356,22 +459,18 @@ class Maniple_Application_Resource_Modules
             $moduleBootstrap->onBootstrap($this);
         }
 
-        $this->_modules[$moduleName]['state'] = self::STATE_BOOTSTRAPPED;
+        $moduleInfo->state = self::STATE_BOOTSTRAPPED;
         $this->_bootstraps{$moduleName} = $moduleBootstrap;
 
         return $moduleBootstrap;
     }
 
-    /**
-     * @param  array $bootstraps
-     * @return ArrayObject
-     */
     protected function _executeBootstraps()
     {
         // at this point all module resources should be registered in bootstrap
         $this->configRoutes();
 
-        foreach ($this->_modules as $module => $moduleInfo) {
+        foreach ($this->_loadedModules as $module => $moduleInfo) {
             $this->bootstrapModule($module);
         }
 
@@ -396,12 +495,12 @@ class Maniple_Application_Resource_Modules
         );
 
         if ($view instanceof Zend_View_Abstract) {
-            foreach ($this->_modules as $module => $moduleInfo) {
+            foreach ($this->_loadedModules as $module => $moduleInfo) {
                 foreach ($helperPaths as $path) {
-                    if (is_dir($moduleInfo['path'] . $path)) {
+                    if (is_dir($moduleInfo->path . $path)) {
                         $view->addHelperPath(
-                            $moduleInfo['path'] . $path,
-                            $moduleInfo['prefix'] . '_View_Helper_'
+                            $moduleInfo->path . $path,
+                            $moduleInfo->prefix . '_View_Helper_'
                         );
                     }
                 }
@@ -461,6 +560,7 @@ class Maniple_Application_Resource_Modules
     /**
      * @param  string|Maniple_Application_Module_Task_TaskInterface $task
      * @param  Maniple_Application_Module_Bootstrap $module
+     * @return mixed
      */
     public function runTask($task, Maniple_Application_Module_Bootstrap $module)
     {

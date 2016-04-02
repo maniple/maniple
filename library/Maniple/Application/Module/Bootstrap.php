@@ -24,7 +24,7 @@ abstract class Maniple_Application_Module_Bootstrap
      * Names of modules this module depends on
      * @var string[]
      */
-    protected $_moduleDeps;
+    protected $_moduleDeps = array();
 
     /**
      * Are all module dependencies bootstrapped?
@@ -180,4 +180,14 @@ abstract class Maniple_Application_Module_Bootstrap
             $this->getModuleManager()->runTask($task, $this);
         }
     } // }}}
+
+    /**
+     * Return an array of module names on which this module depends on
+     *
+     * @return string[]
+     */
+    public function getModuleDependencies()
+    {
+        return $this->_moduleDeps;
+    }
 }
