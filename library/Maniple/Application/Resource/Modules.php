@@ -222,21 +222,25 @@ class Maniple_Application_Resource_Modules
 
         if ($bootstrapClass === $curBootstrapClass) {
             // If the found bootstrap class matches the one calling this
-            // resource, don't re-execute.
-            return null;
+            // resource don't re-execute, but add to stack so that any
+            // dependencies can be properly handled
+            $moduleBootstrap = $this->getBootstrap();
+            $state = self::STATE_BOOTSTRAPPED;
+        } else {
+            $moduleBootstrap = new $bootstrapClass($this->getBootstrap());
+            $state = self::STATE_DEFAULT;
         }
 
-        $moduleBootstrap = new $bootstrapClass($this->getBootstrap());
-
+        // this feature is deprecated, use getModuleDependencies() instead
+        // of bootstrapping modules explicitly
         if ($moduleBootstrap instanceof Maniple_Application_Module_Bootstrap) {
             $moduleBootstrap->setModuleManager($this);
         }
 
-        // TODO move this on bootstrap for proper ordering
-        // add controllers directory without checking if it exists
+        // add module controllers/ directory without checking if it really exists
         // - the way a module directory is retrieved from front controller
         // depends on whether module's controller directory is added to
-        // dispatcher (not the module directory itself)
+        // dispatcher (not the module directory itself), regardless of its existence
         $front->addControllerDirectory($modulePath . '/controllers', $module);
 
         $moduleData = (object) array(
@@ -244,7 +248,7 @@ class Maniple_Application_Resource_Modules
             'path'           => $modulePath,
             'bootstrap'      => $moduleBootstrap,
             'bootstrapClass' => $bootstrapClass,
-            'state'          => self::STATE_DEFAULT,
+            'state'          => $state,
             'stackIndex'     => null,
             'dependencies'   => method_exists($moduleBootstrap, 'getModuleDependencies')
                 ? (array) $moduleBootstrap->getModuleDependencies()
