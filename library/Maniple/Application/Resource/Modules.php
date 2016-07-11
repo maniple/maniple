@@ -299,6 +299,8 @@ class Maniple_Application_Resource_Modules
         // add libary dir to include path, see:
         // http://stackoverflow.com/questions/13377983/zend-framework-module-library
         foreach ($this->_loadedModules as $module => $moduleInfo) {
+            if ($module === 'euhit-workflow') continue;
+
             $path = $moduleInfo->path . '/library';
 
             if (is_dir($path)) {
