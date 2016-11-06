@@ -9,6 +9,7 @@ $dir = dirname(__FILE__);
 $autoload = null;
 while ($dir !== ($parent = dirname($dir))) {
     if (is_file($autoload = $dir . '/vendor/autoload.php')) {
+        define('VENDOR_DIR', $dir . DS . 'vendor');
         require_once $autoload;
         break;
     }
@@ -300,11 +301,29 @@ function maniple_module_install($path, $symlink = true)
 
     if (is_file($path . '/bower.json')) {
         static $installed_components;
+
+        // .bower.json is always generated when installing a Bower package. It
+        // is a clone of bower.json with additional properties used internally.
+        // Also for non-registry packages there will be .bower.json, but no bower.json.
+        // Source: https://github.com/bower/bower/issues/1174
         if ($installed_components === null) {
-            foreach (glob('public/bower_components/*/bower.json') as $bower_json) {
+            foreach (glob('public/bower_components/*/.bower.json') as $bower_json) {
                 $bower = json_decode(file_get_contents($bower_json), true);
-                $name = $bower['name'];
-                $installed_components[$name] = $name;
+                $name = isset($bower['name']) ? $bower['name'] : null;
+
+                if (empty($name)) {
+                    $bower2_json = dirname($bower_json) . '/bower.json';
+                    if (file_exists($bower2_json)) {
+                        $bower = json_decode(file_get_contents($bower2_json), true);
+                    }
+                    $name = isset($bower['name']) ? $bower['name'] : null;
+                }
+
+                if (empty($name)) {
+                    $name = basename(dirname($bower_json));
+                }
+
+                $installed_components[$name] = dirname($bower_json);
             }
         }
 
@@ -319,12 +338,54 @@ function maniple_module_install($path, $symlink = true)
                     } else {
                         $spec = "$package#$version";
                     }
-                    printf("[bower] Installing %s\n", $spec);
-                    `bower install "$spec"`;
+                    bower_install($spec);
+                    $package_dir = 'public/bower_components/' . $package;
+                    echo 'package dir: ' . $package_dir, "\n";
+                    if (file_exists($package_dir . '/.bower.json')) {
+                        $installed_components[$package] = $package_dir;
+                    }
                 }
             }
         }
     }
+}
+
+/**
+ * Detect the available version of Bower
+ *
+ * @return string
+ */
+function bower_binary() {
+    $process = new Zefram_System_Process(array('bower', '--version'));
+    $process->run();
+    return trim($process->getOutput());
+}
+
+/**
+ * Install Bower package
+ *
+ * @param string $package
+ */
+function bower_install($package) {
+    static $bower_available = null;
+
+    if ($bower_available === null) {
+        $bower_available = bower_binary();
+        if ($bower_available) {
+            echo '[bower] Using Bower version ', $bower_available, "\n";
+        } else {
+            echo '[bower] Bower not detected, using bowerphp', "\n";
+        }
+    }
+
+    printf("[bower] Installing %s\n", $package);
+    echo shell_exec(sprintf(
+        "%s install %s 2>&1",
+        $bower_available
+            ? 'bower'
+            : VENDOR_DIR . DS . 'bin' . DS . 'bowerphp',
+        escapeshellarg($package)
+    ));
 }
 
 function maniple_symlink($source, $dest)
