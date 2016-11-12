@@ -55,7 +55,8 @@ try {
             break;
 
         case 'install':
-            maniple_install();
+            // maniple install [base_url]
+            maniple_install(isset($args[2]) ? $args[2] : '/');
             break;
 
         case 'create-module':
@@ -73,14 +74,14 @@ try {
 
 echo "\n";
 
-function maniple_install()
+function maniple_install($basePath)
 {
     maniple_init();
 
     if (is_file('maniple.json')) {
         $config = (array) json_decode(file_get_contents('maniple.json'), true);
         if (isset($config['modules'])) {
-            echo '[FAIL] Reference modules with composer, maniple.json file is deprecated', "\n";
+            echo '[ FAIL ] Reference modules with composer, maniple.json file is deprecated', "\n";
             return;
         }
     }
@@ -98,6 +99,15 @@ function maniple_install()
         ) {
             maniple_module_install($dirPath);
         }
+    }
+
+    // setup .htaccess
+    if (!is_file('.htaccess')) {
+        $basePath = '/' . trim($basePath, '/');
+        $htaccess = file_get_contents('.htaccess.in');
+        $htaccess = str_replace(array('@REWRITE_BASE@/', '@REWRITE_BASE@'), $basePath, $htaccess);
+        file_put_contents('.htaccess', $htaccess);
+        echo '[ DONE ] Written htaccess file', "\n";
     }
 }
 

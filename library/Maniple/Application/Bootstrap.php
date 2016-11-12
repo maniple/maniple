@@ -39,7 +39,10 @@ class Maniple_Application_Bootstrap
             ini_set('default_charset', 'UTF-8');
         }
 
-        Zend_Loader_PluginLoader::setIncludeFileCache(APPLICATION_PATH . '/../variable/cache/PluginLoader');
+        if (!file_exists($cacheDir = APPLICATION_PATH . '/../data/cache')) {
+            $cacheDir = APPLICATION_PATH . '/../variable/cache';
+        }
+        Zend_Loader_PluginLoader::setIncludeFileCache($cacheDir . '/PluginLoader');
     }
 
     /**
