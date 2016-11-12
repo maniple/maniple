@@ -131,21 +131,39 @@ function maniple_init($baseDir = null) {
         'application/configs' => false,
         'application/modules' => false,
 
-        'data'          => false,
-        'data/cache'    => true,
-        'data/doctrine' => true,
-        'data/logs'     => true,
-        'data/mail'     => true,
-        'data/sessions' => true,
-        'data/temp'     => true,
-        'data/twig'     => true,
-        'data/storage'  => true,
-
-        'public'        => false,
+        'public' => false,
     );
+
+    $dataRoot = 'data';
+    $dataDirs = array(
+        'cache',
+        'logs',
+        'mail',
+        'sessions',
+        'temp',
+        'twig',
+        'storage',
+    );
+
+    if (file_exists('maniple.json')) {
+        $overrides = (array) json_decode(file_get_contents('maniple.json'), true);
+        if (isset($overrides['data']['root'])) {
+            $dataRoot = $overrides['data']['root'];
+        }
+
+        if (isset($overrides['data']['directories'])) {
+            $dataDirs = array_merge($dataDirs, $overrides['data']['directories']);
+        }
+    }
+
+    $dirs[$dataRoot] = false;
+    foreach ($dataDirs as $dataDir) {
+        $dirs[$dataRoot . '/' . $dataDir] = true;
+    }
+
     foreach ($dirs as $name => $writable) {
         $dirpath = $baseDir . DS . $name;
-        echo substr(str_pad($dirpath, 70, '.'), -70);
+        echo substr(str_pad($name . ' ', 70, '.'), -70);
         if (!file_exists($dirpath)) {
             if (@mkdir($dirpath, 0755, true)) {
                 echo ' [  OK  ]', "\n";
