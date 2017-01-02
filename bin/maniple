@@ -29,6 +29,9 @@ if (count($args) < 2) {
 $action = $args[1];
 $action_args = array_slice($args, 2);
 
+
+
+
 try {
     switch ($action) {
         case 'init':
@@ -59,17 +62,24 @@ try {
             maniple_install(isset($args[2]) ? $args[2] : '/');
             break;
 
-        case 'create-module':
-            $action = new Maniple_Cli_Action_CreateModuleAction();
-            $action->run($action_args);
-            break;
-
         case 'db:dump':
             maniple_db_dump(@$args[2]);
             break;
+
+        case 'create-module':
+            throw new Exception('create-module action has been removed. Use \'maniple module create\' instead');
+
+        default:
+            $console = new Zefram_Tool_Framework_Client_Console(array(
+                'commandName'   => 'maniple',
+                'helpHeader'    => false,
+                'classesToLoad' => 'Maniple_Tool_Provider_Manifest',
+            ));
+            $console->dispatch();
+            break;
     }
-} catch (Maniple_Cli_Action_Exception $e) {
-    echo "[ FAIL ] ", $e->getAction()->getName(), ": ", $e->getMessage(), "\n";
+} catch (Exception $e) {
+    echo "[ FAIL ] ", $e->getMessage(), "\n";
 }
 
 echo "\n";
