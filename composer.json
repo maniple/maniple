@@ -11,7 +11,7 @@
     ],
     "require": {
         "xemlock/zefram": "dev-master",
-        "beelab/bowerphp": "^0.4.0"
+        "beelab/bowerphp": "^0.4.0 || dev-legacy"
     },
     "autoload": {
         "psr-0": {
