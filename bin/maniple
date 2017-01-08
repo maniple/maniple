@@ -458,7 +458,7 @@ function maniple_symlink($source, $dest)
     echo "[symlink] $dest -> $source\n";
     // don't rely on symlink as it fails on Windows
     // Warning: symlink(): Cannot create symlink, error code(1314)
-    if (stripos(PHP_OS, 'win') !== false) {
+    if (Zefram_Os::isWindows()) {
         `rmdir "$dest" 2>nul`;
         `mklink /J "$dest" "$source"`;
     } else {
