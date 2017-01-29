@@ -34,7 +34,7 @@ class Maniple_Application_Resource_Modules
      * Loaded modules data
      * @var array
      */
-    protected $_loadedModules;
+    protected $_loadedModules = array();
 
     /**
      * Used for resolving bootstraping order
@@ -103,22 +103,15 @@ class Maniple_Application_Resource_Modules
         $this->_modulePaths = array_map('dirname', $front->getControllerDirectory());
 
         // Prepare a list of modules to load
-        // If no explicit list is provided load all modules detected in front controller's
-        // controller directories
-        $toLoad = array();
+        // don't load modules explicitly given as FALSE
+        $modulePaths = $this->_modulePaths;
 
         foreach ($this->getOptions() as $key => $value) {
-            if (is_string($value)) {
-                $toLoad[] = $value;
-            } elseif (is_string($key)) {
-                // legacy feature, will be removed, module options must be provided
-                // directly under module prefix key in config
-                $toLoad[] = $key;
+            if ($value === false) {
+                unset($modulePaths[$module]);
             }
         }
-        if (!$toLoad) {
-            $toLoad = array_keys($this->_modulePaths);
-        }
+        $toLoad = array_keys($modulePaths);
 
         // load modules
         foreach ($toLoad as $module) {
@@ -134,7 +127,7 @@ class Maniple_Application_Resource_Modules
      * List of module names not yet processed
      * @var
      */
-    protected $_queue;
+    protected $_queue = array();
 
     protected function _sortLoadedModules()
     {
@@ -193,6 +186,13 @@ class Maniple_Application_Resource_Modules
                 throw new Exception(sprintf(
                     'Unable to find directory for module "%s"', $module
                 ));
+            }
+
+            // support for legacy modules whose files reside in the module/ subdirectory
+            // if controllers directory exists, add it to front controller, as
+            // otherwise it would not be found by the dispatcher
+            if (file_exists($modulePath . '/module')) {
+                $modulePath .= '/module';
             }
 
             $bootstrapPath  = $modulePath . '/Bootstrap.php';
