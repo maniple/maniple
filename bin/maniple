@@ -32,17 +32,38 @@ $action_args = array_slice($args, 2);
 define('APPLICATION_ENV',  (is_file('appenv') ? trim(file_get_contents('appenv')) : 'production'));
 define('APPLICATION_PATH', realpath('application'));
 
+class ApplicationBootstrapper
+{
+    /**
+     * @var Zend_Application
+     */
+    protected static $_application;
+
+    /**
+     * @return Zend_Application
+     */
+    public static function bootstrap()
+    {
+        if (!self::$_application) {
+            $start = microtime(true);
+            $application = new Zend_Application(
+                APPLICATION_ENV,
+                APPLICATION_PATH . '/configs/application.config.php'
+            );
+            $application->bootstrap();
+            echo 'Application bootstrapped in ' . sprintf('%.2f seconds', microtime(true) - $start) . "\n";
+
+            Zend_Controller_Front::getInstance()->setParam('bootstrap', $application->getBootstrap());
+
+            self::$_application = $application;
+        }
+        return self::$_application;
+    }
+}
+
 function maniple_bootstrap()
 {
-    $start = microtime(true);
-    $application = new Zend_Application(
-        APPLICATION_ENV,
-        APPLICATION_PATH . '/configs/application.config.php'
-    );
-    $application->bootstrap();
-    echo 'Application bootstrapped in ' . sprintf('%.2f seconds', microtime(true) - $start) . "\n";
-
-    Zend_Controller_Front::getInstance()->setParam('bootstrap', $application->getBootstrap());
+    return ApplicationBootstrapper::bootstrap();
 }
 
 try {
@@ -89,6 +110,7 @@ try {
                 'classesToLoad' => 'Maniple_Tool_Provider_Manifest',
             ));
             $console->dispatch();
+
             break;
     }
 } catch (Exception $e) {
