@@ -2,7 +2,10 @@
 
 interface Maniple_Security_ContextInterface
 {
+    /**
+
     public function getIdentity();
+     **/
 
     /**
      * Retrieves currently authenticated user.
