@@ -37,12 +37,12 @@ class Maniple_Application_Bootstrap_Bootstrap
     } // }}}
 
 
-    protected function _bootstrap($resource = null)
-    {
-        if ($resource === null && $this->hasPluginResource('modules')) {
-            $modules = $this->getPluginResource('modules');
-            $modules->preInit(); // to powinno zaktualizować config
-        }
-        return parent::_bootstrap($resource);
-    }
+//    protected function _bootstrap($resource = null)
+//    {
+//        if ($resource === null && $this->hasPluginResource('modules')) {
+//            $modules = $this->getPluginResource('modules');
+//            $modules->preInit(); // to powinno zaktualizować config
+//        }
+//        return parent::_bootstrap($resource);
+//    }
 }

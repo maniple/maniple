@@ -126,8 +126,7 @@ function maniple_install($basePath)
     if (is_file('maniple.json')) {
         $config = (array) json_decode(file_get_contents('maniple.json'), true);
         if (isset($config['modules'])) {
-            echo '[ FAIL ] Reference modules with composer, maniple.json file is deprecated', "\n";
-            return;
+            echo '[ WARN ] Reference modules with composer, maniple.json file is deprecated', "\n";
         }
     }
     foreach (scandir('application/modules') as $dir) {
