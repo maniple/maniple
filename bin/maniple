@@ -29,8 +29,21 @@ if (count($args) < 2) {
 $action = $args[1];
 $action_args = array_slice($args, 2);
 
+define('APPLICATION_ENV',  (is_file('appenv') ? trim(file_get_contents('appenv')) : 'production'));
+define('APPLICATION_PATH', realpath('application'));
 
+function maniple_bootstrap()
+{
+    $start = microtime(true);
+    $application = new Zend_Application(
+        APPLICATION_ENV,
+        APPLICATION_PATH . '/configs/application.config.php'
+    );
+    $application->bootstrap();
+    echo 'Application bootstrapped in ' . sprintf('%.2f seconds', microtime(true) - $start) . "\n";
 
+    Zend_Controller_Front::getInstance()->setParam('bootstrap', $application->getBootstrap());
+}
 
 try {
     switch ($action) {
