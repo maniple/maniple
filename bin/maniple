@@ -220,11 +220,6 @@ function maniple_init($baseDir = null) {
         @chmod($dirpath, $writable ? 0777 : 0755);
     }
 
-    $bootstrap_path = $baseDir . '/application/Bootstrap.php';
-    if (!is_file($bootstrap_path)) {
-        file_put_contents($bootstrap_path, maniple_generate_bootstrap());
-    }
-
     $index_path = $baseDir . '/public/index.php';
     if (!is_file($index_path)) {
         file_put_contents($index_path, maniple_generate_index());
@@ -544,17 +539,6 @@ function maniple_rm($path, $nomove = false)
     return false;
 }
 
-function maniple_generate_bootstrap()
-{
-    return "<?php
-
-class Bootstrap extends Maniple_Application_Bootstrap_Bootstrap
-{
-    // Place your bootstrap code here
-}
-";
-}
-
 function maniple_generate_index()
 {
     return "<?php
@@ -572,7 +556,7 @@ define('VENDOR_PATH', realpath(APPLICATION_PATH . '/../vendor'));
 
 require_once VENDOR_PATH . '/autoload.php';
 
-\$application = new Zend_Application(
+\$application = new Zefram_Application(
     APPLICATION_ENV,
     APPLICATION_PATH . '/configs/application.php'
 );
