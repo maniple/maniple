@@ -106,7 +106,7 @@ class Maniple_Application_Resource_Modules
         // don't load modules explicitly given as FALSE
         $modulePaths = $this->_modulePaths;
 
-        foreach ($this->getOptions() as $key => $value) {
+        foreach ($this->getOptions() as $module => $value) {
             if ($value === false) {
                 unset($modulePaths[$module]);
             }

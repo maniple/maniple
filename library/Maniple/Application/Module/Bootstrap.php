@@ -162,7 +162,7 @@ abstract class Maniple_Application_Module_Bootstrap
     protected function _bootstrapModuleDeps() // {{{
     {
         if (!$this->_moduleDepsBootstrapped) {
-            foreach ((array) $this->_moduleDeps as $module) {
+            foreach ((array) $this->getModuleDependencies() as $module) {
                 $this->getModuleManager()->bootstrapModule($module);
             }
             $this->_moduleDepsBootstrapped = true;
