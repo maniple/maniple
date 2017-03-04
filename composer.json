@@ -13,6 +13,9 @@
         "xemlock/zefram": "dev-master",
         "beelab/bowerphp": "^0.4.0 || dev-legacy"
     },
+    "require-dev": {
+        "phpunit/phpunit": "4.7.*"
+    },
     "autoload": {
         "psr-0": {
             "Maniple_": "library"

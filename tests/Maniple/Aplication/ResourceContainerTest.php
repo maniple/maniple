@@ -45,7 +45,7 @@ class Maniple_Application_ResourceContainerTest
 
     public function testReadyCallback()
     {
-        $container = new Maniple_Application_ResourceContainer();   
+        $container = new Maniple_Application_ResourceContainer();
 
         $this->_objReadyCalled = false;
 
@@ -58,7 +58,7 @@ class Maniple_Application_ResourceContainerTest
 
     public function testWhenReadyCallback()
     {
-        $container = new Maniple_Application_ResourceContainer();   
+        $container = new Maniple_Application_ResourceContainer();
 
         $this->_objReadyCalled = false;
 
@@ -70,11 +70,11 @@ class Maniple_Application_ResourceContainerTest
 
     public function testWhenReadyCallbackFromDefinition()
     {
-        $container = new Maniple_Application_ResourceContainer();   
+        $container = new Maniple_Application_ResourceContainer();
 
         $this->_objReadyCalled = false;
 
-        $container->addResource('obj', 'stdClass');
+        $container->addResource('obj', array('class' => 'stdClass'));
         $container->whenReady('obj', array($this, 'objReadyCallback'));
 
         $this->assertFalse($this->_objReadyCalled);
@@ -108,10 +108,8 @@ class Maniple_Application_ResourceContainerTest
     public function testWhatever()
     {
         $container = new Maniple_Application_ResourceContainer();
-        $container->addResource('obj', 'stdClass');
+        $container->addResource('obj', array('class' => 'stdClass'));
         $this->assertFalse($container->isReady('obj'));
-
-        
 
         $this->assertInstanceOf('stdClass', $container->getResource('obj'));
 
