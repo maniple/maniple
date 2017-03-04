@@ -1,0 +1,4 @@
+<?php
+
+class Maniple_Controller_Action_Exception_BadMethodCall extends Maniple_Controller_Action_Exception
+{}

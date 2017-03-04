@@ -20,6 +20,7 @@ abstract class Maniple_Security_ContextAbstract implements Maniple_Security_Cont
      *
      * @param mixed $superUserId
      * @return Maniple_Security_ContextAbstract
+     * @throws Maniple_Security_Exception_InvalidArgumentException
      */
     public function addSuperUserId($superUserId) // {{{
     {
