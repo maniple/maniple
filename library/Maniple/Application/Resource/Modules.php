@@ -244,6 +244,7 @@ class Maniple_Application_Resource_Modules
         $front->addControllerDirectory($modulePath . '/controllers', $module);
 
         $moduleData = (object) array(
+            'name'           => $module,
             'prefix'         => $modulePrefix,
             'path'           => $modulePath,
             'bootstrap'      => $moduleBootstrap,
@@ -392,46 +393,44 @@ class Maniple_Application_Resource_Modules
         return null;
     }
 
-    public function configRoutes()
+    public function configRoutes($moduleInfo)
     {
         /** @var Zend_Application_Bootstrap_BootstrapAbstract $bootstrap */
         $bootstrap = $this->getBootstrap();
         /** @var Zend_Controller_Router_Rewrite $router */
         $router = $bootstrap->getResource('frontController')->getRouter();
 
-        foreach ($this->_loadedModules as $moduleName => $moduleInfo) {
-            $moduleBootstrap = $moduleInfo->bootstrap;
-            $moduleOptions = $this->getOption($moduleName);
+        $moduleBootstrap = $moduleInfo->bootstrap;
+        $moduleOptions = $this->getOption($moduleInfo->name);
 
-            // get routes defined by getRoutesConfig()
-            if (method_exists($moduleBootstrap, 'getRouteConfig')) {
-                $routesConfig = (array) $moduleBootstrap->getRouteConfig();
-            } elseif (method_exists($moduleBootstrap, 'getRoutesConfig')) {
-                $routesConfig = (array) $moduleBootstrap->getRoutesConfig();
-            } else {
-                $routesConfig = array();
-            }
-            foreach (array('getRoutes', 'onRoutes') as $legacy) {
-                if (method_exists($moduleBootstrap, $legacy)) {
-                    $routesConfig = $this->mergeOptions($routesConfig, $moduleBootstrap->$legacy());
-                }
-            }
-            // override existing options with settings from application config
-            if (isset($moduleOptions['routesConfig'])) {
-                $routesConfig = $this->mergeOptions(
-                    $routesConfig,
-                    array_intersect_key($moduleOptions['routesConfig'], $routesConfig)
-                );
-            }
-            if (is_array($routesConfig)) {
-                $routesConfig = new Zend_Config($routesConfig);
-            }
-            if (!$routesConfig instanceof Zend_Config) {
-                throw new InvalidArgumentException('Route config must be an instance of Zend_Config');
-            }
-
-            $router->addConfig($routesConfig);
+        // get routes defined by getRoutesConfig()
+        if (method_exists($moduleBootstrap, 'getRouteConfig')) {
+            $routesConfig = (array) $moduleBootstrap->getRouteConfig();
+        } elseif (method_exists($moduleBootstrap, 'getRoutesConfig')) {
+            $routesConfig = (array) $moduleBootstrap->getRoutesConfig();
+        } else {
+            $routesConfig = array();
         }
+        foreach (array('getRoutes', 'onRoutes') as $legacy) {
+            if (method_exists($moduleBootstrap, $legacy)) {
+                $routesConfig = $this->mergeOptions($routesConfig, $moduleBootstrap->$legacy());
+            }
+        }
+        // override existing options with settings from application config
+        if (isset($moduleOptions['routesConfig'])) {
+            $routesConfig = $this->mergeOptions(
+                $routesConfig,
+                array_intersect_key($moduleOptions['routesConfig'], $routesConfig)
+            );
+        }
+        if (is_array($routesConfig)) {
+            $routesConfig = new Zend_Config($routesConfig);
+        }
+        if (!$routesConfig instanceof Zend_Config) {
+            throw new InvalidArgumentException('Route config must be an instance of Zend_Config');
+        }
+
+        $router->addConfig($routesConfig);
     }
 
     public function bootstrapModule($moduleName)
@@ -455,6 +454,9 @@ class Maniple_Application_Resource_Modules
 
         $moduleInfo->state = self::STATE_BOOTSTRAPPING;
 
+        // add module routes to router
+        $this->configRoutes($moduleInfo);
+
         // bootstrap any built-in / plugin resources, they will be stored in
         // the common resource container
         $moduleBootstrap->bootstrap();
@@ -473,9 +475,6 @@ class Maniple_Application_Resource_Modules
 
     protected function _executeBootstraps()
     {
-        // at this point all module resources should be registered in bootstrap
-        $this->configRoutes();
-
         foreach ($this->_loadedModules as $module => $moduleInfo) {
             $this->bootstrapModule($module);
         }
