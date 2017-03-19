@@ -2,6 +2,11 @@
 
 class Maniple_View_Helper_ModuleAsset extends Zend_View_Helper_Abstract
 {
+    /**
+     * @var array
+     */
+    protected $_manifest = array();
+
     public function moduleAsset($path, $moduleName = null)
     {
         $frontController = Zend_Controller_Front::getInstance();
@@ -35,10 +40,45 @@ class Maniple_View_Helper_ModuleAsset extends Zend_View_Helper_Abstract
             $baseDir = $moduleName;
         }
 
-        $path = trim($path, '/');
-
-        // TODO get module's assetMap and append checksum for path
+        $path = $this->appendAssetHash($path, $moduleName);
 
         return $this->view->baseUrl('/assets/' . basename($baseDir) . '/' . $path);
+    }
+
+    /**
+     * @param array $manifest
+     * @param string $moduleName
+     * @return $this
+     */
+    public function addManifest(array $manifest, $moduleName)
+    {
+        $this->_manifest[$moduleName] = array_merge(
+            isset($this->_manifest[$moduleName]) ? $this->_manifest[$moduleName] : array(),
+            array_map('strval', $manifest)
+        );
+        return $this;
+    }
+
+    /**
+     * @param string $path
+     * @param string $moduleName
+     * @return string
+     */
+    public function appendAssetHash($path, $moduleName)
+    {
+        $path = trim($path, '/');
+        $hash = null;
+
+        if (isset($this->_manifest[$moduleName][$path])) {
+            $hash = $this->_manifest[$moduleName][$path];
+
+            if (strpos($path, '?') !== false) {
+                $path .= '&' . $hash;
+            } else {
+                $path .= '?' . $hash;
+            }
+        }
+
+        return $path;
     }
 }
