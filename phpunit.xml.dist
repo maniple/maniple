@@ -8,4 +8,7 @@
             <directory suffix=".php">./tests/Maniple</directory>
         </testsuite>
     </testsuites>
+    <logging>
+        <log type="coverage-html" target="build/coverage" logUpperBound="35" hightLowerBound="70" />
+    </logging>
 </phpunit>
