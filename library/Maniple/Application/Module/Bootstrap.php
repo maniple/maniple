@@ -241,11 +241,19 @@ abstract class Maniple_Application_Module_Bootstrap
             $translationsConfig['adapter'] = Zend_Translate::AN_ARRAY;
         }
 
+        // When locale was not explicitly set, use the locale of Translate
+        // resource, to prevent unnecessary automatic locale detection,
+        // which may result in 'The language has to be added before it can
+        // be used' notices.
+        if (!isset($translationsConfig['locale'])) {
+            $translationsConfig['locale'] = $translate->getLocale();
+        }
+
         $translations = new Zend_Translate($translationsConfig);
 
-        // prevent 'Undefined index' notice when translations for
-        // current locale are not available
-        if ($translations->getAdapter()->isAvailable($translate->getLocale())) {
+        // Prevent 'Undefined index' notice when there are no translations
+        // available for current locale.
+        if ($translations->isAvailable($translate->getLocale())) {
             $translate->addTranslation($translations);
         }
     }
