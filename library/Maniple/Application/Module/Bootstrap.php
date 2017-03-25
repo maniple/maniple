@@ -48,7 +48,7 @@ abstract class Maniple_Application_Module_Bootstrap
     {
         parent::__construct($application);
 
-        // front controller will be registered when neccessary, as it
+        // front controller will be registered when necessary, as it
         // may be already present in the resource container
         $this->unregisterPluginResource('FrontController');
     } // }}}
@@ -69,6 +69,7 @@ abstract class Maniple_Application_Module_Bootstrap
      *
      * @param  string $path OPTIONAL
      * @return string
+     * @deprecated
      */
     public function getPath($path = null) // {{{
     {
@@ -91,6 +92,7 @@ abstract class Maniple_Application_Module_Bootstrap
      *
      * @param  Maniple_Application_ModuleBootstrapper $moduleManager
      * @return Maniple_Application_Module_Bootstrap
+     * @deprecated
      */
     public function setModuleManager(Maniple_Application_ModuleBootstrapper $moduleManager) // {{{
     {
@@ -104,6 +106,7 @@ abstract class Maniple_Application_Module_Bootstrap
      *
      * @return Maniple_Application_ModuleBootstrapper
      * @throws Exception
+     * @deprecated
      */
     public function getModuleManager() // {{{
     {
@@ -117,6 +120,7 @@ abstract class Maniple_Application_Module_Bootstrap
      * Is module manager available?
      *
      * @return bool
+     * @deprecated
      */
     public function hasModuleManager() // {{{
     {
@@ -158,6 +162,7 @@ abstract class Maniple_Application_Module_Bootstrap
      * Bootstrap module dependencies.
      *
      * @return void
+     * @deprecated
      */
     protected function _bootstrapModuleDeps() // {{{
     {
@@ -189,5 +194,92 @@ abstract class Maniple_Application_Module_Bootstrap
     public function getModuleDependencies()
     {
         return $this->_moduleDeps;
+    }
+
+    /**
+     * Register routes in router using definitions from getResourcesConfig()
+     *
+     * @return void
+     */
+    protected function _initRouter()
+    {
+        if (!method_exists($this, 'getRoutesConfig')) {
+            return;
+        }
+
+        $routesConfig = (array) $this->getRoutesConfig();
+
+        /** @var Zend_Application_Bootstrap_BootstrapAbstract $bootstrap */
+        $bootstrap = $this->getApplication();
+        $bootstrap->bootstrap('FrontController');
+
+        /** @var Zend_Controller_Router_Rewrite $router */
+        $router = $bootstrap->getResource('FrontController')->getRouter();
+        $router->addConfig(new Zend_Config($routesConfig));
+    }
+
+    /**
+     * Add translations specified in getTranslationsConfig()
+     *
+     * @return void
+     */
+    protected function _initTranslate()
+    {
+        if (!method_exists($this, 'getTranslationsConfig')) {
+            return;
+        }
+
+        $bootstrap = $this->getApplication();
+        $bootstrap->bootstrap('Translate');
+
+        /** @var Zend_Translate_Adapter $translate */
+        $translate = $bootstrap->getResource('Translate')->getAdapter();
+
+        $translationsConfig = (array) $this->getTranslationsConfig();
+
+        if (!isset($translationsConfig['adapter'])) {
+            $translationsConfig['adapter'] = Zend_Translate::AN_ARRAY;
+        }
+
+        $translations = new Zend_Translate($translationsConfig);
+
+        // prevent 'Undefined index' notice when translations for
+        // current locale are not available
+        if ($translations->getAdapter()->isAvailable($translate->getLocale())) {
+            $translate->addTranslation($translations);
+        }
+    }
+
+    /**
+     * Register view script and helper paths based on getViewConfig()
+     *
+     * @return void
+     */
+    protected function _initView()
+    {
+        if (!method_exists($this, 'getViewConfig')) {
+            return;
+        }
+
+        $viewConfig = (array) $this->getViewConfig();
+
+        /** @var Zend_Application_Bootstrap_BootstrapAbstract $bootstrap */
+        $bootstrap = $this->getApplication();
+        $bootstrap->bootstrap('View');
+
+        /** @var Zend_View_Abstract $view */
+        $view = $bootstrap->getResource('View');
+
+        if (isset($viewConfig['helperPaths'])) {
+            foreach ((array) $viewConfig['helperPaths'] as $prefix => $path) {
+                $view->addHelperPath($path, $prefix);
+            }
+        }
+
+        if (isset($viewConfig['scriptPaths'])) {
+            foreach ((array) $viewConfig['scriptPaths'] as $scriptPath) {
+                $view->addScriptPath($scriptPath);
+            }
+        }
     }
 }
