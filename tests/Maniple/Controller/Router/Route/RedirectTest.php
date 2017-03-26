@@ -5,21 +5,31 @@ class Maniple_Controller_Router_Route_RedirectTest extends PHPUnit_Framework_Tes
     public function testConstructor()
     {
         $sourceRoute = new Zend_Controller_Router_Route('route/path');
-        $route = new Maniple_Controller_Router_Route_Redirect($sourceRoute, array('name' => 'routeName'), 301);
+        $route = new Maniple_Controller_Router_Route_Redirect($sourceRoute, array('route' => 'routeName'), 301);
 
         $this->assertSame($sourceRoute, $route->getRoute());
-        $this->assertEquals(array('name' => 'routeName'), $route->getGotoRoute());
+        $this->assertEquals(array('route' => 'routeName'), $route->getGoto());
         $this->assertEquals(301, $route->getCode());
     }
 
     /**
      * @expectedException Zend_Controller_Router_Exception
-     * @expectedExceptionMessage Invalid HTTP redirection status code: 500
+     * @expectedExceptionMessage Goto is expected to be an array or string, received boolean
+     */
+    public function testConstructorWithInvalidGoto()
+    {
+        $sourceRoute = new Zend_Controller_Router_Route('route/path');
+        new Maniple_Controller_Router_Route_Redirect($sourceRoute, true);
+    }
+
+    /**
+     * @expectedException Zend_Controller_Router_Exception
+     * @expectedExceptionMessage Invalid redirect HTTP status code (500)
      */
     public function testConstructorWithInvalidCode()
     {
         $sourceRoute = new Zend_Controller_Router_Route('route/path');
-        new Maniple_Controller_Router_Route_Redirect($sourceRoute, array(), 500);
+        new Maniple_Controller_Router_Route_Redirect($sourceRoute, null, 500);
     }
 
     public function testAssemble()
@@ -32,9 +42,8 @@ class Maniple_Controller_Router_Route_RedirectTest extends PHPUnit_Framework_Tes
         $this->assertEquals($route->assemble($assembleData), $route->getRoute()->assemble($assembleData));
     }
 
-    public function testMatch()
+    public function testMatchWithRoute()
     {
-        /** @var  $router */
         $router = new Zend_Controller_Router_Rewrite();
         $router->addConfig(new Zend_Config(array(
             'routeName' => array(
@@ -49,24 +58,49 @@ class Maniple_Controller_Router_Route_RedirectTest extends PHPUnit_Framework_Tes
 
         /** @var Zend_Controller_Action_Helper_Redirector $redirector */
         $redirector = Zend_Controller_Action_HelperBroker::getStaticHelper('redirector');
-        $redirector->setPrependBase(false);
         $redirector->setExit(false);
 
         $route = new Maniple_Controller_Router_Route_Redirect(
             new Zend_Controller_Router_Route('route/path'),
-            array('name' => 'routeName'),
+            array('route' => 'routeName'),
             301
         );
         $route->match('route/path');
 
         $this->assertTrue($response->isRedirect());
         $this->assertEquals(301, $response->getHttpResponseCode());
-        $this->assertEquals(array(
-            array(
-                'name'    => 'Location',
-                'value'   => '/route/name/path',
-                'replace' => true,
-            )
+        $this->assertContains(array(
+            'name'    => 'Location',
+            'value'   => '/route/name/path',
+            'replace' => true,
+        ), $response->getHeaders());
+    }
+
+    public function testMatchWithUrl()
+    {
+        $router = new Zend_Controller_Router_Rewrite();
+        $response = new Zend_Controller_Response_HttpTestCase();
+
+        Zend_Controller_Front::getInstance()->setResponse($response);
+        Zend_Controller_Front::getInstance()->setRouter($router);
+
+        /** @var Zend_Controller_Action_Helper_Redirector $redirector */
+        $redirector = Zend_Controller_Action_HelperBroker::getStaticHelper('redirector');
+        $redirector->setExit(false);
+
+        $route = new Maniple_Controller_Router_Route_Redirect(
+            new Zend_Controller_Router_Route('route/path'),
+            'robots.txt',
+            301
+        );
+        $route->match('route/path');
+
+        $this->assertTrue($response->isRedirect());
+        $this->assertEquals(301, $response->getHttpResponseCode());
+        $this->assertContains(array(
+            'name'    => 'Location',
+            'value'   => '/robots.txt',
+            'replace' => true,
         ), $response->getHeaders());
     }
 
@@ -81,8 +115,8 @@ class Maniple_Controller_Router_Route_RedirectTest extends PHPUnit_Framework_Tes
                     'type' => 'Zend_Controller_Router_Route',
                     'defaults' => array()
                 ),
-                'gotoRoute' => array(
-                    'name' => 'routeName',
+                'goto' => array(
+                    'route' => 'routeName',
                 ),
             ))
         );
@@ -93,7 +127,7 @@ class Maniple_Controller_Router_Route_RedirectTest extends PHPUnit_Framework_Tes
         $this->assertInstanceOf('Zend_Controller_Router_Route', $route->getRoute());
         $this->assertTrue(false !== $route->getRoute()->match('route/path'));
 
-        $this->assertEquals(array('name' => 'routeName'), $route->getGotoRoute());
+        $this->assertEquals(array('route' => 'routeName'), $route->getGoto());
     }
 
     public function testGetInstanceWithShortConfig()
@@ -103,7 +137,7 @@ class Maniple_Controller_Router_Route_RedirectTest extends PHPUnit_Framework_Tes
                 'type' => 'Maniple_Controller_Router_Route_Redirect',
                 'code' => 301,
                 'route' => 'route/path',
-                'gotoRoute' => 'routeName',
+                'goto' => 'routeName',
             ))
         );
 
@@ -113,7 +147,7 @@ class Maniple_Controller_Router_Route_RedirectTest extends PHPUnit_Framework_Tes
         $this->assertInstanceOf('Zend_Controller_Router_Route', $route->getRoute());
         $this->assertTrue(false !== $route->getRoute()->match('route/path'));
 
-        $this->assertEquals(array('name' => 'routeName'), $route->getGotoRoute());
+        $this->assertEquals(array('route' => 'routeName'), $route->getGoto());
     }
 
 }

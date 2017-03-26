@@ -8,33 +8,39 @@
  * <pre>
  * array(
  *     'type' => 'Maniple_Controller_Router_Route_Redirect',
- *     'code' => 302,
- *     'route' => array(
- *         'route' => 'route/path',
- *         'type' => 'Zend_Controller_Router_Route',
- *         'defaults' => array()
- *     ),
- *     'gotoRoute' => array(
- *         'name' => 'routeName',
- *         'reset' => false,
- *         'encode' => true,
- *         'urlOptions' => array()
- *     ),
- * )
- * </pre>
- *
- * a shorthand version is also available, which uses default route type,
- * and default redirection params:
- *
- * <pre>
- * array(
- *     'type' => 'Maniple_Controller_Router_Route_Redirect',
  *     'route' => 'route/path',
  *     'defaults' => array(),
- *     'gotoRoute' => 'routeName',
+ *     'code' => 302,
+ *     'goto' => 'redirect/path',
  * )
  * </pre>
  *
+ * HTTP status code provided in 'code' key is optional, default is 302.
+ * Along with redirection headers a Cache-Control header is sent, to prevent
+ * permanent caching in browser for 301 redirects.
+ *
+ * Setting 'goto' as string is equivalent to setting it as
+ * <pre>
+ * 'goto' => array(
+ *     'route' => 'redirect/path'
+ * )
+ * </pre>
+ *
+ * Additionally any parameter placeholders will be replaced with matching
+ * values from 'defaults' array, or you can specify them explicitly, along
+ * with other parameters:
+ *
+ * <pre>
+ * 'goto' => array(
+ *     'route' => 'redirect/path',
+ *     'defaults' => array(),
+ *     'reset'  => false,
+ *     'encode' => true,
+ * )
+ * </pre>
+ *
+ * Route in 'goto' is first matched against route names defined in router,
+ * when no match was found it is assumed bo be an url.
  */
 class Maniple_Controller_Router_Route_Redirect implements Zend_Controller_Router_Route_Interface
 {
@@ -46,25 +52,30 @@ class Maniple_Controller_Router_Route_Redirect implements Zend_Controller_Router
     protected $_code = 302;
 
     /**
-     * @var string
+     * Redirection url
+     * @var array
      */
-    protected $_gotoRoute;
+    protected $_goto = array();
 
     /**
+     * Internal route used for matching
      * @var Zend_Controller_Router_Route_Interface
      */
     protected $_route;
 
     /**
      * @param Zend_Controller_Router_Route_Interface|string $route
-     * @param array $gotoRoute
+     * @param string|array $goto
      * @param int $statusCode
      */
     public function __construct(
-        Zend_Controller_Router_Route_Interface $route, array $gotoRoute = array(), $statusCode = null
+        Zend_Controller_Router_Route_Interface $route, $goto = null, $statusCode = null
     ) {
         $this->_route = $route;
-        $this->_gotoRoute = $gotoRoute;
+
+        if ($goto !== null) {
+            $this->_setGoto($goto);
+        }
 
         if ($statusCode !== null) {
             $this->_setCode($statusCode);
@@ -72,17 +83,32 @@ class Maniple_Controller_Router_Route_Redirect implements Zend_Controller_Router
     }
 
     /**
+     * @param string|array $goto
+     * @throws Zend_Controller_Router_Exception
+     */
+    protected function _setGoto($goto)
+    {
+        if (is_string($goto)) {
+            $goto = array('route' => $goto);
+        }
+        if (!is_array($goto)) {
+            throw new Zend_Controller_Router_Exception('Goto is expected to be an array or string, received ' . gettype($goto));
+        }
+        $this->_goto = $goto;
+    }
+
+    /**
      * @param int $code
-     * @return Maniple_Controller_Router_Route_Redirect
+     * @return void
      * @throws Zend_Controller_Router_Exception
      */
     protected function _setCode($code)
     {
-        if (!is_int($code) || (300 > $code) || (399 < $code)) {
-            throw new Zend_Controller_Router_Exception('Invalid HTTP redirection status code: ' . $code);
+        $code = (int) $code;
+        if ((300 > $code) || (307 < $code) || (304 == $code) || (306 == $code)) {
+            throw new Zend_Controller_Router_Exception('Invalid redirect HTTP status code (' . $code  . ')');
         }
         $this->_code = $code;
-        return $this;
     }
 
     /**
@@ -104,9 +130,9 @@ class Maniple_Controller_Router_Route_Redirect implements Zend_Controller_Router
     /**
      * @return array
      */
-    public function getGotoRoute()
+    public function getGoto()
     {
-        return $this->_gotoRoute;
+        return $this->_goto;
     }
 
     public function match($path, $partial = false)
@@ -114,24 +140,43 @@ class Maniple_Controller_Router_Route_Redirect implements Zend_Controller_Router
         if (false !== ($matchParams = $this->_route->match($path, $partial))) {
             /** @var Zend_Controller_Action_Helper_Redirector $helper */
             $helper = Zend_Controller_Action_HelperBroker::getStaticHelper('redirector');
-            $helper->setCode($this->_code);
 
-            $gotoRoute = $this->_gotoRoute + array(
-                'name'       => null,
-                'urlOptions' => array(),
-                'reset'      => false,
-                'encode'     => true
+            $gotoRoute = $this->_goto + array(
+                'route'    => null,
+                'defaults' => array(),
+                'reset'    => false,
+                'encode'   => true
             );
 
-            $urlOptions = array_merge($matchParams, (array) $gotoRoute['urlOptions']);
+            $urlOptions = array_merge($matchParams, (array) $gotoRoute['defaults']);
 
-            /** @var mixed $name */
+            /** @var mixed $route */
             /** @var mixed $reset */
             /** @var mixed $encode */
             extract($gotoRoute, EXTR_SKIP);
 
-            $helper->gotoRoute($urlOptions, $name, $reset, $encode);
+            try {
+                $router = $helper->getFrontController()->getRouter();
+                $url = $router->assemble($urlOptions, $route, $reset, $encode);
+
+            } catch (Zend_Controller_Router_Exception $e) {
+                $url = $gotoRoute['route'];
+                $isAbsolute = preg_match('|^[a-z]+://|', $url);
+
+                if (!$isAbsolute) {
+                    $baseUrl = trim($helper->getFrontController()->getBaseUrl(), '/');
+                    $url = $baseUrl . '/' . ltrim($url, '/');
+                }
+            }
+
+            $helper->getResponse()->setHeader('Cache-Control', 'max-age=3600', true);
+            $helper->gotoUrl($url, array(
+                'code'        => $this->_code,
+                'prependBase' => false,
+            ));
         }
+
+        return false;
     }
 
     public function assemble($data = array(), $reset = false, $encode = false)
@@ -157,12 +202,8 @@ class Maniple_Controller_Router_Route_Redirect implements Zend_Controller_Router
         }
 
         $route = $routeClass::getInstance($routeConfig);
+        $goto = $config->goto instanceof Zend_Config  ? $config->goto->toArray() : $config->goto;
 
-        $gotoRoute = $config->gotoRoute instanceof Zend_Config
-            ? $config->gotoRoute->toArray()
-            : array('name' => (string) $config->gotoRoute);
-
-
-        return new self($route, $gotoRoute, $config->code);
+        return new self($route, $goto, $config->code);
     }
 }
