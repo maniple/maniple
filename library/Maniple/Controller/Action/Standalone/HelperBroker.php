@@ -4,6 +4,18 @@
  * Proxy imitating action controller's helper broker.
  *
  * @version 2013-06-30
+ *
+ * @property Zend_Controller_Action_Helper_ActionStack $actionStack
+ * @property Zend_Controller_Action_Helper_AjaxContext $ajaxContext
+ * @property Zend_Controller_Action_Helper_AutoCompleteDojo $autoCompleteDojo
+ * @property Zend_Controller_Action_Helper_AutoCompleteScriptaculous $autoCompleteScriptaculous
+ * @property Zend_Controller_Action_Helper_Cache $cache
+ * @property Zend_Controller_Action_Helper_ContextSwitch $contextSwitch
+ * @property Zefram_Controller_Action_Helper_FlashMessenger $flashMessenger
+ * @property Zend_Controller_Action_Helper_Json $json
+ * @property Zefram_Controller_Action_Helper_Redirector $redirector
+ * @property Zend_Controller_Action_Helper_Url $url
+ * @property Zend_Controller_Action_Helper_ViewRenderer $viewRenderer
  */
 class Maniple_Controller_Action_Standalone_HelperBroker
 {
