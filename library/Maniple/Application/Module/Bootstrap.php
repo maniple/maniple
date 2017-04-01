@@ -17,24 +17,28 @@ abstract class Maniple_Application_Module_Bootstrap
     /**
      * Manager for module dependency management
      * @var Maniple_Application_ModuleBootstrapper
+     * @deprecated
      */
     protected $_moduleManager;
 
     /**
      * Names of modules this module depends on
      * @var string[]
+     * @deprecated Implement getModuleDependencies() instead
      */
     protected $_moduleDeps = array();
 
     /**
      * Are all module dependencies bootstrapped?
      * @var bool
+     * @deprecated
      */
     protected $_moduleDepsBootstrapped = false;
 
     /**
      * Names of module tasks to be executed after all local resources are bootstrapped
      * @var string[]
+     * @deprecated
      */
     protected $_moduleTasks;
 
@@ -166,6 +170,9 @@ abstract class Maniple_Application_Module_Bootstrap
      */
     protected function _bootstrapModuleDeps() // {{{
     {
+        if (!$this->hasModuleManager()) {
+            return;
+        }
         if (!$this->_moduleDepsBootstrapped) {
             foreach ((array) $this->getModuleDependencies() as $module) {
                 $this->getModuleManager()->bootstrapModule($module);
@@ -181,6 +188,12 @@ abstract class Maniple_Application_Module_Bootstrap
      */
     protected function _runModuleTasks() // {{{
     {
+        if (!$this->hasModuleManager()) {
+            return;
+        }
+        if ($this->_moduleTasks) {
+            trigger_error(sprintf('%s::_moduleTasks is deprecated. Use modules resource instead', get_class($this)), E_USER_NOTICE);
+        }
         foreach ((array) $this->_moduleTasks as $task) {
             $this->getModuleManager()->runTask($task, $this);
         }
@@ -193,6 +206,7 @@ abstract class Maniple_Application_Module_Bootstrap
      */
     public function getModuleDependencies()
     {
+        trigger_error(sprintf('%s::_moduleDeps is deprecated. Each module should override getModuleDependencies() function', get_class($this)), E_USER_NOTICE);
         return $this->_moduleDeps;
     }
 
