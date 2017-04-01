@@ -255,6 +255,10 @@ abstract class Maniple_Application_Module_Bootstrap
             $translationsConfig['adapter'] = Zend_Translate::AN_ARRAY;
         }
 
+        if (!isset($translationsConfig['disableNotices'])) {
+            $translationsConfig['disableNotices'] = $translate->getOptions('disableNotices');
+        }
+
         // When locale was not explicitly set, use the locale of Translate
         // resource, to prevent unnecessary automatic locale detection,
         // which may result in 'The language has to be added before it can
