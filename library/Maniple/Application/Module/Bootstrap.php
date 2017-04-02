@@ -206,7 +206,9 @@ abstract class Maniple_Application_Module_Bootstrap
      */
     public function getModuleDependencies()
     {
-        trigger_error(sprintf('%s::_moduleDeps is deprecated. Each module should override getModuleDependencies() function', get_class($this)), E_USER_NOTICE);
+        if (count($this->_moduleDeps)) {
+            trigger_error(sprintf('%s::_moduleDeps is deprecated. Each module should override getModuleDependencies() function', get_class($this)), E_USER_NOTICE);
+        }
         return $this->_moduleDeps;
     }
 
