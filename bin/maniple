@@ -408,13 +408,13 @@ function maniple_module_install($path, $symlink = true)
                     if (preg_match('#^[a-z]+://#i', $version)
                         || preg_match('#^[-_a-z0-9]+/[-_a-z0-9]+[\#]?#i', $version)
                     ) {
-                        $spec = $version; // url or login/repo
+                        $spec = "$package=$version"; // url or login/repo
                     } else {
-                        $spec = "$package#$version";
+                        $spec = "$package=$package#$version";
                     }
                     bower_install($spec);
                     $package_dir = 'public/bower_components/' . $package;
-                    echo 'package dir: ' . $package_dir, "\n";
+                    echo 'package dir: ' . $package_dir, " (", $spec, ")\n";
                     if (file_exists($package_dir . '/.bower.json')) {
                         $json = json_decode(file_get_contents($package_dir . '/.bower.json'), true);
 
@@ -473,13 +473,17 @@ function bower_install($package) {
     }
 
     printf("[bower] Installing %s\n", $package);
-    echo shell_exec(sprintf(
+    $cmd = sprintf(
         "%s install %s 2>&1",
         $bower_available
             ? 'bower'
             : VENDOR_DIR . DS . 'bin' . DS . 'bowerphp',
         escapeshellarg($package)
-    ));
+    );
+    echo $cmd, "\n";
+    echo system($cmd, $retval), "\n";
+
+    return $retval;
 }
 
 function maniple_symlink($source, $dest)
