@@ -1,9 +1,9 @@
 <?php
 
-class Maniple_Controller_Exception_NotAllowed extends RuntimeException
+class Maniple_Controller_Exception_NotAllowed extends Maniple_Controller_Exception
 {
-    public function __construct($message = 'Not Allowed')
+    public function __construct($message = 'Not Allowed', $code = 403, Exception $previous = null)
     {
-        parent::__construct($message, 403);
+        parent::__construct($message, $code, $previous);
     }
 }
