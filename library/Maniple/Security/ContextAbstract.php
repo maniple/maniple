@@ -16,6 +16,22 @@ abstract class Maniple_Security_ContextAbstract implements Maniple_Security_Cont
     protected $_superUserIds = array();
 
     /**
+     * @var Maniple_Security_AccessControl_Manager
+     */
+    protected $_accessControlManager;
+
+    /**
+     * @return Maniple_Security_AccessControl_Manager
+     */
+    public function getAccessControlManager()
+    {
+        if (null === $this->_accessControlManager) {
+            $this->_accessControlManager = new Maniple_Security_AccessControl_Manager();
+        }
+        return $this->_accessControlManager;
+    }
+
+    /**
      * Add superuser ID.
      *
      * @param mixed $superUserId
@@ -123,6 +139,11 @@ abstract class Maniple_Security_ContextAbstract implements Maniple_Security_Cont
         return in_array($this->_transformId($userId), $this->_superUserIds);
     } // }}}
 
+    public function isImpersonated()
+    {
+        return $this->getUserStorage()->isImpersonated();
+    }
+
     /**
      * @return Maniple_Security_UserInterface
      */
@@ -131,6 +152,20 @@ abstract class Maniple_Security_ContextAbstract implements Maniple_Security_Cont
         return $this->getUserStorage()->getUser();
     } // }}}
 
+    /**
+     * Proxy to {@link getIdentity()}.
+     *
+     * @return mixed
+     * @deprecated
+     */
+    public function getUserId()
+    {
+        return $this->getIdentity();
+    }
+
+    /**
+     * @return mixed|null
+     */
     public function getIdentity()
     {
         $user = $this->getUserStorage()->getUser();
@@ -151,4 +186,18 @@ abstract class Maniple_Security_ContextAbstract implements Maniple_Security_Cont
         }
         return (string) $id;
     } // }}}
+
+    /**
+     * @param mixed $permission
+     * @param mixed $resource
+     * @return bool
+     */
+    public function isAllowed($resource, $permission = null)
+    {
+        if ($permission === null) {
+            $permission = $resource;
+            $resource = null;
+        }
+        return $this->getAccessControlManager()->isAllowed($this, $resource, $permission);
+    }
 }

@@ -30,6 +30,13 @@ interface Maniple_Security_ContextInterface
     public function isSuperUser();
 
     /**
+     * Is currently authenticated user impersonated.
+     *
+     * @return bool
+     */
+    public function isImpersonated();
+
+    /**
      * Does currently authenticated user have a given permission.
      *
      * @param  mixed $permission
