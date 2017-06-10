@@ -30,8 +30,8 @@ class Maniple_Tool_Provider_Module extends Zend_Tool_Framework_Provider_Abstract
         if (!file_exists($moduleDir .'/configs/routes.config.php')) {
             file_put_contents($moduleDir .'/configs/routes.config.php', "<?php return array(\n    // Module routes config\n);");
         }
-        if (!file_exists($moduleDir .'/configs/resource.config.php')) {
-            file_put_contents($moduleDir .'/configs/resource.config.php', "<?php return array(\n    // Module resources config\n);");
+        if (!file_exists($moduleDir .'/configs/resources.config.php')) {
+            file_put_contents($moduleDir .'/configs/resources.config.php', "<?php return array(\n    // Module resources config\n);");
         }
 
         // generate library/ here all autoload classes will be stored
@@ -58,9 +58,37 @@ class Maniple_Tool_Provider_Module extends Zend_Tool_Framework_Provider_Abstract
 
 class {$modulePrefix}_Bootstrap extends Maniple_Application_Module_Bootstrap
 {
-    public function getResourceConfig()
+    public function getModuleDependencies()
     {
-        return require dirname(__FILE__) . '/configs/resource.config.php';
+        return array();
+    }
+
+    public function getResourcesConfig()
+    {
+        return require dirname(__FILE__) . '/configs/resources.config.php';
+    }
+
+    public function getRoutesConfig()
+    {
+        return require dirname(__FILE__) . '/configs/routes.config.php';
+    }
+
+    public function getTranslationsConfig()
+    {
+        return array(
+            'scan'    => Zend_Translate::LOCALE_DIRECTORY,
+            'content' => dirname(__FILE__) . '/languages',
+        );
+    }
+
+    public function getViewConfig()
+    {
+        return array(
+            'scriptPaths' => dirname(__FILE__) . '/views',
+            'helperPaths' => array(
+                '{$modulePrefix}_View_Helper_' => dirname(__FILE__) . '/library/View/Helper/',
+            ),
+        );
     }
 
     /**
@@ -75,34 +103,6 @@ class {$modulePrefix}_Bootstrap extends Maniple_Application_Module_Bootstrap
                 ),
             ),
         ));
-    }
-
-    /**
-     * Register module routes
-     */
-    protected function _initRouter()
-    {
-        /** @var Zend_Application_Bootstrap_BootstrapAbstract \$bootstrap */
-        \$bootstrap = \$this->getApplication();
-        \$bootstrap->bootstrap('FrontController');
-
-        /** @var Zend_Controller_Router_Rewrite \$router */
-        \$router = \$bootstrap->getResource('FrontController')->getRouter();
-        \$router->addConfig(new Zend_Config(require dirname(__FILE__) . '/configs/routes.config.php'));
-    }
-
-    /**
-     * Register view helper paths
-     */
-    protected function _initView()
-    {
-        /** @var Zend_Application_Bootstrap_BootstrapAbstract \$bootstrap */
-        \$bootstrap = \$this->getApplication();
-        \$bootstrap->bootstrap('View');
-
-        /** @var Zend_View_Abstract \$view */
-        \$view = \$bootstrap->getResource('View');
-        \$view->addHelperPath(dirname(__FILE__) . '/library/View/Helper/', '{$modulePrefix}_View_Helper_');
     }
 
     /**
