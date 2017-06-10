@@ -31,40 +31,6 @@ $action_args = array_slice($args, 2);
 define('APPLICATION_ENV',  (is_file('appenv') ? trim(file_get_contents('appenv')) : 'production'));
 define('APPLICATION_PATH', realpath('application'));
 
-class ApplicationBootstrapper
-{
-    /**
-     * @var Zend_Application
-     */
-    protected static $_application;
-
-    /**
-     * @return Zend_Application
-     */
-    public static function bootstrap()
-    {
-        if (!self::$_application) {
-            $start = microtime(true);
-            $application = new Zend_Application(
-                APPLICATION_ENV,
-                APPLICATION_PATH . '/configs/application.config.php'
-            );
-            $application->bootstrap();
-            echo 'Application bootstrapped in ' . sprintf('%.2f seconds', microtime(true) - $start) . "\n";
-
-            Zend_Controller_Front::getInstance()->setParam('bootstrap', $application->getBootstrap());
-
-            self::$_application = $application;
-        }
-        return self::$_application;
-    }
-}
-
-function maniple_bootstrap()
-{
-    return ApplicationBootstrapper::bootstrap();
-}
-
 try {
     switch ($action) {
         case 'init':
@@ -103,10 +69,15 @@ try {
             throw new Exception('create-module action has been removed. Use \'maniple module create\' instead');
 
         default:
-            $console = new Zefram_Tool_Framework_Client_Console(array(
+            $console = new Maniple_Tool_Client_Console(array(
                 'commandName'   => 'maniple',
                 'helpHeader'    => false,
                 'classesToLoad' => 'Maniple_Tool_Provider_Manifest',
+                'application'   => array(
+                    'class'       => 'Zefram_Application',
+                    'environment' => APPLICATION_ENV,
+                    'config'      => APPLICATION_PATH . '/configs/application.config.php',
+                ),
             ));
             $console->dispatch();
 
