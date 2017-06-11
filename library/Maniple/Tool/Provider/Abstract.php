@@ -1,6 +1,6 @@
 <?php
 
-class Maniple_Tool_Provider_Abstract extends Zend_Tool_Framework_Provider_Abstract
+class Maniple_Tool_Provider_Abstract extends Zefram_Tool_Framework_Provider_Abstract
 {
     /**
      * Retrieve application instance from client
