@@ -26,5 +26,8 @@
     ],
     "bin": [
         "bin/maniple"
-    ]
+    ],
+    "scripts": {
+        "test": "phpunit"
+    }
 }
