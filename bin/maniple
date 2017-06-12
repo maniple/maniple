@@ -1,11 +1,62 @@
 #!/usr/bin/env php
 <?php
 
-$MANIPLE_CLI = './vendor/maniple/maniple/library/Maniple/Tool/Cli.php';
+abstract class ManipleLauncher
+{
+    const MANIPLE_CLI = 'vendor/maniple/maniple/library/Maniple/Tool/Cli.php';
 
-if (file_exists($MANIPLE_CLI)) {
-    require $MANIPLE_CLI;
-} else {
-    echo "Unable to find maniple binary\n\n";
-    exit(1);
+    public static function run()
+    {
+        $applicationRoot = self::_detectApplicationRoot();
+
+        if (!$applicationRoot) {
+            self::_error('Unable to detect application root');
+        }
+
+        chdir($applicationRoot);
+        self::_start(self::MANIPLE_CLI);
+    }
+
+    protected static function _error($message)
+    {
+        fprintf(STDERR, "error: %s\n", $message);
+        exit(1);
+    }
+
+    protected static function _start()
+    {
+        require func_get_arg(0);
+    }
+
+    protected static function _detectApplicationRoot()
+    {
+        $lookupDirs = array_merge(
+            self::_lookupDirs(getcwd()),
+            self::_lookupDirs(dirname(__FILE__))
+        );
+
+        foreach ($lookupDirs as $lookupDir) {
+            $cli = $lookupDir . '/' . self::MANIPLE_CLI;
+            if (file_exists($cli)) {
+                return $lookupDir;
+            }
+        }
+
+        return false;
+    }
+
+    protected static function _lookupDirs($dir)
+    {
+        $lookupDirs = array();
+        $dirParts = preg_split('#\\/#', $dir);
+        for ($i = 0, $dirPartsLength = count($dirParts); $i < $dirPartsLength; ++$i) {
+            $dir = join('/', array_slice($dirParts, 0, $dirPartsLength - $i));
+            if (strlen($dir)) {
+                $lookupDirs[] = $dir;
+            }
+        }
+        return $lookupDirs;
+    }
 }
+
+ManipleLauncher::run();

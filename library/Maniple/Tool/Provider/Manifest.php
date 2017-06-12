@@ -19,32 +19,34 @@ class Maniple_Tool_Provider_Manifest implements Zend_Tool_Framework_Manifest_Pro
     {
         $providers = array();
 
-        foreach (scandir('application/modules') as $module) {
-            if ($module === '.' || $module === '..') {
-                continue;
-            }
+        if (is_dir('application/modules')) {
+            foreach (scandir('application/modules') as $module) {
+                if ($module === '.' || $module === '..') {
+                    continue;
+                }
 
-            $manifestFile = 'application/modules/' . $module . '/Manifest.php';
-            if (!file_exists($manifestFile)) {
-                continue;
-            }
+                $manifestFile = 'application/modules/' . $module . '/Manifest.php';
+                if (!file_exists($manifestFile)) {
+                    continue;
+                }
 
-            $manifestClass = $this->_formatModuleName($module) . '_Manifest';
+                $manifestClass = $this->_formatModuleName($module) . '_Manifest';
 
-            if (!class_exists($manifestClass)) {
-                /** @noinspection PhpIncludeInspection */
-                include_once $manifestFile;
-            }
-            if (!class_exists($manifestClass, false) ||
-                !$this->_isManifestImplementation($manifestClass)
-            ) {
-                continue;
-            }
+                if (!class_exists($manifestClass)) {
+                    /** @noinspection PhpIncludeInspection */
+                    include_once $manifestFile;
+                }
+                if (!class_exists($manifestClass, false) ||
+                    !$this->_isManifestImplementation($manifestClass)
+                ) {
+                    continue;
+                }
 
-            $manifest = new $manifestClass();
-            if (method_exists($manifest, 'getProviders')) {
-                foreach ($manifest->getProviders() as $provider) {
-                    $providers[] = $provider;
+                $manifest = new $manifestClass();
+                if (method_exists($manifest, 'getProviders')) {
+                    foreach ($manifest->getProviders() as $provider) {
+                        $providers[] = $provider;
+                    }
                 }
             }
         }
