@@ -200,30 +200,68 @@ function maniple_init($baseDir = null) {
 
 function maniple_generate_configs($dir) {
     $configs = array(
-        'development' =>
-            "phpSettings.display_startup_errors = 1\n" .
-            "phpSettings.display_errors = 1\n" .
-            "\n" .
-            "resources.frontController.params.displayExceptions = 1\n"
-    ,
-        'staging' =>
-            "phpSettings.display_startup_errors = 0\n" .
-            "phpSettings.display_errors = 0\n" .
-            "\n" .
-            "resources.frontController.params.displayExceptions = 0\n"
-    ,
-        'production' =>
-            "phpSettings.display_startup_errors = 0\n" .
-            "phpSettings.display_errors = 0\n" .
-            "\n" .
-            "resources.frontController.params.displayExceptions = 0\n"
-    ,
+        'development' => array(
+            'phpSettings' => array(
+                'display_startup_errors' => true,
+                'display_errors' => true,
+            ),
+            'resources' => array(
+                'frontController' => array(
+                    'params' => array(
+                        'displayExceptions' => true,
+                    ),
+                ),
+            ),
+        ),
+        'staging' => array(
+            'phpSettings' => array(
+                'display_startup_errors' => false,
+                'display_errors' => false,
+            ),
+            'resources' => array(
+                'frontController' => array(
+                    'params' => array(
+                        'displayExceptions' => false,
+                    ),
+                ),
+            ),
+        ),
+        'production' => array(
+            'phpSettings' => array(
+                'display_startup_errors' => false,
+                'display_errors' => false,
+            ),
+            'resources' => array(
+                'frontController' => array(
+                    'params' => array(
+                        'displayExceptions' => false,
+                    ),
+                ),
+            ),
+        ),
     );
     foreach ($configs as $env => $config) {
-        $path = $dir . '/application.' . $env . '.ini';
+        $path = $dir . '/application.' . $env . '.php';
         if (!is_file($path)) {
             echo 'Creating application config file ', basename($path), ' ... ';
-            file_put_contents($path, "[$env]\n\n" . $config);
+
+            $configString = var_export($config, true);
+
+            // use 4 space indent
+            $indentWidth = 4;
+            $configString = preg_replace_callback('/\n(\s+)/', function (array $match) use ($indentWidth) {
+                $indentDepth = strlen($match[1]) / 2;
+                $indent = str_repeat(' ', $indentWidth);
+                return "\n" . str_repeat($indent, $indentDepth);
+            }, $configString);
+
+            // remove space between 'array' and '('
+            $configString = preg_replace('/array\s*\(/', 'array(', $configString);
+
+            // place array( at the same level as =>
+            $configString = preg_replace('/=>\s*array\(/', '=> array(', $configString);
+
+            file_put_contents($path, "<?php\n\nreturn " . $configString . ";\n");
             echo 'done.', "\n";
         }
     }
