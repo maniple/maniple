@@ -213,19 +213,6 @@ function maniple_generate_configs($dir) {
                 ),
             ),
         ),
-        'staging' => array(
-            'phpSettings' => array(
-                'display_startup_errors' => false,
-                'display_errors' => false,
-            ),
-            'resources' => array(
-                'frontController' => array(
-                    'params' => array(
-                        'displayExceptions' => false,
-                    ),
-                ),
-            ),
-        ),
         'production' => array(
             'phpSettings' => array(
                 'display_startup_errors' => false,
