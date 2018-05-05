@@ -2,6 +2,12 @@
 
 class Maniple_Tool_Provider_Module extends Zend_Tool_Framework_Provider_Abstract
 {
+    /**
+     * Create module
+     *
+     * @param string $moduleName
+     * @throws Zend_Tool_Framework_Client_Exception
+     */
     public function create($moduleName)
     {
         $moduleName = trim($moduleName);
@@ -28,14 +34,14 @@ class Maniple_Tool_Provider_Module extends Zend_Tool_Framework_Provider_Abstract
         @mkdir($moduleDir . '/configs');
 
         if (!file_exists($moduleDir .'/configs/routes.config.php')) {
-            file_put_contents($moduleDir .'/configs/routes.config.php', "<?php return array(\n    // Module routes config\n);");
+            file_put_contents($moduleDir .'/configs/routes.config.php', "<?php\n\nreturn array(\n    // Module routes config\n);\n");
         }
         if (!file_exists($moduleDir .'/configs/resources.config.php')) {
-            file_put_contents($moduleDir .'/configs/resources.config.php', "<?php return array(\n    // Module resources config\n);");
+            file_put_contents($moduleDir .'/configs/resources.config.php', "<?php\n\nreturn array(\n    // Module resources config\n);\n");
         }
 
         // generate library/ here all autoload classes will be stored
-        @mkdir($moduleDir . '/library');
+        @mkdir($moduleDir . '/library/' . $modulePrefix, 0777, true);
 
         @mkdir($moduleDir . '/views/layouts', 0777, true);
         @mkdir($moduleDir . '/views/scripts', 0777, true);
@@ -86,7 +92,7 @@ class {$modulePrefix}_Bootstrap extends Maniple_Application_Module_Bootstrap
         return array(
             'scriptPaths' => dirname(__FILE__) . '/views',
             'helperPaths' => array(
-                '{$modulePrefix}_View_Helper_' => dirname(__FILE__) . '/library/View/Helper/',
+                '{$modulePrefix}_View_Helper_' => dirname(__FILE__) . '/library/{$modulePrefix}/View/Helper/',
             ),
         );
     }
@@ -99,7 +105,7 @@ class {$modulePrefix}_Bootstrap extends Maniple_Application_Module_Bootstrap
         Zend_Loader_AutoloaderFactory::factory(array(
             'Zend_Loader_StandardAutoloader' => array(
                 'prefixes' => array(
-                    '{$modulePrefix}_' => dirname(__FILE__) . '/library/',
+                    '{$modulePrefix}_' => dirname(__FILE__) . '/library/{$modulePrefix}/',
                 ),
             ),
         ));
@@ -153,8 +159,7 @@ END;
         // prepare tests bootstrap file
         $testsBootstrap = $dir . '/tests/bootstrap.php';
         if (!file_exists($testsBootstrap)) {
-            file_put_contents($testsBootstrap, <<<END
-<?php
+            file_put_contents($testsBootstrap, "<?php
 
 error_reporting(E_ALL | E_STRICT);
 ini_set('display_startup_errors', 1);
@@ -175,12 +180,12 @@ while (\$parent = \$dir . '/..') {
     \$dir = \$parent;
 }
 if (empty(\$autoload)) {
-    die('Unable to find autoload.php');
+    die('Unable to find vendor/autoload.php file');
 }
 
+/** @noinspection PhpIncludeInspection */
 require_once \$autoload;
-
-END
+"
             );
         }
     }
