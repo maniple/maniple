@@ -185,8 +185,54 @@ if (empty(\$autoload)) {
 
 /** @noinspection PhpIncludeInspection */
 require_once \$autoload;
+
+Zend_Loader_AutoloaderFactory::factory(array(
+    'Zend_Loader_StandardAutoloader' => array(
+        'prefixes' => array(
+            '{$moduleName}_' => dirname(dirname(__FILE__)) . '/library/{$moduleName}/',
+        ),
+    ),
+));
 "
             );
         }
+    }
+
+    public function test($moduleName)
+    {
+        $moduleDir = 'application/modules/' . $moduleName;
+        if (!file_exists($moduleDir)) {
+            throw new Zend_Tool_Framework_Client_Exception('Unable to find module ' . $moduleName);
+        }
+
+        $autoload = null;
+        $dir = $moduleDir;
+        while ($parent = $dir . '/..') {
+            if (file_exists($path = $parent . '/vendor/autoload.php')) {
+                $autoload = realpath($path);
+                break;
+            }
+            $dir = $parent;
+        }
+
+        $phpunit = null;
+        if ($autoload) {
+            $phpunit = dirname($autoload) . '/bin/phpunit';
+
+            if (!file_exists($phpunit)) {
+                $phpunit = null;
+            }
+        }
+
+        if (!$phpunit) {
+            throw new Zend_Tool_Framework_Client_Exception('Unable to find phpunit binary');
+        }
+
+        $cwd = getcwd();
+        chdir($moduleDir);
+        passthru($phpunit, $error);
+        chdir($cwd);
+
+        exit($error);
     }
 }
