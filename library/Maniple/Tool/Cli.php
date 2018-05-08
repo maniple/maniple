@@ -228,7 +228,7 @@ function maniple_generate_configs($dir) {
         ),
     );
     foreach ($configs as $env => $config) {
-        $path = $dir . '/application.' . $env . '.php';
+        $path = $dir . '/application.config.' . $env . '.php';
         if (!is_file($path)) {
             echo 'Creating application config file ', basename($path), ' ... ';
 
@@ -250,6 +250,8 @@ function maniple_generate_configs($dir) {
 
             file_put_contents($path, "<?php\n\nreturn " . $configString . ";\n");
             echo 'done.', "\n";
+        } else {
+            echo 'Application config file ', basename($path), ' already present' . "\n";
         }
     }
 }
