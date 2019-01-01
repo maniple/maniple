@@ -44,13 +44,15 @@ class Maniple_Tool_Provider_Module extends Zend_Tool_Framework_Provider_Abstract
         @mkdir($moduleDir . '/library/' . $modulePrefix, 0777, true);
 
         @mkdir($moduleDir . '/views/layouts', 0777, true);
-        @mkdir($moduleDir . '/views/scripts', 0777, true);
+        @mkdir($moduleDir . '/views/scripts/' . $moduleName, 0777, true);
 
         $this->createTests($modulePrefix, $moduleDir);
 
         @mkdir($moduleDir . '/public');
 
         @mkdir($moduleDir . '/controllers');
+
+        @mkdir($moduleDir . '/languages');
 
         $this->_registry->getResponse()->appendContent(
             sprintf('Created module %s in %s', $moduleName, $moduleDir)
