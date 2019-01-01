@@ -7,6 +7,7 @@ class Maniple_Tool_Provider_Manifest implements Zend_Tool_Framework_Manifest_Pro
         return array_merge(
             array(
                 'Maniple_Tool_Provider_Module',
+                'Maniple_Tool_Provider_Model',
             ),
             $this->_loadModuleProviders()
         );
