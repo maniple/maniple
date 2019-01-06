@@ -44,6 +44,9 @@ class Maniple_Tool_Provider_Model extends Zend_Tool_Framework_Provider_Abstract
         file_put_contents($modelDir . '/' . $modelName . '.php',
 "<?php
 
+/**
+ * @method {$tableClass} getTable()
+ */
 class {$rowClass} extends Zefram_Db_Table_Row
 {
     const className = __CLASS__;
@@ -55,6 +58,10 @@ class {$rowClass} extends Zefram_Db_Table_Row
         file_put_contents($modelDir . '/DbTable/' . $modelName . 's.php',
 "<?php
 
+/**
+ * @method {$rowClass} findRow(mixed \$id)
+ * @method {$rowClass} createRow(array \$data = array(), string \$defaultSource = null)
+ */
 class {$tableClass} extends Zefram_Db_Table
 {
     const className = __CLASS__;
