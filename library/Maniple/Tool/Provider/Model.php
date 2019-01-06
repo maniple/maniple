@@ -41,7 +41,14 @@ class Maniple_Tool_Provider_Model extends Zend_Tool_Framework_Provider_Abstract
         $rowClass = $modulePrefix . '_Model_' . $modelName;
         $tableClass = $modulePrefix . '_Model_DbTable_' . $modelName . 's'; // pluralize
 
-        file_put_contents($modelDir . '/' . $modelName . '.php',
+        $rowClassFile = $modelDir . '/' . $modelName . '.php';
+        $tableClassFile = $modelDir . '/DbTable/' . $modelName . 's.php';
+
+        if (file_exists($rowClassFile)) {
+            throw new Exception("Model file already exists: {$rowClassFile}");
+        }
+
+        file_put_contents($rowClassFile,
 "<?php
 
 /**
@@ -55,7 +62,11 @@ class {$rowClass} extends Zefram_Db_Table_Row
 }
 ");
 
-        file_put_contents($modelDir . '/DbTable/' . $modelName . 's.php',
+        if (file_exists($tableClassFile)) {
+            throw new Exception("Model table file already exists: {$tableClassFile}");
+        }
+
+        file_put_contents($tableClassFile,
 "<?php
 
 /**
