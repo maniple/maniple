@@ -32,7 +32,9 @@ define('APPLICATION_ENV',  (is_file('appenv') ? trim(file_get_contents('appenv')
 define('APPLICATION_PATH', realpath('application'));
 
 try {
-    switch ($action) {
+    if ($action === 'install' && !count($action_args)) {
+        maniple_install(isset($args[2]) ? $args[2] : '/');
+    } else switch ($action) {
         case 'init':
             // maniple init
             maniple_init(isset($args[2]) ? $args[2] : null);
@@ -43,22 +45,8 @@ try {
             maniple_vendor_update(isset($args[2]) ? $args[2] : null);
             break;
 
-        case 'module-install':
-            // maniple module-install [module_path]
-            if (empty($args[2])) {
-                echo "maniple module-install: module_path required\n";
-                exit(1);
-            }
-            maniple_module_install($args[2]);
-            break;
-
         case 'set-baseurl':
             // maniple set-baseurl [base_url]
-            break;
-
-        case 'install':
-            // maniple install [base_url]
-            maniple_install(isset($args[2]) ? $args[2] : '/');
             break;
 
         case 'db:dump':
@@ -111,7 +99,7 @@ function maniple_install($basePath)
             || is_file($dirPath . '/module/Bootstrap.php')
             || is_file($dirPath . '/Module.php') // ZF2 style module
         ) {
-            maniple_module_install($dirPath);
+            Maniple_Tool_Provider_Module_Install::run($dirPath);
         }
     }
 
@@ -256,8 +244,6 @@ function maniple_generate_configs($dir) {
     }
 }
 
-
-
 function maniple_vendor_update($vendor_path = null) {
     $cwd = getcwd(); // absolute
     if (null === $vendor_path) {
@@ -287,214 +273,6 @@ function maniple_vendor_update($vendor_path = null) {
         }
     }
     chdir($cwd);
-}
-
-function maniple_module_install($path, $symlink = true)
-{
-    $path = str_replace('\\', '/', $path);
-
-    if (strpos($path, '/') === false) {
-        // module name given, use default location
-        $path = 'application/modules/' . $path;
-    }
-
-    if (!file_exists($path)) {
-        printf("[ ERROR ] Module directory not found: %s\n", $path);
-        return false;
-    }
-
-    $module_config_path = $path . '/module.json';
-
-    if (!file_exists($module_config_path)) {
-        $module_config = array();
-    } else {
-        $module_config = (array) @json_decode(file_get_contents($module_config_path), true);
-        print_R($module_config);
-    }
-
-    $module_name = empty($module_config['name']) ? basename($path) : basename($module_config['name']);
-
-    $module_dir_name = empty($module_config['moduleDirName']) ? $module_name : basename($module_config['moduleDirName']);
-
-    $module_path = $path;
-
-    if (is_dir($module_path)) {
-        @mkdir('application/modules', 0644, true);
-        if ($symlink) {
-            if (realpath($module_path) !== realpath("application/modules/{$module_dir_name}")) {
-                echo "Linking module ...\n";
-                maniple_symlink(realpath($module_path), "application/modules/{$module_dir_name}");
-            }
-        }
-    } else {
-        echo "[ FAIL ] Module directory not found: $module_path\n";
-    }
-
-
-    echo "\n\n";
-    echo "[Installing module]\n";
-    echo "  path: ", $module_path, "\n";
-    echo "  name: ", $module_name, "\n";
-    echo "  moduleDirName: ", $module_dir_name, " (deprecated)\n";
-    echo "\n";
-
-
-    $assets_dir_name = empty($module_config['assetsDirName']) ? $module_dir_name : basename($module_config['assetsDirName']);
-
-    $publicAssetsFound = false;
-    $publicAssetsDirs = array('resource/public', 'resources/public', 'public', 'assets');
-    foreach ($publicAssetsDirs as $publicAssetsDir) {
-        $assets_path = $path . '/' . $publicAssetsDir;
-
-        if (is_dir($assets_path)) {
-            echo "Linking public assets\n";
-            @mkdir('public/modules', 0755, true);
-            maniple_symlink(realpath($assets_path), "public/modules/{$assets_dir_name}");
-
-            // deprecated
-            @mkdir('public/assets', 0755, true);
-            maniple_symlink(realpath($assets_path), "public/assets/{$assets_dir_name}");
-
-            $publicAssetsFound = true;
-            break;
-        }
-    }
-    if (!$publicAssetsFound) {
-        echo "[assets] public directory not found\n";
-    }
-
-    if (is_file($path . '/bower.json')) {
-        static $installed_components;
-
-        if ($installed_components === null) {
-            foreach (glob('public/bower_components/*') as $component) {
-                if (!is_dir($component)) {
-                    continue;
-                }
-
-                // .bower.json is always generated when installing a Bower package. It
-                // is a clone of bower.json with additional properties used internally.
-                // Also for non-registry packages there will be .bower.json, but no bower.json.
-                // Source: https://github.com/bower/bower/issues/1174
-                $bower_json = $component . '/.bower.json';
-                $bower = json_decode(file_get_contents($bower_json), true);
-                $name = isset($bower['name']) ? $bower['name'] : null;
-
-                if (empty($name)) {
-                    $bower2_json = dirname($bower_json) . '/bower.json';
-                    if (file_exists($bower2_json)) {
-                        $bower = json_decode(file_get_contents($bower2_json), true);
-                    }
-                    $name = isset($bower['name']) ? $bower['name'] : null;
-                }
-
-                if (empty($name)) {
-                    $name = basename(dirname($bower_json));
-                }
-
-                $installed_components[$name] = dirname($bower_json);
-            }
-        }
-
-        $bower = json_decode(file_get_contents($path . '/bower.json'), true);
-        if (isset($bower['dependencies'])) {
-            foreach ((array) $bower['dependencies'] as $package => $version) {
-                if (isset($installed_components[$package])) {
-                    printf("[bower] Package already installed %s\n", $package);
-                } else {
-                    if (preg_match('#^[a-z]+://#i', $version)
-                        || preg_match('#^[-_a-z0-9]+/[-_a-z0-9]+[\#]?#i', $version)
-                    ) {
-                        $spec = "$package=$version"; // url or login/repo
-                    } else {
-                        $spec = "$package=$package#$version";
-                    }
-                    bower_install($spec);
-                    $package_dir = 'public/bower_components/' . $package;
-                    echo 'package dir: ' . $package_dir, " (", $spec, ")\n";
-                    if (file_exists($package_dir . '/.bower.json')) {
-                        $json = json_decode(file_get_contents($package_dir . '/.bower.json'), true);
-
-                        // bowerphp fails to properly create .bower.json for components from GitHub
-                        if (!isset($json['name'])) {
-                            $json = array_merge(
-                                array('name' => $package),
-                                $json
-                            );
-                            file_put_contents(
-                                $package_dir . '/.bower.json',
-                                Zefram_Json::encode($json, array(
-                                    'prettyPrint' => true,
-                                    'unescapedSlashes' => true,
-                                    'unescapedUnicode' => true,
-                                ))
-                            );
-                        }
-
-                        $installed_components[$package] = $package_dir;
-                    } else {
-                        throw new Exception('Failed to install package from bower, ' . $spec);
-                    }
-                }
-            }
-        }
-    }
-}
-
-/**
- * Detect the available version of Bower
- *
- * @return string
- */
-function bower_binary() {
-    $process = new Zefram_System_Process(array('bower', '--version'));
-    $process->run();
-    return trim($process->getOutput());
-}
-
-/**
- * Install Bower package
- *
- * @param string $package
- */
-function bower_install($package) {
-    static $bower_available = null;
-
-    if ($bower_available === null) {
-        $bower_available = bower_binary();
-        if ($bower_available) {
-            echo '[bower] Using Bower version ', $bower_available, "\n";
-        } else {
-            echo '[bower] Bower not detected, using bowerphp', "\n";
-        }
-    }
-
-    printf("[bower] Installing %s\n", $package);
-    $cmd = sprintf(
-        "%s install %s 2>&1",
-        $bower_available
-            ? 'bower'
-            : VENDOR_DIR . DS . 'bin' . DS . 'bowerphp',
-        escapeshellarg($package)
-    );
-    echo $cmd, "\n";
-    echo system($cmd, $retval), "\n";
-
-    return $retval;
-}
-
-function maniple_symlink($source, $dest)
-{
-    echo "[symlink] $dest -> $source\n";
-    // don't rely on symlink as it fails on Windows
-    // Warning: symlink(): Cannot create symlink, error code(1314)
-    if (Zefram_Os::isWindows()) {
-        `rmdir "$dest" 2>nul`;
-        `mklink /J "$dest" "$source"`;
-    } else {
-        `rm "$dest" 2>/dev/null`;
-        `ln -s "$source" "$dest"`;
-    }
 }
 
 function maniple_unlink($path, $nomove = false)

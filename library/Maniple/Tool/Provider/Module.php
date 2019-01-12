@@ -237,4 +237,9 @@ Zend_Loader_AutoloaderFactory::factory(array(
 
         exit($error);
     }
+
+    public function install($moduleName)
+    {
+        Maniple_Tool_Provider_Module_Install::run($moduleName);
+    }
 }
