@@ -21,6 +21,22 @@ class Maniple_Tool_Provider_Module_Install
         echo "  name: ", $moduleName, "\n";
         echo "\n";
 
+        if (file_exists($modulePath . '/composer.json')) {
+            $gitignorePath = "application/modules/.gitignore";
+            if (file_exists($gitignorePath)) {
+                $gitignore = file($gitignorePath);
+                $gitignore = array_map('trim', $gitignore);
+            } else {
+                $gitignore = array();
+            }
+
+            if (!in_array($moduleName, $gitignore)) {
+                $gitignore[] = $moduleName;
+                sort($gitignore);
+                file_put_contents($gitignorePath, implode("\n", $gitignore) . "\n");
+            }
+        }
+
         self::_installPublicAssets($modulePath);
 
         if (file_exists($modulePath . '/bower.json')) {
