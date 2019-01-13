@@ -37,6 +37,7 @@ class Maniple_Tool_Provider_Model extends Zend_Tool_Framework_Provider_Abstract
 
         $filter = new Zend_Filter_Word_CamelCaseToUnderscore();
         $tableName = strtolower($filter->filter($pluralModelName));
+        $idColumnName = strtolower($filter->filter($modelName)) . '_id';
 
         $rowClass = $modulePrefix . '_Model_' . $modelName;
         $tableClass = $modulePrefix . '_Model_DbTable_' . $modelName . 's'; // pluralize
@@ -83,6 +84,28 @@ class {$tableClass} extends Zefram_Db_Table
 
     protected \$_referenceMap = array();
 }
+");
+
+        $paddedIdColumnName = sprintf('%-15s', $idColumnName);
+
+        @mkdir($moduleDir . '/data/schema', 0777, true);
+        file_put_contents($moduleDir . '/data/schema/' . $modulePrefix . '.mysql.sql',
+"-- {$modulePrefix} schema for MySQL
+
+CREATE TABLE {$tableName} (
+
+    {$paddedIdColumnName} INT UNSIGNED PRIMARY KEY AUTO_INCREMENT
+
+) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+");
+        file_put_contents($moduleDir . '/data/schema/' . $modulePrefix . '.pgsql.sql',
+"-- {$modulePrefix} schema for PostgreSQL
+
+CREATE TABLE {$tableName} (
+
+    {$paddedIdColumnName} SERIAL PRIMARY KEY
+
+);
 ");
     }
 }
