@@ -39,9 +39,31 @@ class Maniple_Tool_Provider_Module_Install
 
         self::_installPublicAssets($modulePath);
 
+        if (file_exists($modulePath . '/package.json')) {
+            self::_installNpmDependencies($modulePath);
+        }
+
         if (file_exists($modulePath . '/bower.json')) {
             self::_installBowerDependencies($modulePath);
         }
+    }
+
+    protected static function _installNpmDependencies($modulePath)
+    {
+        $process = new Zefram_System_Process(array('npm', '--version'));
+        $process->run();
+        $npm = trim($process->getOutput());
+
+        if (!$npm) {
+            throw new Exception('No NPM binary found');
+        }
+
+        $wd = getcwd();
+
+        chdir($modulePath);
+        echo system('npm install', $retval), "\n";
+
+        chdir($wd);
     }
 
     protected static function _installPublicAssets($modulePath)
@@ -215,9 +237,9 @@ function bower_install($package) {
     if ($bower_available === null) {
         $bower_available = bower_binary();
         if ($bower_available) {
-            echo '[bower] Using Bower version ', $bower_available, '\n';
+            echo '[bower] Using Bower version ', $bower_available, "\n";
         } else {
-            echo '[bower] Bower not detected, using bowerphp', '\n';
+            echo '[bower] Bower not detected, using bowerphp', "\n";
         }
     }
 
@@ -229,8 +251,8 @@ function bower_install($package) {
             : VENDOR_DIR . DS . 'bin' . DS . 'bowerphp',
         escapeshellarg($package)
     );
-    echo $cmd, '\n';
-    echo system($cmd, $retval), '\n';
+    echo $cmd, "\n";
+    echo system($cmd, $retval), "\n";
 
     return $retval;
 }
