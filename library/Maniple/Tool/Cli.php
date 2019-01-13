@@ -25,6 +25,10 @@ if (count($args) < 2) {
     exit(1);
 }
 
+if ($_SERVER['argv'][1] === 'help') {
+    $_SERVER['argv'][1] = '?';
+}
+
 $action = $args[1];
 $action_args = array_slice($args, 2);
 
