@@ -42,8 +42,18 @@ class Maniple_Tool_Client_Console extends Zefram_Tool_Framework_Client_Console
             'config'      => array(),
         ), (array) $options);
 
+        if (is_string($options['config'])) {
+            $config = Zefram_Config::factory($options['config'], $options['environment'])->toArray();
+        } else {
+            $config = (array) $options['config'];
+        }
+
+        if (is_file('application/configs/cli.config.php')) {
+            $config['config'][] = 'application/configs/cli.config.php';
+        }
+
         $applicationClass = $options['class'];
-        $application = new $applicationClass($options['environment'], $options['config']);
+        $application = new $applicationClass($options['environment'], $config);
 
         if (!$application instanceof Zend_Application) {
             throw new Zend_Tool_Framework_Client_Exception(sprintf(

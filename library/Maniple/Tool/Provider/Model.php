@@ -2,6 +2,8 @@
 
 class Maniple_Tool_Provider_Model extends Zend_Tool_Framework_Provider_Abstract
 {
+    const className = __CLASS__;
+
     /**
      * Create module
      *
