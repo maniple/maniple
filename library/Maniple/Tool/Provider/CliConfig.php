@@ -27,11 +27,12 @@ class Maniple_Tool_Provider_CliConfig extends Zend_Tool_Framework_Provider_Abstr
         }
 
         $ptr = &$config;
-        $keySegments = explode('.', $key);
+        $keySegments = preg_split('/(?<!\\\\)\./', $key);
         $currentPath = array();
 
         while (count($keySegments)) {
             $keySegment = array_shift($keySegments);
+            $keySegment = str_replace('\\.', '.', $keySegment);
 
             if (!count($keySegments)) {
                 $ptr[$keySegment] = $value;
