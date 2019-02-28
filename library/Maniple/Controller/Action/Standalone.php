@@ -76,7 +76,9 @@ abstract class Maniple_Controller_Action_Standalone
     }
 
     protected function _init()
-    {}
+    {
+        $this->getResource('Maniple.Injector')->inject($this);
+    }
 
     /**
      * @return Zend_Controller_Action

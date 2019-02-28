@@ -2,6 +2,26 @@
 
 class Maniple_Controller_Action extends Zefram_Controller_Action
 {
+    /**
+     * @var bool
+     */
+    protected $_initialized = false;
+
+    public function init()
+    {
+        if ($this->_initialized) {
+            return;
+        }
+
+        $this->_initialized = true;
+        $this->_init();
+    }
+
+    protected function _init()
+    {
+        $this->getResource('Maniple.Injector')->inject($this);
+    }
+
     public function getSecurity()
     {
         return $this->getResource('security');
