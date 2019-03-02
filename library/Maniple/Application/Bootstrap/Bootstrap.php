@@ -3,10 +3,13 @@
 /**
  * @version 2015-03-11
  * @author xemlock
+ * @deprecated
  */
 class Maniple_Application_Bootstrap_Bootstrap
     extends Zefram_Application_Bootstrap_Bootstrap
 {
+    protected $_containerClass = 'Maniple_Application_ResourceContainer';
+
     /**
      * Get the plugin loader for resources.
      *
@@ -22,27 +25,4 @@ class Maniple_Application_Bootstrap_Bootstrap
         }
         return $this->_pluginLoader;
     } // }}}
-
-    /**
-     * Bootstrap module.
-     *
-     * @deprecated
-     * @param  string $module
-     * @return Maniple_Application_Bootstrap_Bootstrap
-     */
-    public function bootstrapModule($module) // {{{
-    {
-        $this->getPluginResource('modules')->bootstrapModule($module);
-        return $this;
-    } // }}}
-
-
-//    protected function _bootstrap($resource = null)
-//    {
-//        if ($resource === null && $this->hasPluginResource('modules')) {
-//            $modules = $this->getPluginResource('modules');
-//            $modules->preInit(); // to powinno zaktualizować config
-//        }
-//        return parent::_bootstrap($resource);
-//    }
 }

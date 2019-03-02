@@ -15,7 +15,7 @@ class Maniple_Injector
     /**
      * @param Zefram_Application_ResourceContainer $container
      */
-    public function __construct(Zefram_Application_ResourceContainer $container)
+    public function __construct(Maniple_Application_ResourceContainer $container)
     {
         $this->_container = $container;
     }
