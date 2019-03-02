@@ -1,6 +1,7 @@
 <?php
 
 /**
+ * @deprecated
  * @version 2013-12-05
  */
 class Maniple_Application_ServiceLocator extends Maniple_Application_ResourceContainer

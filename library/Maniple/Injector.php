@@ -3,7 +3,7 @@
 class Maniple_Injector
 {
     /**
-     * @var Zefram_Application_ResourceContainer
+     * @var object
      */
     protected $_container;
 
@@ -13,11 +13,21 @@ class Maniple_Injector
     protected $_metadata;
 
     /**
-     * @param Zefram_Application_ResourceContainer $container
+     * @param object $container
      */
-    public function __construct(Maniple_Application_ResourceContainer $container)
+    public function __construct($container)
     {
+        if (!is_object($container)) {
+            throw new Exception(
+                sprintf('Container must be an object, %s provided', gettype($container))
+            );
+        }
+
         $this->_container = $container;
+
+        if ($container instanceof Maniple_Application_ResourceContainer) {
+            $container->setInjector($this);
+        }
     }
 
     /**

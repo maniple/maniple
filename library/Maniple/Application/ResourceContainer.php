@@ -32,6 +32,11 @@ class Maniple_Application_ResourceContainer implements ArrayAccess
     protected $_callbacks = array();
 
     /**
+     * @var Maniple_Injector
+     */
+    protected $_injector;
+
+    /**
      * @param array|object $options
      */
     public function __construct($options = null) // {{{
@@ -44,6 +49,16 @@ class Maniple_Application_ResourceContainer implements ArrayAccess
             $this->addResources($options);
         }
     } // }}}
+
+    /**
+     * @param Maniple_Injector $injector
+     * @return $this
+     */
+    public function setInjector(Maniple_Injector $injector)
+    {
+        $this->_injector = $injector;
+        return $this;
+    }
 
     /**
      * Add many resources at once
@@ -279,6 +294,11 @@ class Maniple_Application_ResourceContainer implements ArrayAccess
             }
         } else {
             $instance = new $class();
+        }
+
+        // If injector is configured inject properties before calling any methods
+        if ($this->_injector) {
+            $this->_injector->inject($instance);
         }
 
         // this is now deprecated. Params will be passed to constructor
