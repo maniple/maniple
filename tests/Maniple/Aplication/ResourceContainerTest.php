@@ -2,14 +2,40 @@
 
 require_once 'Maniple/Application/ResourceContainer.php';
 
-class Maniple_Application_ResourceContainerTest
-    extends PHPUnit_Framework_TestCase
+class Maniple_Application_ResourceContainerTest extends PHPUnit_Framework_TestCase
 {
-    public function testHasResourceAfterAddResource()
+    protected $_container;
+
+    public function getContainer()
     {
-        $container = new Maniple_Application_ResourceContainer();
-        $container->addResource('obj', new stdClass);
-        $this->assertTrue($container->hasResource('obj'));
+        if ($this->_container === null) {
+            $this->_container = new Maniple_Application_ResourceContainer();
+        }
+        return $this->_container;
+    }
+
+    public function testResourceCallback()
+    {
+        $container = $this->getContainer();
+        $callback = array($this, 'resourceCallback');
+
+        $container->addResourceCallback('pokemon', $callback, array('Gyarados'));
+        $resource = $container->getResource('pokemon');
+
+        $this->assertInstanceOf('Res', $resource);
+        $this->assertEquals('Gyarados', $resource->getName());
+
+        $callback = new Zefram_Stdlib_CallbackHandler(array($this, 'resourceCallback'), array(), array('Lugia'));
+        $container->addResourceCallback('pokemon2', $callback);
+        $resource = $container->getResource('pokemon2');
+
+        $this->assertInstanceOf('Res', $resource);
+        $this->assertEquals('Lugia', $resource->getName());
+    }
+
+    public function resourceCallback($name)
+    {
+        return new Res($name);
     }
 
     /**
@@ -20,80 +46,6 @@ class Maniple_Application_ResourceContainerTest
         $container = new Maniple_Application_ResourceContainer();
         $container->addResource('obj', new stdClass);
         $container->addResource('obj', new stdClass);
-    }
-
-    public function testAddedObjectIsReady()
-    {
-        $container = new Maniple_Application_ResourceContainer();
-        $container->addResource('obj', new stdClass);
-        $this->assertTrue($container->isReady('obj'));
-    }
-
-    public function testAddedAsDescriptionIsNotReady()
-    {
-        $container = new Maniple_Application_ResourceContainer();
-        $container->addResource('obj', array('class' => 'stdClass'));
-        $this->assertFalse($container->isReady('obj'));
-    }
-
-    public function testAddedAsAliasIsNotReady()
-    {
-        $container = new Maniple_Application_ResourceContainer();
-        $container->addResource('obj', 'resource:obj_alias');
-        $this->assertFalse($container->isReady('obj'));
-    }
-
-    public function testReadyCallback()
-    {
-        $container = new Maniple_Application_ResourceContainer();
-
-        $this->_objReadyCalled = false;
-
-        $container->onReady('obj', array($this, 'objReadyCallback'));
-        $container->addResource('obj', array('class' => 'stdClass'));
-        $container->getResource('obj');
-
-        $this->assertTrue($this->_objReadyCalled);
-    }
-
-    public function testWhenReadyCallback()
-    {
-        $container = new Maniple_Application_ResourceContainer();
-
-        $this->_objReadyCalled = false;
-
-        $container->addResource('obj', new stdClass);
-        $container->whenReady('obj', array($this, 'objReadyCallback'));
-
-        $this->assertTrue($this->_objReadyCalled);
-    }
-
-    public function testWhenReadyCallbackFromDefinition()
-    {
-        $container = new Maniple_Application_ResourceContainer();
-
-        $this->_objReadyCalled = false;
-
-        $container->addResource('obj', array('class' => 'stdClass'));
-        $container->whenReady('obj', array($this, 'objReadyCallback'));
-
-        $this->assertFalse($this->_objReadyCalled);
-        $container->getResource('obj');
-        $this->assertTrue($this->_objReadyCalled);
-    }
-
-    public function objReadyCallback($obj)
-    {
-        $this->_objReadyCalled = true;
-    }
-
-    /**
-     * @expectedException InvalidArgumentException
-     */
-    public function testInvalidReadyCallback()
-    {
-        $container = new Maniple_Application_ResourceContainer();
-        $container->onReady('obj', 0xDEADBEEF);
     }
 
     /**
@@ -109,16 +61,11 @@ class Maniple_Application_ResourceContainerTest
     {
         $container = new Maniple_Application_ResourceContainer();
         $container->addResource('obj', array('class' => 'stdClass'));
-        $this->assertFalse($container->isReady('obj'));
 
         $this->assertInstanceOf('stdClass', $container->getResource('obj'));
 
-
-        $this->assertTrue($container->isReady('obj'));
-
         $container->removeResource('obj');
         $this->assertFalse($container->hasResource('obj'));
-        $this->assertFalse($container->isReady('obj'));
     }
 
     public function testGetProxy()
@@ -175,13 +122,21 @@ class Maniple_Application_ResourceContainerTest
         $container->addResource('obj_alias', 'resource:obj');
         $container->addResource('obj_alias2', 'resource:obj_alias');
 
-        $this->assertTrue($container->isReady('obj'));
-
         $this->assertTrue($container->hasResource('obj_alias'));
-        $this->assertTrue($container->isReady('obj_alias'));
-
         $this->assertTrue($container->hasResource('obj_alias2'));
-        $this->assertTrue($container->isReady('obj_alias2')); // alias inherits isReady flag
         $this->assertTrue($container->getResource('obj_alias2') === $obj);
+    }
+}
+
+class Res
+{
+    public function __construct($name)
+    {
+        $this->_name = $name;
+    }
+
+    public function getName()
+    {
+        return $this->_name;
     }
 }
