@@ -90,6 +90,10 @@ class Maniple_Application_ResourceContainer implements ArrayAccess
             throw new Zend_Application_Exception("Resource '$name' is already registered");
         }
 
+        if (is_string($resource) && !strncasecmp($resource, 'class:', 6)) {
+            $resource = array('class' => substr($resource, 6));
+        }
+
         if (is_string($resource)) {
             if (!strncasecmp($resource, 'resource:', 9)) {
                 $this->_aliases[$name] = substr($resource, 9);
