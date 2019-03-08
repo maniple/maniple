@@ -60,7 +60,7 @@ class Maniple_Assets_AssetManager
      */
     public function getAssetUrl($path, $moduleName = null)
     {
-        list($path, $module) = $this->_getPathAndModule($path, $moduleName);
+        list($path, $module, $moduleName) = $this->_getPathAndModule($path, $moduleName);
 
         if (method_exists($module, 'getAssetsBaseDir')) {
             $baseDir = baseName($module->getAssetsBaseDir());
@@ -135,6 +135,6 @@ class Maniple_Assets_AssetManager
         $path = str_replace('\\', '//', $path);
         $path = preg_replace('/[.]{2,}/', '.', $path);
 
-        return array(ltrim($path, '/'), $module);
+        return array(ltrim($path, '/'), $module, $moduleName);
     }
 }
