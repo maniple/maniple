@@ -40,7 +40,7 @@ class Maniple_Application_Bootstrap
         }
 
         if (!file_exists($cacheDir = APPLICATION_PATH . '/../data/cache')) {
-            $cacheDir = APPLICATION_PATH . '/../variable/cache';
+            $cacheDir = APPLICATION_PATH . '/../data/cache';
         }
         Zend_Loader_PluginLoader::setIncludeFileCache($cacheDir . '/PluginLoader');
     }
