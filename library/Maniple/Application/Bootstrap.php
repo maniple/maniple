@@ -3,6 +3,7 @@
 /**
  * @version 2014-05-19
  * @author xemlock
+ * @deprecated 
  */
 class Maniple_Application_Bootstrap
     extends Maniple_Application_Bootstrap_Bootstrap
