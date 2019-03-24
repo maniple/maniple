@@ -4,9 +4,8 @@
  * Generates asset url with cache-busting suffix
  *
  * @version 2019-02-11
- * @deprecated Use Maniple_View_Helper_AssetUrl
  */
-class Maniple_View_Helper_Asset extends Zend_View_Helper_Abstract
+class Maniple_View_Helper_AssetUrl extends Zend_View_Helper_Abstract
 {
     /**
      * @return Maniple_AssetMananger_Service
@@ -23,7 +22,7 @@ class Maniple_View_Helper_Asset extends Zend_View_Helper_Abstract
      * @param string $moduleName OPTIONAL
      * @return string
      */
-    public function asset($path, $moduleName = null)
+    public function assetUrl($path, $moduleName = null)
     {
         return $this->_getAssetManager()->getAssetUrl($path, $moduleName);
     }
