@@ -48,6 +48,9 @@ class {$controllerClass} extends Maniple_Controller_Action
     const className = __CLASS__;
 }
 ");
+        $this->_registry->getResponse()->appendContent(
+            sprintf('Created controller %s in %s', $controllerName, $controllerDir)
+        );
 
         $indexActionFile = $controllerDir . '/' . $controllerName . '/IndexAction.php';
 
@@ -69,11 +72,22 @@ class {$controllerClass}_IndexAction extends Maniple_Controller_Action_Standalon
     }
 }
 ");
+            $this->_registry->getResponse()->appendContent(
+                sprintf('Created index action for controller %s in %s', $controllerName, $indexActionFile)
+            );
         }
 
-        $this->_registry->getResponse()->appendContent(
-            sprintf('Created controller %s in %s', $controllerName, $controllerDir)
-        );
+        $indexActionViewDir = $moduleDir . '/views/scripts/' . $this->_toDashCase($module) . '/' . $this->_toDashCase($name);
+        $indexActionViewFile = $indexActionViewDir . '/index.twig';
+
+        @mkdir($indexActionViewDir, 0777, true);
+
+        if (!file_exists($indexActionViewFile)) {
+            file_put_contents($indexActionViewFile, "<h1>{$controllerName}::indexAction works!</h1>\n");
+            $this->_registry->getResponse()->appendContent(
+                sprintf('Created view script for controller\'s %s index action in %s', $controllerName, $indexActionFile)
+            );
+        }
     }
 
     /**
@@ -83,5 +97,20 @@ class {$controllerClass}_IndexAction extends Maniple_Controller_Action_Standalon
     protected function _toCamelCase($string)
     {
         return str_replace(' ', '', ucfirst(ucwords(str_replace('-', ' ', $string))));
+    }
+
+    /**
+     * @param string $string
+     * @return string
+     */
+    protected function _toDashCase($string)
+    {
+        // filters from Zend_Controller_Action_Helper_ViewRenderer::getInflector()
+        $filter = new Zend_Filter();
+        $filter->addFilter(new Zend_Filter_Word_CamelCaseToDash());
+        $filter->addFilter(new Zend_Filter_PregReplace('#[^a-z0-9' . preg_quote('/', '#') . ']+#i', '-'));
+        $filter->addFilter(new Zend_Filter_StringToLower());
+
+        return $filter->filter($string);
     }
 }
