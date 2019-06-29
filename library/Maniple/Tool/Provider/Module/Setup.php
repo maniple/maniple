@@ -1,6 +1,6 @@
 <?php
 
-class Maniple_Tool_Provider_Module_Install
+class Maniple_Tool_Provider_Module_Setup
 {
     /**
      * @param string $moduleName

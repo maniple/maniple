@@ -103,7 +103,7 @@ function maniple_install($basePath)
             || is_file($dirPath . '/module/Bootstrap.php')
             || is_file($dirPath . '/Module.php') // ZF2 style module
         ) {
-            Maniple_Tool_Provider_Module_Install::run($dirPath);
+            Maniple_Tool_Provider_Module_Setup::run($dirPath);
         }
     }
 

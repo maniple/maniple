@@ -240,9 +240,9 @@ Zend_Loader_AutoloaderFactory::factory(array(
         exit($error);
     }
 
-    public function install($moduleName)
+    public function setup($moduleName)
     {
-        Maniple_Tool_Provider_Module_Install::run($moduleName);
+        Maniple_Tool_Provider_Module_Setup::run($moduleName);
     }
 
     public function add($moduleSpec)

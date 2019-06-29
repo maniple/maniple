@@ -86,6 +86,6 @@ class Maniple_Tool_Provider_Module_Add
         echo `composer require {$spec}{$version}`;
 
         echo "Setting up module " . basename($spec) . " ...\n";
-        Maniple_Tool_Provider_Module_Install::run(basename($spec));
+        Maniple_Tool_Provider_Module_Setup::run(basename($spec));
     }
 }
