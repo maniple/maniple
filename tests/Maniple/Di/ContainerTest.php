@@ -1,15 +1,13 @@
 <?php
 
-require_once 'Maniple/Application/ResourceContainer.php';
-
-class Maniple_Application_ResourceContainerTest extends PHPUnit_Framework_TestCase
+class Maniple_Di_ContainerTest extends PHPUnit_Framework_TestCase
 {
     protected $_container;
 
     public function getContainer()
     {
         if ($this->_container === null) {
-            $this->_container = new Maniple_Application_ResourceContainer();
+            $this->_container = new Maniple_Di_Container();
         }
         return $this->_container;
     }
@@ -43,7 +41,7 @@ class Maniple_Application_ResourceContainerTest extends PHPUnit_Framework_TestCa
      */
     public function testThrowsOnExistingResource()
     {
-        $container = new Maniple_Application_ResourceContainer();
+        $container = new Maniple_Di_Container();
         $container->addResource('obj', new stdClass);
         $container->addResource('obj', new stdClass);
     }
@@ -53,13 +51,13 @@ class Maniple_Application_ResourceContainerTest extends PHPUnit_Framework_TestCa
      */
     public function testRetrieveUnregisteredResource()
     {
-        $container = new Maniple_Application_ResourceContainer();
+        $container = new Maniple_Di_Container();
         $container->getResource('obj');
     }
 
     public function testWhatever()
     {
-        $container = new Maniple_Application_ResourceContainer();
+        $container = new Maniple_Di_Container();
         $container->addResource('obj', array('class' => 'stdClass'));
 
         $this->assertInstanceOf('stdClass', $container->getResource('obj'));
@@ -71,7 +69,7 @@ class Maniple_Application_ResourceContainerTest extends PHPUnit_Framework_TestCa
     public function testGetProxy()
     {
         $obj = new stdClass;
-        $container = new Maniple_Application_ResourceContainer();
+        $container = new Maniple_Di_Container();
         $container->addResource('obj', $obj);
         $this->assertTrue($container->obj === $obj);
     }
@@ -79,7 +77,7 @@ class Maniple_Application_ResourceContainerTest extends PHPUnit_Framework_TestCa
     public function testSetProxy()
     {
         $obj = new stdClass;
-        $container = new Maniple_Application_ResourceContainer();
+        $container = new Maniple_Di_Container();
         $container->obj = $obj;
         $this->assertTrue($container->getResource('obj') === $obj);
     }
@@ -91,7 +89,7 @@ class Maniple_Application_ResourceContainerTest extends PHPUnit_Framework_TestCa
             'obj2' => new stdClass,
             'obj3' => new stdClass,
         );
-        $container = new Maniple_Application_ResourceContainer();
+        $container = new Maniple_Di_Container();
         $container->addResources($resources);
 
         foreach ($resources as $name => $resource) {
@@ -106,7 +104,7 @@ class Maniple_Application_ResourceContainerTest extends PHPUnit_Framework_TestCa
             'obj2' => new stdClass,
             'obj3' => new stdClass,
         );
-        $container = new Maniple_Application_ResourceContainer($resources);
+        $container = new Maniple_Di_Container($resources);
 
         foreach ($resources as $name => $resource) {
             $this->assertTrue($container->getResource($name) === $resource);
@@ -117,7 +115,7 @@ class Maniple_Application_ResourceContainerTest extends PHPUnit_Framework_TestCa
     {
         $obj = new stdClass;
 
-        $container = new Maniple_Application_ResourceContainer();
+        $container = new Maniple_Di_Container();
         $container->addResource('obj', $obj);
         $container->addResource('obj_alias', 'resource:obj');
         $container->addResource('obj_alias2', 'resource:obj_alias');

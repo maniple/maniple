@@ -18,12 +18,12 @@ class Maniple_Application_Resource_Maniple extends Zend_Application_Resource_Res
         }
 
         $container = $bootstrap->getContainer();
-        if (!$container instanceof Maniple_Application_ResourceContainer) {
-            throw new Exception('Container must be an instance of Maniple_Application_ResourceContainer');
+        if (!$container instanceof Maniple_Di_Container) {
+            throw new Exception('Container must be an instance of Maniple_Di_Container');
         }
 
         $container->addResources(array(
-            'Maniple.Injector' => new Maniple_Injector($container),
+            'Maniple.Injector' => $container->getInjector(),
             'Maniple.AssetRegistry' => array(
                 'class' => 'Maniple_Assets_AssetRegistry',
             ),

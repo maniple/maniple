@@ -1,12 +1,14 @@
 <?php
 
 /**
- * Resource container with lazy object initialization.
+ * Resource container with lazy object initialization and injection support
  *
- * @version 2015-12-22 / 2015-03-30
+ * @version 2019-06-29 / 2015-12-22 / 2015-03-30
  */
-class Maniple_Application_ResourceContainer implements ArrayAccess
+class Maniple_Di_Container implements ArrayAccess
 {
+    const className = __CLASS__;
+
     /**
      * Initialized resources
      * @var array
@@ -32,7 +34,7 @@ class Maniple_Application_ResourceContainer implements ArrayAccess
     protected $_callbacks = array();
 
     /**
-     * @var Maniple_Injector
+     * @var Maniple_Di_Injector
      */
     protected $_injector;
 
@@ -51,10 +53,21 @@ class Maniple_Application_ResourceContainer implements ArrayAccess
     } // }}}
 
     /**
-     * @param Maniple_Injector $injector
+     * @return Maniple_Di_Injector
+     */
+    public function getInjector()
+    {
+        if (empty($this->_injector)) {
+            $this->_injector = new Maniple_Di_Injector($this);
+        }
+        return $this->_injector;
+    }
+
+    /**
+     * @param Maniple_Di_Injector $injector
      * @return $this
      */
-    public function setInjector(Maniple_Injector $injector)
+    public function setInjector(Maniple_Di_Injector $injector)
     {
         $this->_injector = $injector;
         return $this;
@@ -64,7 +77,7 @@ class Maniple_Application_ResourceContainer implements ArrayAccess
      * Add many resources at once
      *
      * @param  array|Traversable $resources
-     * @return Zefram_Application_ResourceContainer
+     * @return $this
      */
     public function addResources($resources) // {{{
     {
@@ -79,7 +92,7 @@ class Maniple_Application_ResourceContainer implements ArrayAccess
      *
      * @param  string $name
      * @param  string|array|object $resource
-     * @return Zefram_Application_ResourceContainer
+     * @return $this
      * @throws Zend_Application_Exception
      */
     public function addResource($name, $resource) // {{{
@@ -194,7 +207,7 @@ class Maniple_Application_ResourceContainer implements ArrayAccess
      * Remove resource from container.
      *
      * @param  string $name
-     * @return Zefram_Application_ResourceContainer
+     * @return void
      */
     public function removeResource($name) // {{{
     {
@@ -300,10 +313,8 @@ class Maniple_Application_ResourceContainer implements ArrayAccess
             $instance = new $class();
         }
 
-        // If injector is configured inject properties before calling any methods
-        if ($this->_injector) {
-            $this->_injector->inject($instance);
-        }
+        // Inject properties before calling any methods
+        $this->getInjector()->inject($instance);
 
         // this is now deprecated. Params will be passed to constructor
         foreach ((array) $params as $key => $value) {

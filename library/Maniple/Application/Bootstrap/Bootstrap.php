@@ -8,14 +8,14 @@
 class Maniple_Application_Bootstrap_Bootstrap
     extends Zefram_Application_Bootstrap_Bootstrap
 {
-    protected $_containerClass = 'Maniple_Application_ResourceContainer';
+    protected $_containerClass = Maniple_Di_Container::className;
 
     /**
      * Get the plugin loader for resources.
      *
      * @return Zend_Loader_PluginLoader_Interface
      */
-    public function getPluginLoader() // {{{
+    public function getPluginLoader()
     {
         if ($this->_pluginLoader === null) {
             parent::getPluginLoader()->addPrefixPath(
@@ -24,5 +24,5 @@ class Maniple_Application_Bootstrap_Bootstrap
             );
         }
         return $this->_pluginLoader;
-    } // }}}
+    }
 }

@@ -1,7 +1,14 @@
 <?php
 
-class Maniple_Injector
+/**
+ * Resource injector
+ *
+ * @version 2019-06-29 / 2019-02-28
+ */
+class Maniple_Di_Injector
 {
+    const className = __CLASS__;
+
     /**
      * @var object
      */
@@ -24,10 +31,6 @@ class Maniple_Injector
         }
 
         $this->_container = $container;
-
-        if ($container instanceof Maniple_Application_ResourceContainer) {
-            $container->setInjector($this);
-        }
     }
 
     /**
@@ -80,19 +83,25 @@ class Maniple_Injector
 
                 $resourceName = null;
 
+                // @Inject('resourceName')
                 if (preg_match('/@Inject\((?P<resourceName>[^)]+)\)/', $comment, $match)) {
                     $resourceName = $match['resourceName'];
                     $resourceName = trim($resourceName, '\'"');
-                }
-
-                if (empty($resourceName)) {
-                    continue;
                 }
 
                 if (preg_match('/@var\s+(?P<varType>[\S]+)/', $comment, $match)) {
                     $varType = $match['varType'];
                 } else {
                     $varType = null;
+                }
+
+                // If '@Inject' or '@Inject()' use type specified in @var as resource name
+                if (empty($resourceName) && preg_match('/@Inject(\s|\(\))/', $comment)) {
+                    $resourceName = $varType;
+                }
+
+                if (empty($resourceName)) {
+                    continue;
                 }
 
                 $metadata[$prop->getName()] = compact('resourceName', 'varType');
