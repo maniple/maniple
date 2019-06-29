@@ -3,12 +3,12 @@
 /**
  * @version 2014-05-19
  * @author xemlock
- * @deprecated 
+ * @deprecated
  */
 class Maniple_Application_Bootstrap
     extends Maniple_Application_Bootstrap_Bootstrap
 {
-    protected $_containerClass = 'Maniple_Application_ResourceContainer';
+    protected $_containerClass = Maniple_Di_Container::className;
 
     public function __construct($application)
     {
