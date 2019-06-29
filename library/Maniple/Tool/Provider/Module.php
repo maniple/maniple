@@ -245,8 +245,8 @@ Zend_Loader_AutoloaderFactory::factory(array(
         Maniple_Tool_Provider_Module_Setup::run($moduleName);
     }
 
-    public function add($moduleSpec)
+    public function install($moduleSpec)
     {
-        Maniple_Tool_Provider_Module_Add::run($moduleSpec);
+        Maniple_Tool_Provider_Module_Install::run($moduleSpec);
     }
 }

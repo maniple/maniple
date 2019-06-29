@@ -1,6 +1,6 @@
 <?php
 
-class Maniple_Tool_Provider_Module_Add
+class Maniple_Tool_Provider_Module_Install
 {
     /**
      * Adds and installs module from Packagist or GitHub
