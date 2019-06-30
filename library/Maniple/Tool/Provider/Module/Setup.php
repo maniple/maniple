@@ -22,7 +22,7 @@ class Maniple_Tool_Provider_Module_Setup
         echo "\n";
 
         if (file_exists($modulePath . '/composer.json')) {
-            $gitignorePath = "application/modules/.gitignore";
+            $gitignorePath = ".gitignore";
             if (file_exists($gitignorePath)) {
                 $gitignore = file($gitignorePath);
                 $gitignore = array_map('trim', $gitignore);
@@ -30,9 +30,25 @@ class Maniple_Tool_Provider_Module_Setup
                 $gitignore = array();
             }
 
-            if (!in_array($moduleName, $gitignore)) {
-                $gitignore[] = $moduleName;
-                sort($gitignore);
+            $prefix = 'application/modules/';
+            $moduleGitignore = $prefix . $moduleName;
+
+            if (!in_array($moduleGitignore, $gitignore)) {
+                $after = false;
+
+                foreach ($gitignore as $i => $line) {
+                    if (substr($line, 0, strlen($prefix)) === $prefix) {
+                        $after = $i;
+                    }
+                }
+
+                if ($after === false) {
+                    $gitignore[] = "\n# Installed maniple modules";
+                    $gitignore[] = $moduleGitignore;
+                } else {
+                    array_splice($gitignore, $after + 1, 0, $moduleGitignore);
+                }
+
                 file_put_contents($gitignorePath, implode("\n", $gitignore) . "\n");
             }
         }
