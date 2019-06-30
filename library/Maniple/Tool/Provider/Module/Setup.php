@@ -132,7 +132,7 @@ class Maniple_Tool_Provider_Module_Setup
 
     protected static $_installedBowerComponents;
 
-    protected static function _installBowerDependencies()
+    protected static function _installBowerDependencies($modulePath)
     {
         if (self::$_installedBowerComponents === null) {
             foreach (glob('public/bower_components/*') as $component) {
@@ -164,7 +164,7 @@ class Maniple_Tool_Provider_Module_Setup
             }
         }
 
-        $bower = json_decode(file_get_contents($path . '/bower.json'), true);
+        $bower = json_decode(file_get_contents($modulePath . '/bower.json'), true);
         if (isset($bower['dependencies'])) {
             foreach ((array)$bower['dependencies'] as $package => $version) {
                 if (isset(self::$_installedBowerComponents[$package])) {
