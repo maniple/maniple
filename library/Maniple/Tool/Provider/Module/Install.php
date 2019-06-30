@@ -59,9 +59,11 @@ class Maniple_Tool_Provider_Module_Install
                     $repo = 'https://github.com/' . $spec;
                     echo "Adding repository {$repo} to composer.json ... ";
                     $composer['repositories'][] = array(
-                        'type' => 'vcs',
+                        'type' => 'git',
                         'url' => $repo,
                     );
+                    $composer['repositories'] = self::tidyComposerRepositories($composer['repositories']);
+
                     file_put_contents('./composer.json', Zefram_Json::encode($composer, array(
                         'prettyPrint'      => true,
                         'unescapedSlashes' => true,
@@ -87,5 +89,28 @@ class Maniple_Tool_Provider_Module_Install
 
         echo "Setting up module " . basename($spec) . " ...\n";
         Maniple_Tool_Provider_Module_Setup::run(basename($spec));
+    }
+
+    /**
+     * @param array $repositories
+     * @return array
+     */
+    public static function tidyComposerRepositories(array $repositories)
+    {
+        $sortedRepositories = array();
+        foreach ($repositories as $repo) {
+            if (!is_array($repo) || empty($repo['url'])) {
+                continue;
+            }
+            $repo = array_merge(array(
+                'type' => isset($repo['type']) ? $repo['type'] : 'vcs',
+                'url' => $repo['url'],
+            ), $repo);
+            $sortedRepositories[$repo['url']] = $repo;
+        }
+
+        ksort($sortedRepositories);
+
+        return array_values($sortedRepositories);
     }
 }
