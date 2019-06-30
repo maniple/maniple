@@ -24,6 +24,7 @@ class Maniple_Application_Resource_Maniple extends Zend_Application_Resource_Res
 
         $container->addResources(array(
             'Maniple.Injector' => $container->getInjector(),
+            'Maniple.SharedEventManager' => $this->_initSharedEventManager(),
             'Maniple.AssetRegistry' => array(
                 'class' => 'Maniple_Assets_AssetRegistry',
             ),
@@ -36,8 +37,37 @@ class Maniple_Application_Resource_Maniple extends Zend_Application_Resource_Res
                     'resource:Maniple.AssetRegistry',
                 ),
             ),
+
+            // Aliases
+            'SharedEventManager' => 'resource:Maniple.SharedEventManager',
         ));
 
         return $this;
+    }
+
+    /**
+     * @return Zend_EventManager_SharedEventManager
+     */
+    protected function _initSharedEventManager()
+    {
+        // There is a cyclic requires when autoloading Zend_EventManager_SharedEventManager,
+        // resulting in Fatal error: Class 'Zend_EventManager_SharedEventManager' not found
+        // in Zend/EventManager/StaticEventManager.php on line 33
+        //
+        // SharedEventManager.php:
+        // - EventManager.php
+        // - SharedEventCollection.php
+        //
+        // EventManager.php:
+        // - StaticEventManager.php
+        //
+        // StaticEventManager.php:
+        // - EventManager.php
+        // - SharedEventManager.php
+        //
+        // To break circular dependency we need to autoload the StaticEventManager first
+        class_exists('Zend_EventManager_StaticEventManager');
+
+        return new Zend_EventManager_SharedEventManager();
     }
 }
