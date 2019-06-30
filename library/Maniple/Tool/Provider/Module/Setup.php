@@ -166,7 +166,7 @@ class Maniple_Tool_Provider_Module_Setup
 
         $bower = json_decode(file_get_contents($modulePath . '/bower.json'), true);
         if (isset($bower['dependencies'])) {
-            foreach ((array)$bower['dependencies'] as $package => $version) {
+            foreach ((array) $bower['dependencies'] as $package => $version) {
                 if (isset(self::$_installedBowerComponents[$package])) {
                     printf('[bower] Package already installed %s\n', $package);
                 } else {
