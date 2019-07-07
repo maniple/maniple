@@ -15,25 +15,20 @@ class Maniple_Di_ContainerTest extends PHPUnit_Framework_TestCase
     public function testResourceCallback()
     {
         $container = $this->getContainer();
-        $callback = array($this, 'resourceCallback');
+        $callback = Maniple_Di_ContainerTest_Res::className . '::factory';
 
         $container->addResourceCallback('pokemon', $callback, array('Gyarados'));
         $resource = $container->getResource('pokemon');
 
-        $this->assertInstanceOf('Res', $resource);
+        $this->assertInstanceOf(Maniple_Di_ContainerTest_Res::className, $resource);
         $this->assertEquals('Gyarados', $resource->getName());
 
-        $callback = new Zefram_Stdlib_CallbackHandler(array($this, 'resourceCallback'), array(), array('Lugia'));
+        $callback = new Zefram_Stdlib_CallbackHandler($callback, array(), array('Lugia'));
         $container->addResourceCallback('pokemon2', $callback);
         $resource = $container->getResource('pokemon2');
 
-        $this->assertInstanceOf('Res', $resource);
+        $this->assertInstanceOf(Maniple_Di_ContainerTest_Res::className, $resource);
         $this->assertEquals('Lugia', $resource->getName());
-    }
-
-    public function resourceCallback($name)
-    {
-        return new Res($name);
     }
 
     /**
@@ -124,10 +119,61 @@ class Maniple_Di_ContainerTest extends PHPUnit_Framework_TestCase
         $this->assertTrue($container->hasResource('obj_alias2'));
         $this->assertTrue($container->getResource('obj_alias2') === $obj);
     }
+
+    public function testMultiple()
+    {
+        $container = new Maniple_Di_Container();
+        $container->addResource('A', array(
+            'class' => Maniple_Di_ContainerTest_A::className,
+            'multiple' => true,
+        ));
+
+        $a1 = $container->getResource('A');
+        $a2 = $container->getResource('A');
+
+        $this->assertInstanceOf(Maniple_Di_ContainerTest_A::className, $a1);
+        $this->assertInstanceOf(Maniple_Di_ContainerTest_A::className, $a2);
+        $this->assertFalse($a1 === $a2);
+    }
+
+    public function testMultipleCallback()
+    {
+        $container = new Maniple_Di_Container();
+        $container->addResource('A', array(
+            'callback' => Maniple_Di_ContainerTest_A::className . '::factory',
+            'multiple' => true,
+        ));
+
+        $a1 = $container->getResource('A');
+        $a2 = $container->getResource('A');
+
+        $this->assertInstanceOf(Maniple_Di_ContainerTest_A::className, $a1);
+        $this->assertInstanceOf(Maniple_Di_ContainerTest_A::className, $a2);
+        $this->assertFalse($a1 === $a2);
+    }
+
+    public function testMultipleAlias()
+    {
+        $container = new Maniple_Di_Container();
+        $container->addResource('A', array(
+            'class' => Maniple_Di_ContainerTest_A::className,
+            'multiple' => true,
+        ));
+        $container->addResource('AA', 'resource:A');
+
+        $a1 = $container->getResource('AA');
+        $a2 = $container->getResource('AA');
+
+        $this->assertInstanceOf(Maniple_Di_ContainerTest_A::className, $a1);
+        $this->assertInstanceOf(Maniple_Di_ContainerTest_A::className, $a2);
+        $this->assertFalse($a1 === $a2);
+    }
 }
 
-class Res
+class Maniple_Di_ContainerTest_Res
 {
+    const className = __CLASS__;
+
     public function __construct($name)
     {
         $this->_name = $name;
@@ -136,5 +182,20 @@ class Res
     public function getName()
     {
         return $this->_name;
+    }
+
+    public static function factory($name)
+    {
+        return new self($name);
+    }
+}
+
+class Maniple_Di_ContainerTest_A
+{
+    const className = __CLASS__;
+
+    public static function factory()
+    {
+        return new self();
     }
 }

@@ -28,12 +28,6 @@ class Maniple_Di_Container implements ArrayAccess
     protected $_definitions = array();
 
     /**
-     * Resource callbacks
-     * @var array
-     */
-    protected $_callbacks = array();
-
-    /**
      * @var Maniple_Di_Injector
      */
     protected $_injector;
@@ -99,7 +93,7 @@ class Maniple_Di_Container implements ArrayAccess
     {
         $name = $this->_foldCase($name);
 
-        if (isset($this->_resources[$name])) {
+        if ($this->hasResource($name)) {
             throw new Zend_Application_Exception("Resource '$name' is already registered");
         }
 
@@ -122,10 +116,17 @@ class Maniple_Di_Container implements ArrayAccess
         }
 
         if (is_array($resource) && isset($resource['class'])) {
+            unset($resource['callback']);
             $this->_definitions[$name] = $resource;
+
         } elseif (is_array($resource) && isset($resource['callback'])) {
             $args = isset($resource['args']) ? array_values($resource['args']) : array();
             $this->addResourceCallback($name, $resource['callback'], $args);
+
+            if (isset($resource['multiple']) && $resource['multiple']) {
+                $this->_definitions[$name]['multiple'] = true;
+            }
+
         } else {
             $this->_resources[$name] = $resource;
         }
@@ -138,6 +139,7 @@ class Maniple_Di_Container implements ArrayAccess
      * @param callable|Zend_Stdlib_CallbackHandler $callback
      * @param array $args OPTIONAL
      * @return $this
+     * @deprecated Use {@link addResource()} instead
      */
     public function addResourceCallback($name, $callback, array $args = array())
     {
@@ -146,7 +148,7 @@ class Maniple_Di_Container implements ArrayAccess
         }
 
         $name = $this->_foldCase($name);
-        $this->_callbacks[$name] = $callback;
+        $this->_definitions[$name] = array('callback' => $callback);
 
         return $this;
     }
@@ -173,26 +175,34 @@ class Maniple_Di_Container implements ArrayAccess
         $resource = null;
 
         // After a resource is instantiated from definition, the definition
-        // is removed
+        // is removed, unless resource is not explicitly marked as a multiple
+        // instance resource
         if (isset($this->_definitions[$name])) {
-            $resource = $this->_createInstance($this->_definitions[$name]);
+            $definition = $this->_definitions[$name];
+
+            if (isset($definition['class'])) {
+                $resource = $this->_createInstance($definition);
+
+            } elseif (isset($definition['callback'])) {
+                $resource = $definition['callback']->__invoke($this);
+
+                if ($resource === null) {
+                    throw new Zend_Application_Exception("Could not create instance of '$name' from callback");
+                }
+            }
+
+            if (isset($definition['multiple']) && $definition['multiple']) {
+                return $resource;
+            }
+
             unset($this->_definitions[$name]);
         }
 
         if (isset($this->_aliases[$name])) {
-            if (!$this->hasResource($name)) {
+            if (!$this->hasResource($this->_aliases[$name])) {
                 throw new Zend_Application_Exception("Invalid resource alias '$name'");
             }
-            $resource = $this->getResource($this->_aliases[$name]);
-            unset($this->_aliases[$name]);
-        }
-
-        if (isset($this->_callbacks[$name])) {
-            $resource = $this->_callbacks[$name]->__invoke($this);
-            if ($resource === null) {
-                throw new Zend_Application_Exception("Could not create instance of '$name' from callback");
-            }
-            unset($this->_callbacks[$name]);
+            return $this->getResource($this->_aliases[$name]);
         }
 
         if ($resource === null) {
@@ -215,8 +225,7 @@ class Maniple_Di_Container implements ArrayAccess
         unset(
             $this->_resources[$name],
             $this->_definitions[$name],
-            $this->_aliases[$name],
-            $this->_callbacks[$name]
+            $this->_aliases[$name]
         );
     } // }}}
 
@@ -231,8 +240,7 @@ class Maniple_Di_Container implements ArrayAccess
         $name = $this->_foldCase($name);
         return isset($this->_resources[$name])
             || isset($this->_definitions[$name])
-            || isset($this->_aliases[$name])
-            || isset($this->_callbacks[$name]);
+            || isset($this->_aliases[$name]);
     } // }}}
 
     /**
