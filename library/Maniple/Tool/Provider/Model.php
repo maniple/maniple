@@ -22,7 +22,7 @@ class Maniple_Tool_Provider_Model extends Zend_Tool_Framework_Provider_Abstract
         $moduleName = $module;
 
         if (!preg_match('/^[A-Z][a-zA-Z0-9]*$/', $modelName)) {
-            throw new Exception("Invalid model name: '$modelName'");
+            throw new Exception("Invalid model name: '$modelName'. Name must follow upper camel-case convention.");
         }
 
         $moduleDir = 'application/modules/' . $moduleName;
@@ -33,19 +33,22 @@ class Maniple_Tool_Provider_Model extends Zend_Tool_Framework_Provider_Abstract
         $modulePrefix = str_replace(' ', '', ucfirst(ucwords(str_replace('-', ' ', $moduleName))));
         $modelDir = $moduleDir . '/library/' . $modulePrefix . '/Model';
 
-        @mkdir($modelDir . '/DbTable', 0777, true);
+        @mkdir($modelDir . '/Table', 0777, true);
+        @mkdir($modelDir . '/Rowset', 0777, true);
 
-        $pluralModelName = $modelName . 's';
+        $modelNamePluralized = $modelName . 's'; // TODO Use inflector?
 
         $filter = new Zend_Filter_Word_CamelCaseToUnderscore();
-        $tableName = strtolower($filter->filter($pluralModelName));
+        $tableName = strtolower($filter->filter($modelNamePluralized));
         $idColumnName = strtolower($filter->filter($modelName)) . '_id';
 
         $rowClass = $modulePrefix . '_Model_' . $modelName;
-        $tableClass = $modulePrefix . '_Model_DbTable_' . $modelName . 's'; // pluralize
+        $tableClass = $modulePrefix . '_Model_Table_' . $modelNamePluralized;
+        $rowsetClass = $modulePrefix . '_Model_Rowset_' . $modelNamePluralized;
 
         $rowClassFile = $modelDir . '/' . $modelName . '.php';
-        $tableClassFile = $modelDir . '/DbTable/' . $modelName . 's.php';
+        $tableClassFile = $modelDir . '/Table/' . $modelNamePluralized . '.php';
+        $rowsetClassFile = $modelDir . '/Rowset/' . $modelNamePluralized . '.php';
 
         if (file_exists($rowClassFile)) {
             throw new Exception("Model file already exists: {$rowClassFile}");
@@ -66,7 +69,7 @@ class {$rowClass} extends Zefram_Db_Table_Row
 ");
 
         if (file_exists($tableClassFile)) {
-            throw new Exception("Model table file already exists: {$tableClassFile}");
+            throw new Exception("Model table class file already exists: {$tableClassFile}");
         }
 
         file_put_contents($tableClassFile,
@@ -75,6 +78,8 @@ class {$rowClass} extends Zefram_Db_Table_Row
 /**
  * @method {$rowClass} findRow(mixed \$id)
  * @method {$rowClass} createRow(array \$data = array(), string \$defaultSource = null)
+ * @method {$rowsetClass} find(mixed \$key, mixed ...\$keys)
+ * @method {$rowsetClass} fetchAll(string|array|Zend_Db_Table_Select \$where = null, string|array \$order = null, int \$count = null, int \$offset = null)
  */
 class {$tableClass} extends Zefram_Db_Table
 {
@@ -82,30 +87,65 @@ class {$tableClass} extends Zefram_Db_Table
 
     protected \$_rowClass = {$rowClass}::className;
 
+    protected \$_rowsetClass = {$rowsetClass}::className;
+
     protected \$_name = '{$tableName}';
 
     protected \$_referenceMap = array();
 }
 ");
 
+        if (file_exists($rowsetClassFile)) {
+            throw new Exception("Model rowset class file already exists: {$rowsetClassFile}");
+        }
+
+        file_put_contents($rowsetClassFile,
+"<?php
+
+/**
+ * @method bool setTable({$tableClass} \$table)
+ * @method {$tableClass} getTable()
+ * @method {$rowClass}|null current()
+ * @method {$rowClass} offsetGet(string \$offset)
+ * @method {$rowClass} getRow(int \$position, \$seek = false)
+ */
+class {$rowsetClass} extends Zend_Db_Table_Rowset
+{
+    const className = __CLASS__;
+
+    protected \$_tableClass = {$tableClass}::className;
+
+    protected \$_rowClass = {$rowClass}::className;
+}
+");
+
         $paddedIdColumnName = sprintf('%-15s', $idColumnName);
 
         @mkdir($moduleDir . '/data/schema', 0777, true);
-        file_put_contents($moduleDir . '/data/schema/' . $modulePrefix . '.mysql.sql',
+        file_put_contents($moduleDir . '/data/schema/' . $modulePrefix . '.MYSQL.sql',
 "-- {$modulePrefix} schema for MySQL
 
-CREATE TABLE {$tableName} (
+CREATE TABLE /* PREFIX */{$tableName} (
 
     {$paddedIdColumnName} INT UNSIGNED PRIMARY KEY AUTO_INCREMENT
 
 ) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ");
-        file_put_contents($moduleDir . '/data/schema/' . $modulePrefix . '.pgsql.sql',
+        file_put_contents($moduleDir . '/data/schema/' . $modulePrefix . '.PGSQL.sql',
 "-- {$modulePrefix} schema for PostgreSQL
 
-CREATE TABLE {$tableName} (
+CREATE TABLE /* PREFIX */{$tableName} (
 
     {$paddedIdColumnName} SERIAL PRIMARY KEY
+
+);
+");
+        file_put_contents($moduleDir . '/data/schema/' . $modulePrefix . '.SQLITE.sql',
+            "-- {$modulePrefix} schema for SQLite
+
+CREATE TABLE /* PREFIX */{$tableName} (
+
+    {$paddedIdColumnName} INTEGER PRIMARY KEY
 
 );
 ");
