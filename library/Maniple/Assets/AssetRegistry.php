@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Provides assets for {@link Maniple_Asset_AssetManager} service.
+ * Provides assets for {@link Maniple_Assets_AssetManager} service.
  *
  * @version 2019-02-11
  */
