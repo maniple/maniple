@@ -16,6 +16,11 @@ class Maniple_Tool_Provider_Module extends Zend_Tool_Framework_Provider_Abstract
         if (!strlen($moduleName)) {
             throw new Zend_Tool_Framework_Client_Exception('Module name must not be empty');
         }
+
+        // Convert camel-case to dash-case
+        $filter = new Zend_Filter_Word_CamelCaseToDash();
+        $moduleName = strtolower($filter->filter($moduleName));
+
         if (!preg_match('/^[a-z][-a-z0-9]*$/', $moduleName)) {
             throw new Zend_Tool_Framework_Client_Exception('Invalid module name: ' . $moduleName);
         }
