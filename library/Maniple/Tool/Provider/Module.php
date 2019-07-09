@@ -45,7 +45,6 @@ class Maniple_Tool_Provider_Module extends Zend_Tool_Framework_Provider_Abstract
         // generate library/ here all autoload classes will be stored
         @mkdir($moduleDir . '/library/' . $modulePrefix, 0777, true);
 
-        @mkdir($moduleDir . '/views/layouts', 0777, true);
         @mkdir($moduleDir . '/views/scripts/' . $moduleName, 0777, true);
 
         $this->createTests($modulePrefix, $moduleDir);
@@ -135,10 +134,12 @@ class {$modulePrefix}_Bootstrap extends Maniple_Application_Module_Bootstrap
     protected function createTests($moduleName, $dir)
     {
         $xml = <<<END
-<?xml version="1.0" encoding="UTF-8"?>
-<phpunit backupGlobals="false"
-         bootstrap="tests/bootstrap.php"
-         colors="true">
+<phpunit bootstrap="tests/bootstrap.php" colors="true">
+    <php>
+        <ini name="display_errors" value="On" />
+        <ini name="display_startup_errors" value="On" />
+        <ini name="error_reporting" value="-1" />
+    </php>
     <testsuites>
         <testsuite name="{$moduleName} Test Suite">
             <directory suffix=".php">./tests</directory>
@@ -153,7 +154,7 @@ class {$modulePrefix}_Bootstrap extends Maniple_Application_Module_Bootstrap
 </phpunit>
 
 END;
-        $configPath = $dir . '/phpunit.xml.dist';
+        $configPath = $dir . '/phpunit.xml';
         if (!file_exists($configPath)) {
             file_put_contents($configPath, $xml);
         }
@@ -164,10 +165,6 @@ END;
         $testsBootstrap = $dir . '/tests/bootstrap.php';
         if (!file_exists($testsBootstrap)) {
             file_put_contents($testsBootstrap, "<?php
-
-error_reporting(E_ALL | E_STRICT);
-ini_set('display_startup_errors', 1);
-ini_set('display_errors', 1);
 
 // find autoload.php moving upwards, so that tests can be executed
 // even if the library itself lies in the vendor/ directory of another
