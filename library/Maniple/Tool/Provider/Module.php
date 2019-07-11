@@ -98,7 +98,7 @@ class {$modulePrefix}_Bootstrap extends Maniple_Application_Module_Bootstrap
     public function getViewConfig()
     {
         return array(
-            'scriptPaths' => dirname(__FILE__) . '/views',
+            'scriptPaths' => dirname(__FILE__) . '/views/scripts',
             'helperPaths' => array(
                 '{$modulePrefix}_View_Helper_' => dirname(__FILE__) . '/library/{$modulePrefix}/View/Helper/',
             ),
