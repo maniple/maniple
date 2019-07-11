@@ -88,6 +88,55 @@ class {$controllerClass}_IndexAction extends Maniple_Controller_Action_Standalon
                 sprintf('Created view script for controller\'s %s index action in %s', $controllerName, $indexActionFile)
             );
         }
+
+        $routesConfigFile = $moduleDir . '/configs/routes.config.php';
+        if (!file_exists($routesConfigFile)) {
+            @mkdir(dirname($routesConfigFile), 0777, true);
+            $routesConfig = array();
+        } else {
+            $routesConfig = Zefram_Config::factory($routesConfigFile)->toArray();
+        }
+
+        $key = $module . '.' . $this->_toDashCase($name) . '.index';
+
+        if (!isset($routesConfig[$key])) {
+            $routesConfig[$key] = array(
+                'route'    => $this->_toDashCase($name),
+                'defaults' => array(
+                    'module'     => $this->_toDashCase($module),
+                    'controller' => $this->_toDashCase($name),
+                    'action'     => 'index',
+                ),
+            );
+            file_put_contents($routesConfigFile, "<?php\n\nreturn " . $this->_dumpValue($routesConfig) . ";\n");
+            $this->_registry->getResponse()->appendContent(
+                sprintf('Added route %s to routes.config.php', $key)
+            );
+        }
+    }
+
+    protected function _dumpValue($value, $indent = '')
+    {
+        if (is_scalar($value) || $value === null) {
+            return var_export($value, 1);
+        } elseif (is_array($value)) {
+            $str = "array(\n";
+
+            $keyLength = 0;
+            foreach ($value as $k => $v) {
+                $keyLength = max($keyLength, strlen(var_export($k, 1)));
+            }
+
+            foreach ($value as $k => $v) {
+                $strKey = var_export($k, 1);
+                $strPad = str_repeat(' ', max(0, $keyLength - strlen($strKey)));
+                $str .= $indent . '    ' . $strKey . $strPad . ' => ' . $this->_dumpValue($v, $indent . '    ') . ",\n";
+            }
+            $str .= $indent . ")";
+            return $str;
+        } else {
+            throw new Exception(sprintf('Unserializable value: %s', is_object($value) ? get_class($value) : gettype($value)));
+        }
     }
 
     /**
