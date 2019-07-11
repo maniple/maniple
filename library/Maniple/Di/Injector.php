@@ -56,7 +56,12 @@ class Maniple_Di_Injector
                 throw new Exception('Resource not found: ' . $desc['resourceName']);
             }
             if ($desc['varType'] && !($dep instanceof $desc['varType'])) {
-                throw new Exception('Invalid resource type: ' . $desc['resourceName'] . ' ' . $desc['varType']);
+                throw new Exception(sprintf(
+                    'Invalid type of \'%s\' resource: %s, expected %s',
+                    $desc['resourceName'],
+                    is_object($dep) ? get_class($dep) : gettype($dep),
+                    $desc['varType']
+                ));
             }
 
             $prop = $ref->getProperty($name);
