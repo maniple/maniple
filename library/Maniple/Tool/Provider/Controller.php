@@ -67,7 +67,7 @@ class {$controllerClass}_IndexAction extends Maniple_Controller_Action_Standalon
 
     protected \$_actionControllerClass = {$controllerClass}::className;
 
-    public function run(Zend_Controller_Request_Abstract \$request = null, Zend_Controller_Response_Abstract \$response = null)
+    public function run()
     {
     }
 }
