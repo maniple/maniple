@@ -109,7 +109,7 @@ class {$tableClass} extends Zefram_Db_Table
  * @method {$rowClass} offsetGet(string \$offset)
  * @method {$rowClass} getRow(int \$position, \$seek = false)
  */
-class {$rowsetClass} extends Zend_Db_Table_Rowset
+class {$rowsetClass} extends Zefram_Db_Table_Rowset
 {
     const className = __CLASS__;
 
