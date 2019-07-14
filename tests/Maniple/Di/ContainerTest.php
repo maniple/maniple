@@ -92,6 +92,30 @@ class Maniple_Di_ContainerTest extends PHPUnit_Framework_TestCase
         }
     }
 
+    public function testAddResourceNameOnly()
+    {
+        $container = new Maniple_Di_Container();
+        $container->addResource(Maniple_Di_ContainerTest_A::className);
+
+        $this->assertInstanceOf(
+            Maniple_Di_ContainerTest_A::className,
+            $container->getResource(Maniple_Di_ContainerTest_A::className)
+        );
+    }
+
+    public function testAddResourcesNameOnly()
+    {
+        $container = new Maniple_Di_Container();
+        $container->addResources(array(
+            Maniple_Di_ContainerTest_A::className,
+        ));
+
+        $this->assertInstanceOf(
+            Maniple_Di_ContainerTest_A::className,
+            $container->getResource(Maniple_Di_ContainerTest_A::className)
+        );
+    }
+
     public function testAddMultipleResourcesInContructor()
     {
         $resources = array(

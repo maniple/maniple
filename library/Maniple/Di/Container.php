@@ -76,6 +76,10 @@ class Maniple_Di_Container implements ArrayAccess
     public function addResources($resources) // {{{
     {
         foreach ($resources as $name => $resource) {
+            if (is_int($name) && is_string($resource)) {
+                $name = $resource;
+                $resource = null;
+            }
             $this->addResource($name, $resource);
         }
         return $this;
@@ -85,12 +89,16 @@ class Maniple_Di_Container implements ArrayAccess
      * Add a resource
      *
      * @param  string $name
-     * @param  string|array|object $resource
+     * @param  string|array|object $resource OPTIONAL If not provided $name param will be treated as resource's class name
      * @return $this
      * @throws Zend_Application_Exception
      */
-    public function addResource($name, $resource) // {{{
+    public function addResource($name, $resource = null) // {{{
     {
+        if ($resource === null) {
+            $resource = array('class' => $name);
+        }
+
         $name = $this->_foldCase($name);
 
         if ($this->hasResource($name)) {
