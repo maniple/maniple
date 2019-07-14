@@ -120,7 +120,7 @@ class Maniple_Di_Container implements ArrayAccess
             $this->_definitions[$name] = $resource;
 
         } elseif (is_array($resource) && isset($resource['callback'])) {
-            $args = isset($resource['args']) ? array_values($resource['args']) : array();
+            $args = isset($resource['args']) ? array_values((array) $resource['args']) : array();
             $this->addResourceCallback($name, $resource['callback'], $args);
 
             if (isset($resource['multiple']) && $resource['multiple']) {
