@@ -187,7 +187,8 @@ class Maniple_Tool_Provider_Schema extends Maniple_Tool_Provider_Abstract
 
         $sql = array_map(
             function ($line) {
-                $line = preg_replace('/(-- |#).*$/', '', $line);
+                // Single line comments: MySQL '-- ', PostgreSQL '--'
+                $line = preg_replace('/(--|#).*$/', '', $line);
                 $line = trim($line);
                 return $line;
             },
