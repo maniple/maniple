@@ -46,6 +46,20 @@ class Maniple_Di_InjectorTest extends PHPUnit_Framework_TestCase
             $container->getResource('C')->getB()
         );
     }
+
+    public function testNewInstance()
+    {
+        $container = new Maniple_Di_Container();
+        $container->addResource('A', new stdClass);
+
+        $injector = $container->getInjector();
+
+        /** @var Maniple_Di_InjectorTest_B $instance */
+        $instance = $injector->newInstance(Maniple_Di_InjectorTest_B::className);
+
+        $this->assertInstanceOf(Maniple_Di_InjectorTest_B::className, $instance);
+        $this->assertSame($container->getResource('A'), $instance->getA());
+    }
 }
 
 class Maniple_Di_InjectorTest_B

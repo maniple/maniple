@@ -34,6 +34,29 @@ class Maniple_Di_Injector
     }
 
     /**
+     * @param string $class
+     * @param array $args
+     * @return object
+     */
+    public function newInstance($class, array $args = array())
+    {
+        if ($args) {
+            $ref = new ReflectionClass($class);
+            if ($ref->hasMethod('__construct')) {
+                $instance = $ref->newInstanceArgs($args);
+            } else {
+                $instance = $ref->newInstance();
+            }
+        } else {
+            $instance = new $class();
+        }
+
+        $this->inject($instance);
+
+        return $instance;
+    }
+
+    /**
      * @param object $object
      */
     public function inject($object)
