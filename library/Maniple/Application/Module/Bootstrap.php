@@ -58,6 +58,25 @@ abstract class Maniple_Application_Module_Bootstrap
     } // }}}
 
     /**
+     * @param Zend_Application_Bootstrap_BootstrapAbstract $application
+     * @return $this
+     * @throws Zend_Application_Bootstrap_Exception
+     */
+    public function setApplication($application)
+    {
+        parent::setApplication($application);
+
+        // Share container with parent bootstrap
+        $this->setContainer($application->getContainer());
+
+        if (!$application->hasPluginResource('FrontController')) {
+            $application->registerPluginResource('FrontController');
+        }
+
+        return $this;
+    }
+
+    /**
      * Retrieves parent bootstrap.
      *
      * @return Zend_Application_Bootstrap_Bootstrapper|null
