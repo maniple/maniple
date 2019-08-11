@@ -168,7 +168,7 @@ class Maniple_Tool_Provider_Module_Setup
         if (isset($bower['dependencies'])) {
             foreach ((array) $bower['dependencies'] as $package => $version) {
                 if (isset(self::$_installedBowerComponents[$package])) {
-                    printf('[bower] Package already installed %s\n', $package);
+                    printf("[bower] Package already installed %s\n", $package);
                 } else {
                     if (preg_match('#^[a-z]+://#i', $version)
                         || preg_match('#^[-_a-z0-9]+/[-_a-z0-9]+[\#]?#i', $version)
@@ -179,7 +179,7 @@ class Maniple_Tool_Provider_Module_Setup
                     }
                     bower_install($spec);
                     $package_dir = 'public/bower_components/' . $package;
-                    echo 'package dir: ' . $package_dir, ' (', $spec, ')\n';
+                    echo 'package dir: ' . $package_dir, ' (', $spec, ")\n";
                     if (file_exists($package_dir . '/.bower.json')) {
                         $json = json_decode(file_get_contents($package_dir . '/.bower.json'), true);
 
