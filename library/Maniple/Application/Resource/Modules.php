@@ -475,6 +475,15 @@ class Maniple_Application_Resource_Modules
 
     protected function _executeBootstraps()
     {
+        /** @var $front Zend_Controller_Front */
+        $front = $this->getBootstrap()->getResource('FrontController');
+        $defaultModule = $front->getDefaultModule();
+
+        // Start bootstrapping with default module
+        if ($defaultModule) {
+            $this->bootstrapModule($defaultModule);
+        }
+
         foreach ($this->_loadedModules as $module => $moduleInfo) {
             $this->bootstrapModule($module);
         }
