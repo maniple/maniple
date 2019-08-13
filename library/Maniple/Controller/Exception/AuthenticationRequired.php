@@ -7,8 +7,19 @@ class Maniple_Controller_Exception_AuthenticationRequired extends Maniple_Contro
      */
     protected $_continueUrl;
 
-    public function __construct($message = 'Authentication Required', $continueUrl = null)
+    /**
+     * @param string|Zend_Controller_Request_Http $message
+     * @param string $continueUrl
+     */
+    public function __construct($message = null, $continueUrl = null)
     {
+        if ($message instanceof Zend_Controller_Request_Http) {
+            $continueUrl = $message->getRequestUri();
+            $message = null;
+        }
+        if ($message === null) {
+            $message = 'Authentication Required';
+        }
         parent::__construct($message, 401);
         $this->setContinueUrl($continueUrl);
     }
