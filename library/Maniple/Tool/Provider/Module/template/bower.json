@@ -1,0 +1,6 @@
+{
+    "name": "%moduleName%",
+    "private": true,
+    "dependencies": {
+    }
+}

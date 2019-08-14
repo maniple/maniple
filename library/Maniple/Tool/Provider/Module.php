@@ -52,7 +52,7 @@ class Maniple_Tool_Provider_Module extends Zend_Tool_Framework_Provider_Abstract
 
         @mkdir($moduleDir . '/views/scripts/' . $moduleName, 0777, true);
 
-        $this->createTests($modulePrefix, $moduleDir);
+        $this->createTests($modulePrefix, $moduleName, $moduleDir);
 
         @mkdir($moduleDir . '/public');
 
@@ -60,148 +60,48 @@ class Maniple_Tool_Provider_Module extends Zend_Tool_Framework_Provider_Abstract
 
         @mkdir($moduleDir . '/languages');
 
+        $this->_copyTemplateFile('composer.json', $moduleDir, $moduleName, $modulePrefix);
+        $this->_copyTemplateFile('bower.json', $moduleDir, $moduleName, $modulePrefix);
+        $this->_copyTemplateFile('.editorconfig', $moduleDir, $moduleName, $modulePrefix);
+        $this->_copyTemplateFile('.gitignore', $moduleDir, $moduleName, $modulePrefix);
+
         $this->_registry->getResponse()->appendContent(
             sprintf('Created module %s in %s', $moduleName, $moduleDir)
         );
     }
 
+    protected function _copyTemplateFile($fileName, $moduleDir, $moduleName, $modulePrefix, array $vars = array())
+    {
+        $targetFile = $moduleDir . '/' . $fileName;
+        if (!file_exists($targetFile) || !filesize($targetFile)) {
+            $fileContents = strtr(
+                file_get_contents(__DIR__ . '/Module/template/' . $fileName),
+                array_merge(
+                    $vars,
+                    array(
+                        '%moduleName%'   => $moduleName,
+                        '%modulePrefix%' => $modulePrefix,
+                    )
+                )
+            );
+
+            file_put_contents($targetFile, $fileContents);
+            echo "Created " . $fileName . " file\n";
+        }
+    }
+
     protected function _createModuleBootstrap($moduleDir, $modulePrefix, $moduleName)
     {
-        if (!file_exists($moduleDir . '/Bootstrap.php')) {
-            $bootstrapImpl = "<?php
-
-class {$modulePrefix}_Bootstrap extends Maniple_Application_Module_Bootstrap
-{
-    public function getModuleDependencies()
-    {
-        return array();
-    }
-
-    public function getResourcesConfig()
-    {
-        return require dirname(__FILE__) . '/configs/resources.config.php';
-    }
-
-    public function getRoutesConfig()
-    {
-        return require dirname(__FILE__) . '/configs/routes.config.php';
-    }
-
-    public function getTranslationsConfig()
-    {
-        return array(
-            'scan'    => Zend_Translate::LOCALE_DIRECTORY,
-            'content' => dirname(__FILE__) . '/languages',
-        );
-    }
-
-    public function getViewConfig()
-    {
-        return array(
-            'scriptPaths' => dirname(__FILE__) . '/views/scripts',
-            'helperPaths' => array(
-                '{$modulePrefix}_View_Helper_' => dirname(__FILE__) . '/library/{$modulePrefix}/View/Helper/',
-            ),
-        );
-    }
-
-    /**
-     * Register autoloader paths
-     */
-    protected function _initAutoloader()
-    {
-        Zend_Loader_AutoloaderFactory::factory(array(
-            'Zend_Loader_StandardAutoloader' => array(
-                'prefixes' => array(
-                    '{$modulePrefix}_' => dirname(__FILE__) . '/library/{$modulePrefix}/',
-                ),
-            ),
+        $this->_copyTemplateFile('Bootstrap.php', $moduleDir, $moduleName, $modulePrefix, array(
+            'class __modulePrefix' => "class {$modulePrefix}",
         ));
     }
 
-    /**
-     * Setup view path spec
-     */
-    protected function _initViewRenderer()
+    protected function createTests($modulePrefix, $moduleName, $dir)
     {
-        /** @var Zefram_Controller_Action_Helper_ViewRenderer \$viewRenderer */
-        \$viewRenderer = Zend_Controller_Action_HelperBroker::getStaticHelper('ViewRenderer');
-        \$viewRenderer->setViewScriptPathSpec(':module/:controller/:action.:suffix', '{$moduleName}');
-        \$viewRenderer->setViewSuffix('twig', '{$moduleName}');
-    }
-}
-";
+        $this->_copyTemplateFile('phpunit.xml', $dir, $moduleName, $modulePrefix);
 
-            file_put_contents($moduleDir . '/Bootstrap.php', $bootstrapImpl);
-        }
-    }
-
-    protected function createTests($moduleName, $dir)
-    {
-        $xml = <<<END
-<phpunit bootstrap="tests/bootstrap.php" colors="true">
-    <php>
-        <ini name="display_errors" value="On" />
-        <ini name="display_startup_errors" value="On" />
-        <ini name="error_reporting" value="-1" />
-    </php>
-    <testsuites>
-        <testsuite name="{$moduleName} Test Suite">
-            <directory suffix=".php">./tests</directory>
-        </testsuite>
-    </testsuites>
-    <filter>
-        <whitelist>
-            <directory suffix=".php">./controllers</directory>
-            <directory suffix=".php">./library</directory>
-        </whitelist>
-    </filter>
-</phpunit>
-
-END;
-        $configPath = $dir . '/phpunit.xml';
-        if (!file_exists($configPath)) {
-            file_put_contents($configPath, $xml);
-        }
-
-        @mkdir($dir . '/tests');
-
-        // prepare tests bootstrap file
-        $testsBootstrap = $dir . '/tests/bootstrap.php';
-        if (!file_exists($testsBootstrap)) {
-            file_put_contents($testsBootstrap, "<?php
-
-// find autoload.php moving upwards, so that tests can be executed
-// even if the library itself lies in the vendor/ directory of another
-// project
-
-\$dir = dirname(__FILE__);
-\$autoload = null;
-
-while (\$parent = \$dir . '/..') {
-    if (file_exists(\$path = \$parent . '/vendor/autoload.php')) {
-        \$autoload = \$path;
-        break;
-    }
-    \$dir = \$parent;
-}
-if (empty(\$autoload)) {
-    die('Unable to find vendor/autoload.php file');
-}
-
-/** @noinspection PhpIncludeInspection */
-require_once \$autoload;
-
-Zend_Loader_AutoloaderFactory::factory(array(
-    'Zend_Loader_StandardAutoloader' => array(
-        'prefixes' => array(
-            '{$moduleName}_' => dirname(dirname(__FILE__)) . '/library/{$moduleName}/',
-        ),
-    ),
-));
-"
-            );
-        }
+        @mkdir($dir . '/tests/' . $modulePrefix, 0777, true);
     }
 
     public function test($moduleName)
