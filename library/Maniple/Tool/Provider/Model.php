@@ -62,6 +62,15 @@ class {$rowClass} extends Zefram_Db_Table_Row
     const className = __CLASS__;
 
     protected \$_tableClass = {$tableClass}::className;
+
+    /**
+     * @return int
+     */
+    public function getId()
+    {
+        /** @noinspection PhpUndefinedFieldInspection */
+        return (int) \$this->{$idColumnName};
+    }
 }
 ");
 
