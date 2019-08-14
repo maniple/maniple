@@ -33,8 +33,7 @@ class Maniple_Tool_Provider_Model extends Zend_Tool_Framework_Provider_Abstract
         $modulePrefix = str_replace(' ', '', ucfirst(ucwords(str_replace('-', ' ', $moduleName))));
         $modelDir = $moduleDir . '/library/' . $modulePrefix . '/Model';
 
-        @mkdir($modelDir . '/Table', 0777, true);
-        @mkdir($modelDir . '/Rowset', 0777, true);
+        @mkdir($modelDir . '/DbTable', 0777, true);
 
         $modelNamePluralized = $modelName . 's'; // TODO Use inflector?
 
@@ -43,12 +42,10 @@ class Maniple_Tool_Provider_Model extends Zend_Tool_Framework_Provider_Abstract
         $idColumnName = strtolower($filter->filter($modelName)) . '_id';
 
         $rowClass = $modulePrefix . '_Model_' . $modelName;
-        $tableClass = $modulePrefix . '_Model_Table_' . $modelNamePluralized;
-        $rowsetClass = $modulePrefix . '_Model_Rowset_' . $modelNamePluralized;
+        $tableClass = $modulePrefix . '_Model_DbTable_' . $modelNamePluralized;
 
         $rowClassFile = $modelDir . '/' . $modelName . '.php';
-        $tableClassFile = $modelDir . '/Table/' . $modelNamePluralized . '.php';
-        $rowsetClassFile = $modelDir . '/Rowset/' . $modelNamePluralized . '.php';
+        $tableClassFile = $modelDir . '/DbTable/' . $modelNamePluralized . '.php';
 
         if (file_exists($rowClassFile)) {
             throw new Exception("Model file already exists: {$rowClassFile}");
@@ -72,6 +69,8 @@ class {$rowClass} extends Zefram_Db_Table_Row
             throw new Exception("Model table class file already exists: {$tableClassFile}");
         }
 
+        // Define return type of find() and fetchAll() as combined Rowset/array
+        // https://stackoverflow.com/questions/10706835/phpstorm-correct-phpdoc-for-a-collection-of-objects
         file_put_contents($tableClassFile,
 "<?php
 
@@ -79,8 +78,8 @@ class {$rowClass} extends Zefram_Db_Table_Row
  * @method {$rowClass} createRow(array \$data = array(), string \$defaultSource = null)
  * @method {$rowClass}|null fetchRow(string|array|Zend_Db_Table_Select \$where = null, string|array \$order = null, int \$offset = null)
  * @method {$rowClass}|null findRow(mixed \$id)
- * @method {$rowsetClass} find(mixed \$key, mixed ...\$keys)
- * @method {$rowsetClass} fetchAll(string|array|Zend_Db_Table_Select \$where = null, string|array \$order = null, int \$count = null, int \$offset = null)
+ * @method Zend_Db_Table_Rowset_Abstract|{$rowClass}[] find(mixed \$key, mixed ...\$keys)
+ * @method Zend_Db_Table_Rowset_Abstract|{$rowClass}[] fetchAll(string|array|Zend_Db_Table_Select \$where = null, string|array \$order = null, int \$count = null, int \$offset = null)
  */
 class {$tableClass} extends Zefram_Db_Table
 {
@@ -88,67 +87,57 @@ class {$tableClass} extends Zefram_Db_Table
 
     protected \$_rowClass = {$rowClass}::className;
 
-    protected \$_rowsetClass = {$rowsetClass}::className;
-
     protected \$_name = '{$tableName}';
 
     protected \$_referenceMap = array();
 }
 ");
 
-        if (file_exists($rowsetClassFile)) {
-            throw new Exception("Model rowset class file already exists: {$rowsetClassFile}");
-        }
-
-        file_put_contents($rowsetClassFile,
-"<?php
-
-/**
- * @method bool setTable({$tableClass} \$table)
- * @method {$tableClass} getTable()
- * @method {$rowClass}|null current()
- * @method {$rowClass} offsetGet(string \$offset)
- * @method {$rowClass} getRow(int \$position, \$seek = false)
- */
-class {$rowsetClass} extends Zefram_Db_Table_Rowset
-{
-    const className = __CLASS__;
-
-    protected \$_tableClass = {$tableClass}::className;
-
-    protected \$_rowClass = {$rowClass}::className;
-}
-");
-
         $paddedIdColumnName = sprintf('%-15s', $idColumnName);
 
         @mkdir($moduleDir . '/data/schema', 0777, true);
-        file_put_contents($moduleDir . '/data/schema/' . $modulePrefix . '.MYSQL.sql',
+        file_put_contents($moduleDir . '/data/schema/' . $tableName . '.mysql.sql',
 "-- {$modulePrefix} schema for MySQL
 
-CREATE TABLE /* PREFIX */{$tableName} (
+CREATE TABLE {$tableName} (
 
-    {$paddedIdColumnName} INT UNSIGNED PRIMARY KEY AUTO_INCREMENT
+    {$paddedIdColumnName} INT PRIMARY KEY AUTO_INCREMENT
 
-) ENGINE=InnoDB CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+) ENGINE=InnoDB CHARACTER SET utf8mb4;
 ");
-        file_put_contents($moduleDir . '/data/schema/' . $modulePrefix . '.PGSQL.sql',
+        file_put_contents($moduleDir . '/data/schema/' . $tableName . '.pgsql.sql',
 "-- {$modulePrefix} schema for PostgreSQL
 
-CREATE TABLE /* PREFIX */{$tableName} (
+CREATE TABLE {$tableName} (
 
     {$paddedIdColumnName} SERIAL PRIMARY KEY
 
 );
 ");
-        file_put_contents($moduleDir . '/data/schema/' . $modulePrefix . '.SQLITE.sql',
+        file_put_contents($moduleDir . '/data/schema/' . $tableName . '.sqlite.sql',
             "-- {$modulePrefix} schema for SQLite
 
-CREATE TABLE /* PREFIX */{$tableName} (
+CREATE TABLE {$tableName} (
 
     {$paddedIdColumnName} INTEGER PRIMARY KEY
 
 );
 ");
+
+        $schemaFile = $moduleDir . '/data/schema/' . $moduleName . '.schema.php';
+        if (file_exists($schemaFile)) {
+            $schema = (array) require $schemaFile;
+        } else {
+            $schema = array();
+        }
+        $schema[$tableName] = array(
+            'columns' => array(
+                $idColumnName => array(
+                    'primary' => true,
+                    'autoincrement' => true,
+                ),
+            ),
+        );
+        // file_put_contents($schemaFile, "<?php\n\nreturn " . Maniple_Filter_VarExport::filterStatic($schema) . ";\n");
     }
 }
