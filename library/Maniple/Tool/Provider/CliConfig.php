@@ -50,7 +50,7 @@ class Maniple_Tool_Provider_CliConfig extends Zend_Tool_Framework_Provider_Abstr
             $ptr = &$ptr[$keySegment];
         }
 
-        $php = $this->_dumpValue($config);
+        $php = Maniple_Filter_VarExport::filterStatic($config);
 
         file_put_contents(self::CONFIG_PATH, '<?php return ' . $php . ";\n");
     }
@@ -63,21 +63,5 @@ class Maniple_Tool_Provider_CliConfig extends Zend_Tool_Framework_Provider_Abstr
             $config = array();
         }
         return $config;
-    }
-
-    protected function _dumpValue($value, $indent = '')
-    {
-        if (is_scalar($value) || $value === null) {
-            return var_export($value, 1);
-        } elseif (is_array($value)) {
-            $str = "array(\n";
-            foreach ($value as $k => $v) {
-                $str .= $indent . '    ' . var_export($k, 1) . ' => ' . $this->_dumpValue($v, $indent . '    ') . ",\n";
-            }
-            $str .= $indent . ")";
-            return $str;
-        } else {
-            throw new Exception(sprintf('Unserializable value: %s', is_object($value) ? get_class($value) : gettype($value)));
-        }
     }
 }

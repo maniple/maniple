@@ -108,34 +108,10 @@ class {$controllerClass}_IndexAction extends Maniple_Controller_Action_Standalon
                     'action'     => 'index',
                 ),
             );
-            file_put_contents($routesConfigFile, "<?php\n\nreturn " . $this->_dumpValue($routesConfig) . ";\n");
+            file_put_contents($routesConfigFile, "<?php\n\nreturn " . Maniple_Filter_VarExport::filterStatic($routesConfig) . ";\n");
             $this->_registry->getResponse()->appendContent(
                 sprintf('Added route %s to routes.config.php', $key)
             );
-        }
-    }
-
-    protected function _dumpValue($value, $indent = '')
-    {
-        if (is_scalar($value) || $value === null) {
-            return var_export($value, 1);
-        } elseif (is_array($value)) {
-            $str = "array(\n";
-
-            $keyLength = 0;
-            foreach ($value as $k => $v) {
-                $keyLength = max($keyLength, strlen(var_export($k, 1)));
-            }
-
-            foreach ($value as $k => $v) {
-                $strKey = var_export($k, 1);
-                $strPad = str_repeat(' ', max(0, $keyLength - strlen($strKey)));
-                $str .= $indent . '    ' . $strKey . $strPad . ' => ' . $this->_dumpValue($v, $indent . '    ') . ",\n";
-            }
-            $str .= $indent . ")";
-            return $str;
-        } else {
-            throw new Exception(sprintf('Unserializable value: %s', is_object($value) ? get_class($value) : gettype($value)));
         }
     }
 
