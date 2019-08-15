@@ -37,12 +37,12 @@ class Maniple_SlugGenerator_Db extends Maniple_SlugGenerator_Abstract
     {
         $select = $this->_db->select();
         $select->from(
-            array('tbl' => $this->_tableName),
-            array('cnt' => new Zend_Db_Expr('COUNT(1)'))
+            $this->_tableName,
+            array(new Zend_Db_Expr('COUNT(1)'))
         );
         $select->where($this->_db->quoteIdentifier($this->_colName) . ' = ?', (string) $slug);
 
-        $count = (int) $select->query()->fetchColumn('cnt');
+        $count = (int) $select->query()->fetchColumn(0);
         return (bool) $count;
     }
 
