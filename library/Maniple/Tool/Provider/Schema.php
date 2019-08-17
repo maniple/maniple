@@ -62,7 +62,7 @@ class Maniple_Tool_Provider_Schema extends Maniple_Tool_Provider_Abstract
         }
         if (!$hasTable) {
             echo 'Schemas table not present, creating ... ';
-            $db->query("CREATE TABLE {$db->quoteIdentifier($tableName)} (schema_id VARCHAR(255) PRIMARY KEY, installed_at INTEGER NOT NULL)");
+            $db->query("CREATE TABLE {$db->quoteIdentifier($tableName)} (schema_id VARCHAR(191) PRIMARY KEY, installed_at INTEGER NOT NULL)");
             echo 'done.', "\n";
         }
 
@@ -222,7 +222,7 @@ class Maniple_Tool_Provider_Schema extends Maniple_Tool_Provider_Abstract
                 );
                 $query = preg_replace(
                     '/(CREATE INDEX) (`|"|\\[)?([^ ]+) (ON) (`|"|\\[)?/i',
-                    '$1 $2' . $tablePrefix . ' $3 $4' . $tablePrefix,
+                    '$1 $2' . $tablePrefix . '$3 $4 $5' . $tablePrefix,
                     $query
                 );
                 return $query;
