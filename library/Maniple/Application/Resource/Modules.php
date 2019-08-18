@@ -488,36 +488,10 @@ class Maniple_Application_Resource_Modules
             $this->bootstrapModule($module);
         }
 
-        // Ok, all modules loaded successfully, add search paths
-        $this->_setupViewPaths();
-
         // great, all modules are loaded, notify of module loading completion
         foreach ($this->_bootstraps as $moduleBootstrap) {
             if (method_exists($moduleBootstrap, 'onModulesLoaded')) {
                 $moduleBootstrap->onModulesLoaded($this);
-            }
-        }
-    }
-
-    protected function _setupViewPaths()
-    {
-        $view = $this->_getBootstrapResource('View');
-
-        $helperPaths = array(
-            '/library/View/Helper',
-            '/views/helpers',
-        );
-
-        if ($view instanceof Zend_View_Abstract) {
-            foreach ($this->_loadedModules as $module => $moduleInfo) {
-                foreach ($helperPaths as $path) {
-                    if (is_dir($moduleInfo->path . $path)) {
-                        $view->addHelperPath(
-                            $moduleInfo->path . $path,
-                            $moduleInfo->prefix . '_View_Helper_'
-                        );
-                    }
-                }
             }
         }
     }
