@@ -35,7 +35,7 @@ class Maniple_Di_Container implements ArrayAccess
     /**
      * @param array|object $options
      */
-    public function __construct($options = null) // {{{
+    public function __construct($options = null)
     {
         if (is_object($options) && method_exists($options, 'toArray')) {
             $options = (array) $options->toArray();
@@ -44,7 +44,7 @@ class Maniple_Di_Container implements ArrayAccess
         if (is_array($options)) {
             $this->addResources($options);
         }
-    } // }}}
+    }
 
     /**
      * @return Maniple_Di_Injector
@@ -73,7 +73,7 @@ class Maniple_Di_Container implements ArrayAccess
      * @param  array|Traversable $resources
      * @return $this
      */
-    public function addResources($resources) // {{{
+    public function addResources($resources)
     {
         foreach ($resources as $name => $resource) {
             if (is_int($name) && is_string($resource)) {
@@ -83,7 +83,7 @@ class Maniple_Di_Container implements ArrayAccess
             $this->addResource($name, $resource);
         }
         return $this;
-    } // }}}
+    }
 
     /**
      * Add a resource
@@ -91,9 +91,8 @@ class Maniple_Di_Container implements ArrayAccess
      * @param  string $name
      * @param  string|array|object $resource OPTIONAL If not provided $name param will be treated as resource's class name
      * @return $this
-     * @throws Zend_Application_Exception
      */
-    public function addResource($name, $resource = null) // {{{
+    public function addResource($name, $resource = null)
     {
         if ($resource === null) {
             $resource = array('class' => $name);
@@ -102,7 +101,7 @@ class Maniple_Di_Container implements ArrayAccess
         $name = $this->_foldCase($name);
 
         if ($this->hasResource($name)) {
-            throw new Zend_Application_Exception("Resource '$name' is already registered");
+            throw new Maniple_Di_Exception("Resource '$name' is already registered");
         }
 
         if (is_string($resource) && !strncasecmp($resource, 'class:', 6)) {
@@ -140,7 +139,7 @@ class Maniple_Di_Container implements ArrayAccess
         }
 
         return $this;
-    } // }}}
+    }
 
     /**
      * @param string $name
@@ -166,9 +165,8 @@ class Maniple_Di_Container implements ArrayAccess
      *
      * @param  string $name
      * @return mixed
-     * @throws Zend_Application_Exception
      */
-    public function getResource($name) // {{{
+    public function getResource($name)
     {
         $name = $this->_foldCase($name);
 
@@ -195,7 +193,7 @@ class Maniple_Di_Container implements ArrayAccess
                 $resource = $definition['callback']->__invoke($this);
 
                 if ($resource === null) {
-                    throw new Zend_Application_Exception("Could not create instance of '$name' from callback");
+                    throw new Maniple_Di_Exception("Could not create instance of '$name' from callback");
                 }
             }
 
@@ -208,18 +206,18 @@ class Maniple_Di_Container implements ArrayAccess
 
         if (isset($this->_aliases[$name])) {
             if (!$this->hasResource($this->_aliases[$name])) {
-                throw new Zend_Application_Exception("Invalid resource alias '$name'");
+                throw new Maniple_Di_Exception("Invalid resource alias '$name'");
             }
             return $this->getResource($this->_aliases[$name]);
         }
 
         if ($resource === null) {
-            throw new Zend_Application_Exception("No resource is registered for key '$name'");
+            throw new Maniple_Di_Exception("No resource is registered for key '$name'");
         }
 
         $this->_resources[$name] = $resource;
         return $resource;
-    } // }}}
+    }
 
     /**
      * Remove resource from container.
@@ -227,7 +225,7 @@ class Maniple_Di_Container implements ArrayAccess
      * @param  string $name
      * @return void
      */
-    public function removeResource($name) // {{{
+    public function removeResource($name)
     {
         $name = $this->_foldCase($name);
         unset(
@@ -235,7 +233,7 @@ class Maniple_Di_Container implements ArrayAccess
             $this->_definitions[$name],
             $this->_aliases[$name]
         );
-    } // }}}
+    }
 
     /**
      * Is given resource registered in the container?
@@ -243,13 +241,13 @@ class Maniple_Di_Container implements ArrayAccess
      * @param  string $name
      * @return bool
      */
-    public function hasResource($name) // {{{
+    public function hasResource($name)
     {
         $name = $this->_foldCase($name);
         return isset($this->_resources[$name])
             || isset($this->_definitions[$name])
             || isset($this->_aliases[$name]);
-    } // }}}
+    }
 
     /**
      * Helper method to maintain case-insensitivity of resource names.
@@ -257,16 +255,16 @@ class Maniple_Di_Container implements ArrayAccess
      * @param  string $key
      * @return string
      */
-    protected function _foldCase($key) // {{{
+    protected function _foldCase($key)
     {
         return strtolower($key);
-    } // }}}
+    }
 
     /**
      * @param  array|object $params
      * @return array
      */
-    protected function _prepareParams($params) // {{{
+    protected function _prepareParams($params)
     {
         if (is_object($params) && method_exists($params, 'toArray')) {
             $params = $params->toArray();
@@ -290,19 +288,18 @@ class Maniple_Di_Container implements ArrayAccess
         }
 
         return $params;
-    } // }}}
+    }
 
     /**
      * Create an instance of a given class and setup its parameters.
      *
      * @param  array $description
      * @return object
-     * @throws Zend_Application_Exception
      */
-    protected function _createInstance(array $description) // {{{
+    protected function _createInstance(array $description)
     {
         if (empty($description['class'])) {
-            throw new Zend_Application_Exception('No class name found in description');
+            throw new Maniple_Di_Exception('No class name found in description');
         }
 
         $class = $description['class'];
@@ -372,7 +369,7 @@ class Maniple_Di_Container implements ArrayAccess
         if (isset($description['invoke'])) {
             foreach ($description['invoke'] as $invoke) {
                 if (!is_array($invoke)) {
-                    throw new Zend_Application_Exception('Invoke value must be an array');
+                    throw new Maniple_Di_Exception('Invoke value must be an array');
                 }
                 $method = array_shift($invoke);
                 $args = (array) array_shift($invoke);
@@ -381,7 +378,7 @@ class Maniple_Di_Container implements ArrayAccess
         }
 
         return $instance;
-    } // }}}
+    }
 
     /**
      * Proxy to {@see getResource()}.
