@@ -288,33 +288,39 @@ class Maniple_Application_Resource_Modules
 
 
     /**
-     * Initializes autoloader for classes withing modules.
-     *
-     * This autoloader maps Module_ClassName to module/library/ClassName.php
+     * Initializes autoloader for module classes.
      *
      * @return void
-     * @deprecated
      */
-    protected function _initAutoloader() // {{{
+    protected function _initAutoloader()
     {
+        $autoloaderConfig = array();
+
         // add libary dir to include path, see:
         // http://stackoverflow.com/questions/13377983/zend-framework-module-library
         foreach ($this->_loadedModules as $module => $moduleInfo) {
-            if ($module === 'euhit-workflow') continue;
+            $moduleBootstrap = $moduleInfo->bootstrap;
 
-            $path = $moduleInfo->path . '/library';
-
-            if (is_dir($path)) {
-                Zend_Loader_AutoloaderFactory::factory(array(
-                    'Zend_Loader_StandardAutoloader' => array(
-                        'prefixes' => array(
-                            $moduleInfo->prefix . '_' => $path,
-                        ),
-                    ),
-                ));
+            // method_exists checks is method is defined in the code
+            // is_callable if it's callable in the current context. Both
+            // need to be checked, because is_callable returns true if __call
+            // magic method is defined
+            if (method_exists($moduleBootstrap, 'getAutoloaderConfig')
+                && is_callable(array($moduleBootstrap, 'getAutoloaderConfig'))
+            ) {
+                $autoloaderConfig = Zefram_Stdlib_ArrayUtils::merge(
+                    $autoloaderConfig,
+                    $moduleBootstrap->getAutoloaderConfig()
+                );
             }
         }
-    } // }}}
+
+        if ($autoloaderConfig) {
+            Zend_Loader_AutoloaderFactory::factory(array(
+                'Zend_Loader_StandardAutoloader' => $autoloaderConfig
+            ));
+        }
+    }
 
     public function configResources()
     {
