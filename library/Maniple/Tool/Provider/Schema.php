@@ -62,7 +62,7 @@ class Maniple_Tool_Provider_Schema extends Maniple_Tool_Provider_Abstract
         }
         if (!$hasTable) {
             echo 'Schemas table not present, creating ... ';
-            $db->query("CREATE TABLE {$db->quoteIdentifier($tableName)} (schema_id VARCHAR(191) PRIMARY KEY, installed_at INTEGER NOT NULL)");
+            $db->query("CREATE TABLE {$db->quoteIdentifier($tableName)} (schema_id VARCHAR(191) PRIMARY KEY, installed_at VARCHAR(23))");
             echo 'done.', "\n";
         }
 
@@ -77,7 +77,7 @@ class Maniple_Tool_Provider_Schema extends Maniple_Tool_Provider_Abstract
 
         foreach ($installedSchemas as $key => $row) {
             if (isset($schemas[$key])) {
-                echo sprintf("%s already installed at %s\n", $key, date('Y-m-d H:i:s', $row['installed_at']));
+                echo sprintf("%s already installed at %s\n", $key, $row['installed_at']);
                 unset($schemas[$key]);
                 continue;
             }
@@ -103,9 +103,11 @@ class Maniple_Tool_Provider_Schema extends Maniple_Tool_Provider_Abstract
                     $db->query($query);
                     echo "\n\n";
                 }
+                $utime = microtime(true) - time();
+                $now = date('Y-m-d H:i:s') . sprintf('.%03d', $utime * 1000);
                 $db->insert($tableName, array(
                     'schema_id' => $id,
-                    'installed_at' => time(),
+                    'installed_at' => $now,
                 ));
                 $db->commit();
             } catch (Exception $e) {
