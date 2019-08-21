@@ -186,66 +186,6 @@ function maniple_init($baseDir = null) {
     if (!is_file($index_path)) {
         file_put_contents($index_path, maniple_generate_index());
     }
-
-    maniple_generate_configs($baseDir . '/application/configs');
-}
-
-function maniple_generate_configs($dir) {
-    $configs = array(
-        'development' => array(
-            'phpSettings' => array(
-                'display_startup_errors' => true,
-                'display_errors' => true,
-            ),
-            'resources' => array(
-                'frontController' => array(
-                    'params' => array(
-                        'displayExceptions' => true,
-                    ),
-                ),
-            ),
-        ),
-        'production' => array(
-            'phpSettings' => array(
-                'display_startup_errors' => false,
-                'display_errors' => false,
-            ),
-            'resources' => array(
-                'frontController' => array(
-                    'params' => array(
-                        'displayExceptions' => false,
-                    ),
-                ),
-            ),
-        ),
-    );
-    foreach ($configs as $env => $config) {
-        $path = $dir . '/application.config.' . $env . '.php';
-        if (!is_file($path)) {
-            echo 'Creating application config file ', basename($path), ' ... ';
-
-            $configString = var_export($config, true);
-
-            // use 4 space indent
-            $indentWidth = 4;
-            $configString = preg_replace_callback('/\n(\s+)/', function (array $match) use ($indentWidth) {
-                $indentDepth = strlen($match[1]) / 2;
-                $indent = str_repeat(' ', $indentWidth);
-                return "\n" . str_repeat($indent, $indentDepth);
-            }, $configString);
-
-            // remove space between 'array' and '('
-            $configString = preg_replace('/array\s*\(/', 'array(', $configString);
-
-            // place array( at the same level as =>
-            $configString = preg_replace('/=>\s*array\(/', '=> array(', $configString);
-
-            file_put_contents($path, "<?php\n\nreturn " . $configString . ";\n");
-            echo 'done.', "\n";
-        } else {
-            echo 'Application config file ', basename($path), ' already present' . "\n";
-        }
-    }
 }
 
 function maniple_vendor_update($vendor_path = null) {
