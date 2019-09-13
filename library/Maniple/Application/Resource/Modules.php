@@ -442,7 +442,7 @@ class Maniple_Application_Resource_Modules
     public function bootstrapModule($moduleName)
     {
         if (!isset($this->_loadedModules[$moduleName])) {
-            throw new Exception('Invalid module name: ' . $moduleName);
+            throw new Zend_Application_Resource_Exception('Invalid module name: ' . $moduleName);
         }
 
         $moduleInfo = $this->_loadedModules[$moduleName];
@@ -455,10 +455,14 @@ class Maniple_Application_Resource_Modules
         }
 
         if ($moduleInfo->state === self::STATE_BOOTSTRAPPING) {
-            throw new Exception('Cyclic module dependency detected; module ' . $moduleName . ' is during bootstrap process');
+            throw new Zend_Application_Resource_Exception('Cyclic module dependency detected; module ' . $moduleName . ' is during bootstrap process');
         }
 
         $moduleInfo->state = self::STATE_BOOTSTRAPPING;
+
+        foreach ($moduleInfo->dependencies as $dependency) {
+            $this->bootstrapModule($dependency);
+        }
 
         // add module routes to router
         $this->configRoutes($moduleInfo);
@@ -495,6 +499,7 @@ class Maniple_Application_Resource_Modules
         }
 
         // great, all modules are loaded, notify of module loading completion
+        // BC
         foreach ($this->_bootstraps as $moduleBootstrap) {
             if (method_exists($moduleBootstrap, 'onModulesLoaded')) {
                 $moduleBootstrap->onModulesLoaded($this);
