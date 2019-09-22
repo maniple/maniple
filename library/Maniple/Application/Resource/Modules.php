@@ -316,9 +316,21 @@ class Maniple_Application_Resource_Modules
         }
 
         if ($autoloaderConfig) {
-            Zend_Loader_AutoloaderFactory::factory(array(
-                'Zend_Loader_StandardAutoloader' => $autoloaderConfig
-            ));
+            if (isset($autoloaderConfig['prefixes'])) { // legacy format
+                $prefixes = $autoloaderConfig['prefixes'];
+                unset($autoloaderConfig['prefixes']);
+            } else {
+                $prefixes = array();
+            }
+
+            $autoloaderConfig = Zefram_Stdlib_ArrayUtils::merge(
+                array('Zend_Loader_StandardAutoloader' => array(
+                    'prefixes' => $prefixes,
+                )),
+                $autoloaderConfig
+            );
+
+            Zend_Loader_AutoloaderFactory::factory($autoloaderConfig);
         }
     }
 
