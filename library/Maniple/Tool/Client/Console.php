@@ -3,7 +3,7 @@
 class Maniple_Tool_Client_Console extends Zefram_Tool_Framework_Client_Console
 {
     /**
-     * @var Zend_Application
+     * @var Zend_Application|array
      */
     protected $_application;
 
@@ -19,6 +19,7 @@ class Maniple_Tool_Client_Console extends Zefram_Tool_Framework_Client_Console
 
     /**
      * @return Zend_Application
+     * @throws Zend_Config_Exception
      * @throws Zend_Tool_Framework_Client_Exception
      */
     public function getApplication()
@@ -32,6 +33,7 @@ class Maniple_Tool_Client_Console extends Zefram_Tool_Framework_Client_Console
     /**
      * @param array $options
      * @return Zend_Application
+     * @throws Zend_Config_Exception
      * @throws Zend_Tool_Framework_Client_Exception
      */
     protected function _createApplication($options)

@@ -138,16 +138,13 @@ class Maniple_Application_Resource_Modules
     }
 
     /**
-     * @param $a
-     * @param $b
-     * @internal
+     * Load a specific module by name.
+     *
+     * @param string $module
+     * @return object
+     * @throws Zend_Application_Bootstrap_Exception
+     * @throws Zend_Application_Resource_Exception
      */
-    protected function _sortLoadedModulesCompare($a, $b)
-    {
-        // sort descending by stackIndex
-        return $a->stackIndex - $b->stackIndex;
-    }
-
     public function loadModule($module)
     {
         if (isset($this->_loadedModules[$module])) {
@@ -156,6 +153,8 @@ class Maniple_Application_Resource_Modules
 
         /** @var Zend_Application_Bootstrap_BootstrapAbstract $bootstrap */
         $bootstrap = $this->getBootstrap();
+        $bootstrap->bootstrap('FrontController');
+
         /** @var $front Zend_Controller_Front */
         $front = $bootstrap->getResource('FrontController');
         $default = $front->getDefaultModule();
@@ -168,8 +167,12 @@ class Maniple_Application_Resource_Modules
         // use autoloading - so that modules residing in other locations, but accessible
         // to autoloader can be taken into account
         if (class_exists($bootstrapClass, true)) {
-            $ref = new ReflectionClass($bootstrapClass);
-            $modulePaths[$module] = $modulePath = dirname($ref->getFileName());
+            try {
+                $ref = new ReflectionClass($bootstrapClass);
+                $modulePaths[$module] = $modulePath = dirname($ref->getFileName());
+            } catch (Exception $e) {
+                throw new Zend_Application_Resource_Exception($e->getMessage(), $e->getCode(), $e);
+            }
 
         } else {
             if (isset($this->_modulePaths[$module])) {
@@ -183,7 +186,7 @@ class Maniple_Application_Resource_Modules
                 }
             }
             if (empty($modulePath) || !is_dir($modulePath)) {
-                throw new Exception(sprintf(
+                throw new Zend_Application_Resource_Exception(sprintf(
                     'Unable to find directory for module "%s"', $module
                 ));
             }
@@ -198,6 +201,7 @@ class Maniple_Application_Resource_Modules
             $bootstrapPath  = $modulePath . '/Bootstrap.php';
             if (file_exists($bootstrapPath)) {
                 $eMsgTpl = 'Bootstrap file found for module "%s" but bootstrap class "%s" not found';
+                /** @noinspection PhpIncludeInspection */
                 include_once $bootstrapPath;
                 if (($default != $module)
                     && !class_exists($bootstrapClass, false)
@@ -241,7 +245,11 @@ class Maniple_Application_Resource_Modules
         // - the way a module directory is retrieved from front controller
         // depends on whether module's controller directory is added to
         // dispatcher (not the module directory itself), regardless of its existence
-        $front->addControllerDirectory($modulePath . '/controllers', $module);
+        try {
+            $front->addControllerDirectory($modulePath . '/controllers', $module);
+        } catch (Zend_Controller_Exception $e) {
+            throw new Zend_Application_Resource_Exception($e->getMessage(), $e->getCode(), $e);
+        }
 
         $moduleData = (object) array(
             'name'           => $module,
@@ -264,6 +272,18 @@ class Maniple_Application_Resource_Modules
         }
 
         return $moduleData;
+    }
+
+    /**
+     * @param object $a
+     * @param object $b
+     * @return int
+     * @internal
+     */
+    protected function _sortLoadedModulesCompare($a, $b)
+    {
+        // sort descending by stackIndex
+        return $a->stackIndex - $b->stackIndex;
     }
 
     function _depVisitor($module)
@@ -546,15 +566,18 @@ class Maniple_Application_Resource_Modules
 
     /**
      * @var Zend_Loader_PluginLoader_Interface
+     * @deprecated
      */
     protected $_taskLoader;
 
     /**
      * @var Maniple_Application_Module_Task_TaskInterface[]
+     * @deprecated
      */
     protected $_taskRegistry;
 
     /**
+     * @deprecated
      * @return Zend_Loader_PluginLoader_Interface
      */
     public function getTaskLoader()
@@ -572,6 +595,7 @@ class Maniple_Application_Resource_Modules
      * @param  string|Maniple_Application_Module_Task_TaskInterface $task
      * @param  Maniple_Application_Module_Bootstrap $module
      * @return mixed
+     * @deprecated
      */
     public function runTask($task, Maniple_Application_Module_Bootstrap $module)
     {
@@ -590,7 +614,6 @@ class Maniple_Application_Resource_Modules
         }
         return $task->run($module);
     }
-
 
     protected function _hasBootstrapResource($resourceName)
     {

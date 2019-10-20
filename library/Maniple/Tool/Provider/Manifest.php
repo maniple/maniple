@@ -1,7 +1,17 @@
 <?php
 
-class Maniple_Tool_Provider_Manifest implements Zend_Tool_Framework_Manifest_ProviderManifestable
+class Maniple_Tool_Provider_Manifest implements Zend_Tool_Framework_Manifest_ProviderManifestable,
+    Zend_Tool_Framework_Registry_EnabledInterface
 {
+    /**
+     * @var Zend_Tool_Framework_Registry_Interface
+     */
+    protected $_registry = null;
+
+    /**
+     * @return array
+     * @throws Zend_Tool_Framework_Provider_Exception
+     */
     public function getProviders()
     {
         return array_merge(
@@ -17,15 +27,55 @@ class Maniple_Tool_Provider_Manifest implements Zend_Tool_Framework_Manifest_Pro
     }
 
     /**
+     * @param Zend_Tool_Framework_Registry_Interface $registry
+     * @return $this
+     */
+    public function setRegistry(Zend_Tool_Framework_Registry_Interface $registry)
+    {
+        $this->_registry = $registry;
+        return $this;
+    }
+
+    /**
+     * Retrieve application instance from client
+     *
+     * @return Zend_Application
+     * @throws Zend_Tool_Framework_Provider_Exception
+     */
+    protected function _getApplication()
+    {
+        $client = $this->_registry->getClient();
+        $application = method_exists($client, 'getApplication') ? $client->getApplication() : null;
+
+        if (!$application instanceof Zend_Application) {
+            throw new Zend_Tool_Framework_Provider_Exception('Unable to retrieve Zend_Application from client');
+        }
+
+        return $application;
+    }
+
+    /**
      * @return array
+     * @throws Zend_Tool_Framework_Provider_Exception
      */
     protected function _loadModuleProviders()
     {
         $providers = array();
 
         if (is_dir('application/modules')) {
+            /** @var Maniple_Application_Resource_Modules $modules */
+            $modules = $this->_getApplication()->getBootstrap()->getPluginResource('modules');
+
             foreach (scandir('application/modules') as $module) {
                 if ($module === '.' || $module === '..') {
+                    continue;
+                }
+
+                $bootstrap = $modules->loadModule($module)->bootstrap;
+                if ($bootstrap instanceof Zend_Tool_Framework_Manifest_ProviderManifestable) {
+                    foreach ($bootstrap->getProviders() as $provider) {
+                        $providers[] = $provider;
+                    }
                     continue;
                 }
 
