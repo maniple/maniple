@@ -115,7 +115,7 @@ class Maniple_Application_Resource_Modules
 
         // load modules
         foreach ($toLoad as $module) {
-            $this->loadModule($module);
+            $this->_loadModule($module);
         }
 
         $this->_sortLoadedModules();
@@ -145,7 +145,7 @@ class Maniple_Application_Resource_Modules
      * @throws Zend_Application_Bootstrap_Exception
      * @throws Zend_Application_Resource_Exception
      */
-    public function loadModule($module)
+    public function _loadModule($module)
     {
         if (isset($this->_loadedModules[$module])) {
             return $this->_loadedModules[$module];
@@ -268,10 +268,23 @@ class Maniple_Application_Resource_Modules
         $this->_queue[] = $module;
 
         foreach ($moduleData->dependencies as $dep) {
-            $this->loadModule($dep);
+            $this->_loadModule($dep);
         }
 
         return $moduleData;
+    }
+
+    /**
+     * Load a specific module by name.
+     *
+     * @param string $module
+     * @return Zend_Application_Bootstrap_BootstrapAbstract
+     * @throws Zend_Application_Bootstrap_Exception
+     * @throws Zend_Application_Resource_Exception
+     */
+    public function loadModule($module)
+    {
+        return $this->_loadModule($module)->bootstrap;
     }
 
     /**
@@ -288,7 +301,7 @@ class Maniple_Application_Resource_Modules
 
     function _depVisitor($module)
     {
-        $moduleData = $this->loadModule($module);
+        $moduleData = $this->_loadModule($module);
         if (!$moduleData) {
             throw new Exception('Unable to load module: ' . $module);
         }
@@ -305,7 +318,6 @@ class Maniple_Application_Resource_Modules
         $moduleData->depSortState = 'done';
         $moduleData->stackIndex = ++$this->_stackIndexCounter;
     }
-
 
     /**
      * Initializes autoloader for module classes.
