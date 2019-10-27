@@ -24,8 +24,12 @@ class Maniple_Di_Injector
      */
     public function __construct($container)
     {
+        if (!ini_get('opcache.save_comments')) {
+            throw new RuntimeException('Support for annotations is disabled. Injector requires that \'opcache.save_comments\' ini setting is enabled');
+        }
+
         if (!is_object($container)) {
-            throw new Exception(
+            throw new InvalidArgumentException(
                 sprintf('Container must be an object, %s provided', gettype($container))
             );
         }
@@ -74,17 +78,31 @@ class Maniple_Di_Injector
         $ref = new ReflectionClass($object);
 
         foreach ($metadata as $name => $desc) {
-            $dep = $this->_container->{$desc['resourceName']};
-            if (empty($dep)) {
-                throw new Exception('Resource not found: ' . $desc['resourceName']);
-            }
-            if ($desc['varType'] && !($dep instanceof $desc['varType'])) {
-                throw new Exception(sprintf(
-                    'Invalid type of \'%s\' resource: %s, expected %s',
-                    $desc['resourceName'],
-                    is_object($dep) ? get_class($dep) : gettype($dep),
-                    $desc['varType']
-                ));
+            $dep = isset($this->_container->{$desc['resourceName']})
+                ? $this->_container->{$desc['resourceName']}
+                : null;
+
+            if ($dep === null) {
+                if (!$desc['nullable']) {
+                    throw new Exception('Resource not found: ' . $desc['resourceName']);
+                }
+
+            } elseif ($desc['varType']) {
+                $match = false;
+                foreach ($desc['varType'] as $varType) {
+                    if ($dep instanceof $varType) {
+                        $match = true;
+                        break;
+                    }
+                }
+                if (!$match) {
+                    throw new InvalidArgumentException(sprintf(
+                        'Invalid type of \'%s\' resource: %s, expected %s',
+                        $desc['resourceName'],
+                        is_object($dep) ? get_class($dep) : gettype($dep),
+                        join('|', $desc['varType'])
+                    ));
+                }
             }
 
             $prop = $ref->getProperty($name);
@@ -117,22 +135,36 @@ class Maniple_Di_Injector
                     $resourceName = trim($resourceName, '\'"');
                 }
 
+                $nullable = false;
+                $varType = array();
+
                 if (preg_match('/@var\s+(?P<varType>[\S]+)/', $comment, $match)) {
-                    $varType = $match['varType'];
-                } else {
-                    $varType = null;
+                    foreach (explode('|', $match['varType']) as $type) {
+                        if (strtolower($type) === 'null') {
+                            $nullable = true;
+                        } else {
+                            $varType[] = $type;
+                        }
+                    }
                 }
 
                 // If '@Inject' or '@Inject()' use type specified in @var as resource name
                 if (empty($resourceName) && preg_match('/@Inject(\s|\(\))/', $comment)) {
-                    $resourceName = $varType;
+                    if (count($varType) > 1) {
+                        throw new InvalidArgumentException(sprintf(
+                            'Only a single not null type is allowed on injected property %s in class %s',
+                            $prop->getName(),
+                            $ref->getName()
+                        ));
+                    }
+                    $resourceName = reset($varType);
                 }
 
                 if (empty($resourceName)) {
                     continue;
                 }
 
-                $metadata[$prop->getName()] = compact('resourceName', 'varType');
+                $metadata[$prop->getName()] = compact('resourceName', 'varType', 'nullable');
             }
 
             $this->_metadata[$objectClass] = $metadata;
