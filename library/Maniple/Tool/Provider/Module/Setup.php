@@ -7,7 +7,7 @@ class Maniple_Tool_Provider_Module_Setup
      */
     public static function run($moduleName)
     {
-        $modulePath = is_dir($moduleName) ? $moduleName : "application/modules/{$moduleName}";
+        $modulePath = "application/modules/{$moduleName}";
 
         if (!is_dir($modulePath)) {
             throw new Exception('Module directory not found: ' . $moduleName);
