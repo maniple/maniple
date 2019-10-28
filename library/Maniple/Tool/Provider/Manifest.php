@@ -66,7 +66,7 @@ class Maniple_Tool_Provider_Manifest implements Zend_Tool_Framework_Manifest_Pro
             /** @var Maniple_Application_Resource_Modules $modules */
             $modules = $this->_getApplication()->getBootstrap()->getPluginResource('modules');
 
-            foreach (scandir('application/modules') as $module) {
+            foreach (scandir(APPLICATION_PATH . '/modules') as $module) {
                 if ($module === '.' || $module === '..') {
                     continue;
                 }
@@ -79,7 +79,7 @@ class Maniple_Tool_Provider_Manifest implements Zend_Tool_Framework_Manifest_Pro
                     continue;
                 }
 
-                $manifestFile = 'application/modules/' . $module . '/Manifest.php';
+                $manifestFile = APPLICATION_PATH . '/modules/' . $module . '/Manifest.php';
                 if (!file_exists($manifestFile)) {
                     continue;
                 }

@@ -123,7 +123,7 @@ class Maniple_Tool_Provider_Schema extends Maniple_Tool_Provider_Abstract
      */
     protected function _getModuleSchemas($module)
     {
-        $moduleDir = 'application/modules/' . $module;
+        $moduleDir = APPLICATION_PATH . '/modules/' . $module;
         if (!is_dir($moduleDir)) {
             throw new RuntimeException("Module '$module' does not exist");
         }

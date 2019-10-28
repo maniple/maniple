@@ -7,7 +7,7 @@ class Maniple_Tool_Provider_Module_Setup
      */
     public static function run($moduleName)
     {
-        $modulePath = "application/modules/{$moduleName}";
+        $modulePath = APPLICATION_PATH . "/modules/{$moduleName}";
 
         if (!is_dir($modulePath)) {
             throw new Exception('Module directory not found: ' . $moduleName);
@@ -30,7 +30,7 @@ class Maniple_Tool_Provider_Module_Setup
                 $gitignore = array();
             }
 
-            $prefix = 'application/modules/';
+            $prefix = '/modules/';
             $moduleGitignore = $prefix . $moduleName;
 
             if (!in_array($moduleGitignore, $gitignore)) {
@@ -219,11 +219,11 @@ function maniple_module_install($path, $symlink = true)
     $module_path = $path;
 
     if (is_dir($module_path)) {
-        @mkdir('application/modules', 0644, true);
+        @mkdir(APPLICATION_PATH . '/modules', 0644, true);
         if ($symlink) {
-            if (realpath($module_path) !== realpath("application/modules/{$module_dir_name}")) {
+            if (realpath($module_path) !== realpath(APPLICATION_PATH . "/modules/{$module_dir_name}")) {
                 echo 'Linking module ...\n';
-                maniple_symlink(realpath($module_path), "application/modules/{$module_dir_name}");
+                maniple_symlink(realpath($module_path), APPLICATION_PATH . "/modules/{$module_dir_name}");
             }
         }
     } else {

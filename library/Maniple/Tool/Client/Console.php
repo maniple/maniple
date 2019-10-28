@@ -50,8 +50,8 @@ class Maniple_Tool_Client_Console extends Zefram_Tool_Framework_Client_Console
             $config = (array) $options['config'];
         }
 
-        if (is_file('application/configs/cli.config.php')) {
-            $config['config'][] = 'application/configs/cli.config.php';
+        if (is_file(APPLICATION_PATH . '/configs/cli.config.php')) {
+            $config['config'][] = APPLICATION_PATH . '/configs/cli.config.php';
         }
 
         $applicationClass = $options['class'];

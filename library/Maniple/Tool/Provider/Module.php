@@ -25,7 +25,7 @@ class Maniple_Tool_Provider_Module extends Zend_Tool_Framework_Provider_Abstract
             throw new Zend_Tool_Framework_Client_Exception('Invalid module name: ' . $moduleName);
         }
 
-        $dir = 'application/modules/' . $moduleName;
+        $dir = APPLICATION_PATH . '/modules/' . $moduleName;
         if (!file_exists($dir) && !@mkdir($dir, 0777, true)) {
             throw new Zend_Tool_Framework_Client_Exception('Unable to create module directory');
         }
@@ -106,7 +106,7 @@ class Maniple_Tool_Provider_Module extends Zend_Tool_Framework_Provider_Abstract
 
     public function test($moduleName)
     {
-        $moduleDir = 'application/modules/' . $moduleName;
+        $moduleDir = APPLICATION_PATH . '/modules/' . $moduleName;
         if (!file_exists($moduleDir)) {
             throw new Zend_Tool_Framework_Client_Exception('Unable to find module ' . $moduleName);
         }

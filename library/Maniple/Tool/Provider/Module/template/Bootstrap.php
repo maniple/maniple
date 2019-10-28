@@ -43,7 +43,7 @@ class __modulePrefix_Bootstrap extends Maniple_Application_Module_Bootstrap
         Zend_Loader_AutoloaderFactory::factory(array(
             'Zend_Loader_StandardAutoloader' => array(
                 'prefixes' => array(
-                    '%modulePrefix%_' => dirname(__FILE__) . '/library/%modulePrefix%/',
+                    '%modulePrefix%_' => __DIR__ . '/library/%modulePrefix%/',
                 ),
             ),
         ));

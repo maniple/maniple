@@ -25,7 +25,7 @@ class Maniple_Tool_Provider_Model extends Zend_Tool_Framework_Provider_Abstract
             throw new Exception("Invalid model name: '$modelName'. Name must follow upper camel-case convention.");
         }
 
-        $moduleDir = 'application/modules/' . $moduleName;
+        $moduleDir = APPLICATION_PATH . '/modules/' . $moduleName;
         if (!is_dir($moduleDir)) {
             throw new Exception("Module '$moduleName' does not exist");
         }

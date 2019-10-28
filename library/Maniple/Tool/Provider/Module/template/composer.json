@@ -27,7 +27,7 @@
             "url": "https://github.com/maniple/maniple"
         },
         {
-            "type": "vcs",
+            "type": "git",
             "url": "https://github.com/xemlock/zefram"
         }
     ],
@@ -38,5 +38,5 @@
     },
     "scripts": {
         "test": "phpunit"
-    }
+    },
 }

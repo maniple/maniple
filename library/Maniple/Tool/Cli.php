@@ -33,7 +33,7 @@ $action = $args[1];
 $action_args = array_slice($args, 2);
 
 define('APPLICATION_ENV',  (is_file('appenv') ? trim(file_get_contents('appenv')) : 'production'));
-define('APPLICATION_PATH', realpath('application'));
+define('APPLICATION_PATH', getcwd());
 
 try {
     if ($action === 'install' && !count($action_args)) {
@@ -91,11 +91,11 @@ function maniple_install($basePath)
             echo '[ WARN ] Reference modules with composer, maniple.json file is deprecated', "\n";
         }
     }
-    foreach (scandir('application/modules') as $dir) {
+    foreach (scandir(APPLICATION_PATH . '/modules') as $dir) {
         if (substr($dir, 0, 1) === '.') {
             continue;
         }
-        $dirPath = 'application/modules/' . $dir;
+        $dirPath = APPLICATION_PATH . '/modules/' . $dir;
         if (!is_dir($dirPath)) {
             continue;
         }
@@ -103,7 +103,7 @@ function maniple_install($basePath)
             || is_file($dirPath . '/module/Bootstrap.php')
             || is_file($dirPath . '/Module.php') // ZF2 style module
         ) {
-            Maniple_Tool_Provider_Module_Setup::run($dirPath);
+            Maniple_Tool_Provider_Module_Setup::run($dir);
         }
     }
 
@@ -134,9 +134,8 @@ function maniple_init($baseDir = null) {
     }
 
     $dirs = array(
-        'application/configs' => false,
-        'application/modules' => false,
-
+        'configs' => false,
+        'modules' => false,
         'public' => false,
     );
 

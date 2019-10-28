@@ -17,7 +17,7 @@ class Maniple_Tool_Provider_Controller extends Zend_Tool_Framework_Provider_Abst
             throw new Exception("Invalid controller name: '$name'");
         }
 
-        $moduleDir = 'application/modules/' . $module;
+        $moduleDir = APPLICATION_PATH . '/modules/' . $module;
         if (!is_dir($moduleDir)) {
             throw new Exception("Module '$module' does not exist");
         }

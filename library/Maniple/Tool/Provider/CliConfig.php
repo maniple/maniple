@@ -4,8 +4,6 @@ class Maniple_Tool_Provider_CliConfig extends Zend_Tool_Framework_Provider_Abstr
 {
     const className = __CLASS__;
 
-    const CONFIG_PATH = './application/configs/cli.config.php';
-
     /**
      * @param string $key
      * @param string $value
@@ -52,16 +50,21 @@ class Maniple_Tool_Provider_CliConfig extends Zend_Tool_Framework_Provider_Abstr
 
         $php = Maniple_Filter_VarExport::filterStatic($config);
 
-        file_put_contents(self::CONFIG_PATH, '<?php return ' . $php . ";\n");
+        file_put_contents($this->_getConfigPath(), '<?php return ' . $php . ";\n");
     }
 
     protected function _loadConfig()
     {
-        if (is_file(self::CONFIG_PATH)) {
-            $config = (array) require self::CONFIG_PATH;
+        if (is_file($this->_getConfigPath())) {
+            $config = (array) require $this->_getConfigPath();
         } else {
             $config = array();
         }
         return $config;
+    }
+
+    protected function _getConfigPath()
+    {
+        return APPLICATION_PATH . '/configs/cli.config.php';
     }
 }
