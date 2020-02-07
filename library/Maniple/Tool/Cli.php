@@ -33,7 +33,7 @@ $action = $args[1];
 $action_args = array_slice($args, 2);
 
 define('APPLICATION_ENV',  (is_file('appenv') ? trim(file_get_contents('appenv')) : 'production'));
-define('APPLICATION_PATH', getcwd());
+define('APPLICATION_PATH', getcwd() . '/application');
 
 try {
     if ($action === 'install' && !count($action_args)) {
