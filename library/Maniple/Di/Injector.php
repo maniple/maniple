@@ -24,8 +24,11 @@ class Maniple_Di_Injector
      */
     public function __construct($container)
     {
-        if (!ini_get('opcache.save_comments')) {
-            throw new RuntimeException('Support for annotations is disabled. Injector requires that \'opcache.save_comments\' ini setting is enabled');
+        if (function_exists('opcache_get_status')) {
+            $opcache = opcache_get_status(false);
+            if ($opcache && $opcache['opcache_enabled'] && !ini_get('opcache.save_comments')) {
+                throw new RuntimeException('Support for annotations is disabled. Injector requires that \'opcache.save_comments\' ini setting is enabled');
+            }
         }
 
         if (!is_object($container)) {
