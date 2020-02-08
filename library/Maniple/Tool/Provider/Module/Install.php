@@ -74,24 +74,6 @@ class Maniple_Tool_Provider_Module_Install
                 $installable = true;
                 if (!$version) {
                     $version = ':dev-master';
-
-                    // GitHub API requires User-Agent to be provided
-                    // https://stackoverflow.com/a/37142247/1086596
-                    $context = stream_context_create(array(
-                        'http' => array(
-                            'method' => 'GET',
-                            'header' => array(
-                                'User-Agent: ' . __CLASS__,
-                            ),
-                        ),
-                    ));
-                    $info = file_get_contents("https://api.github.com/repos/{$spec}/commits/master", false, $context);
-                    if ($info !== false) {
-                        try {
-                            $info = Zefram_Json::decode($info);
-                            $version .= '#' . substr($info['sha'], 0, 7);
-                        } catch (Exception $e) {}
-                    }
                 }
             } else {
                 echo "not found.\n";
@@ -102,8 +84,56 @@ class Maniple_Tool_Provider_Module_Install
             throw new Exception("Unable to install module {$spec}");
         }
 
+        // if package is from repo, fetch latest commit
+        if ($version === ':dev-master') {
+            // GitHub API requires User-Agent to be provided
+            // https://stackoverflow.com/a/37142247/1086596
+            $context = stream_context_create(array(
+                'http' => array(
+                    'method' => 'GET',
+                    'header' => array(
+                        'User-Agent: ' . __CLASS__,
+                    ),
+                ),
+            ));
+            $info = file_get_contents("https://api.github.com/repos/{$spec}/commits/master", false, $context);
+            if ($info !== false) {
+                try {
+                    $info = Zefram_Json::decode($info);
+                    $version .= '#' . substr($info['sha'], 0, 7);
+                } catch (Exception $e) {}
+            }
+        }
+
+        // Install package without updating all dependencies
         echo "Installing package {$spec}{$version} ... \n";
-        echo `composer require {$spec}{$version}`;
+        passthru("composer require --no-update {$spec}{$version}", $return);
+
+        // Ensure proper commit version is present in lockfile
+        list($branch, $commit) = explode('#', $version);
+        if ($branch === ':dev-master' && strlen($commit)) {
+            $lock = Zefram_Json::decode(file_get_contents('./composer.lock'));
+            $changed = false;
+            foreach ($lock['packages'] as $i => &$package) {
+                if ($package['name'] === $spec
+                    && $package['version'] === 'dev-master'
+                    && strpos($package['source']['reference'], $commit) !== 0
+                ) {
+                    $package['source']['reference'] = $commit;
+                    $changed = true;
+                }
+            }
+            unset($package);
+            if ($changed) {
+                echo 'Updated package version in composer.lock', "\n";
+                file_put_contents('./composer.lock', Zefram_Json::encode($lock, array(
+                    'prettyPrint'      => true,
+                    'unescapedSlashes' => true,
+                    'unescapedUnicode' => true,
+                )));
+                passthru("composer update --lock");
+            }
+        }
 
         echo "Setting up module " . basename($spec) . " ...\n";
         Maniple_Tool_Provider_Module_Setup::run(basename($spec));
@@ -119,6 +149,9 @@ class Maniple_Tool_Provider_Module_Install
         foreach ($repositories as $repo) {
             if (!is_array($repo) || empty($repo['url'])) {
                 continue;
+            }
+            if (strpos($repo['url'], 'https://github.com/') === 0) {
+                $repo['type'] = 'git';
             }
             $repo = array_merge(array(
                 'type' => isset($repo['type']) ? $repo['type'] : 'vcs',
