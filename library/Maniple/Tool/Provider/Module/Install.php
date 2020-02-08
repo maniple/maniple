@@ -110,7 +110,7 @@ class Maniple_Tool_Provider_Module_Install
         passthru("composer require --no-update {$spec}{$version}", $return);
 
         // Ensure proper commit version is present in lockfile
-        list($branch, $commit) = explode('#', $version);
+        list($branch, $commit) = strpos($version, '#') !== false ? explode('#', $version) : array('', '');
         if ($branch === ':dev-master' && strlen($commit)) {
             $lock = Zefram_Json::decode(file_get_contents('./composer.lock'));
             $changed = false;
