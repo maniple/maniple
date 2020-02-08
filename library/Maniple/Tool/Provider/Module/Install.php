@@ -74,6 +74,24 @@ class Maniple_Tool_Provider_Module_Install
                 $installable = true;
                 if (!$version) {
                     $version = ':dev-master';
+
+                    // GitHub API requires User-Agent to be provided
+                    // https://stackoverflow.com/a/37142247/1086596
+                    $context = stream_context_create(array(
+                        'http' => array(
+                            'method' => 'GET',
+                            'header' => array(
+                                'User-Agent: ' . __CLASS__,
+                            ),
+                        ),
+                    ));
+                    $info = file_get_contents("https://api.github.com/repos/{$spec}/commits/master", false, $context);
+                    if ($info !== false) {
+                        try {
+                            $info = Zefram_Json::decode($info);
+                            $version .= '#' . substr($info['sha'], 0, 7);
+                        } catch (Exception $e) {}
+                    }
                 }
             } else {
                 echo "not found.\n";
