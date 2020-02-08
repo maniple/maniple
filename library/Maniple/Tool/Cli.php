@@ -134,8 +134,8 @@ function maniple_init($baseDir = null) {
     }
 
     $dirs = array(
-        'configs' => false,
-        'modules' => false,
+        'application/configs' => false,
+        'application/modules' => false,
         'public' => false,
     );
 
