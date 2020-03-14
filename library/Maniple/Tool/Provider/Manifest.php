@@ -71,7 +71,12 @@ class Maniple_Tool_Provider_Manifest implements Zend_Tool_Framework_Manifest_Pro
                     continue;
                 }
 
-                $bootstrap = $modules->loadModule($module);
+                try {
+                    $bootstrap = $modules->loadModule($module);
+                } catch (Zend_Application_Resource_Exception $e) {
+                    continue;
+                }
+
                 if ($bootstrap instanceof Zend_Tool_Framework_Manifest_ProviderManifestable) {
                     foreach ($bootstrap->getProviders() as $provider) {
                         $providers[] = $provider;

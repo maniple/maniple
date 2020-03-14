@@ -284,7 +284,10 @@ class Maniple_Application_Resource_Modules
      */
     public function loadModule($module)
     {
-        return $this->_loadModule($module)->bootstrap;
+        if (null !== ($moduleData = $this->_loadModule($module))) {
+            return $moduleData->bootstrap;
+        }
+        throw new Zend_Application_Resource_Exception(sprintf("Unable to load module '%s'", $module));
     }
 
     /**
