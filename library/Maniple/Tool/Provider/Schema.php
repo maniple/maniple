@@ -37,6 +37,68 @@ class Maniple_Tool_Provider_Schema extends Maniple_Tool_Provider_Abstract
 
     public function installAction($module)
     {
+        $install = $this->_prepareInstall($module);
+
+        if (empty($install)) {
+            echo 'No schemas to install.', "\n";
+            return;
+        }
+
+        foreach ($install as $id => $queries) {
+            if (empty($queries)) {
+                echo 'No queries found in ', $id, "\n";
+                continue;
+            }
+
+            $db->beginTransaction();
+            try {
+                echo sprintf("Installing schema %s, %d queries found\n", $id, count($queries));
+                foreach ($queries as $i => $query) {
+                    echo sprintf("Running query #%d:\n  %s\n", $i, $query);
+                    $db->query($query);
+                    echo "\n\n";
+                }
+                $utime = microtime(true) - time();
+                $now = date('Y-m-d H:i:s') . sprintf('.%03d', $utime * 1000);
+                $db->insert($tableName, array(
+                    'schema_id'    => $id,
+                    'installed_at' => $now,
+                ));
+                $db->commit();
+            } catch (Exception $e) {
+                $db->rollBack();
+                throw $e;
+            }
+        }
+    }
+
+    public function showInstallAction($module)
+    {
+        $install = $this->_prepareInstall($module);
+
+        if (empty($install)) {
+            echo 'No schemas to install.', "\n";
+            return;
+        }
+
+        foreach ($install as $id => $queries) {
+            if (empty($queries)) {
+                echo '-- Schema: ', $id, ': No queries found', "\n";
+                continue;
+            }
+            echo '-- Schema: ', $id, ":\n";
+            foreach ($queries as $query) {
+                echo "\n", $query, ";\n";
+            }
+        }
+    }
+
+    /**
+     * @param string $module
+     * @return array
+     */
+    protected function _prepareInstall($module)
+    {
         $adapterClass = get_class($this->_getDbAdapter());
         $parts = explode('_', $adapterClass);
 
@@ -46,7 +108,6 @@ class Maniple_Tool_Provider_Schema extends Maniple_Tool_Provider_Abstract
         $schemas = @$_schemas[$schemaType];
 
         if (!$schemas) {
-            echo 'No schemas to install.', "\n";
             return;
         }
 
@@ -89,33 +150,11 @@ class Maniple_Tool_Provider_Schema extends Maniple_Tool_Provider_Abstract
             return;
         }
 
+        $queries = array();
         foreach ($schemas as $id => $file) {
-            $queries = self::parseQueries(file_get_contents($file), $tablePrefix);
-            if (!$queries) {
-                echo 'No queries found in ', $file, "\n";
-                continue;
-            }
-
-            $db->beginTransaction();
-            try {
-                echo sprintf("Installing schema %s, %d queries found\n", $id, count($queries));
-                foreach ($queries as $i => $query) {
-                    echo sprintf("Running query #%d:\n  %s\n", $i, $query);
-                    $db->query($query);
-                    echo "\n\n";
-                }
-                $utime = microtime(true) - time();
-                $now = date('Y-m-d H:i:s') . sprintf('.%03d', $utime * 1000);
-                $db->insert($tableName, array(
-                    'schema_id' => $id,
-                    'installed_at' => $now,
-                ));
-                $db->commit();
-            } catch (Exception $e) {
-                $db->rollBack();
-                throw $e;
-            }
+            $queries[$id] = self::parseQueries(file_get_contents($file), $tablePrefix);
         }
+        return $queries;
     }
 
     /**
