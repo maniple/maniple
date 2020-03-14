@@ -54,12 +54,13 @@ class Maniple_Tool_Provider_Schema extends Maniple_Tool_Provider_Abstract
         $tablePrefix = $this->_db->getTablePrefix();
         $tableName = $tablePrefix . '_schemas';
         $hasTable = false;
-        try {
-            $db->describeTable($tableName);
-            $hasTable = true;
-        } catch (Zend_Db_Statement_Exception $e) {
 
+        try {
+            $info = $db->describeTable($tableName);
+            $hasTable = !empty($info);
+        } catch (Zend_Db_Statement_Exception $e) {
         }
+
         if (!$hasTable) {
             echo 'Schemas table not present, creating ... ';
             $db->query("CREATE TABLE {$db->quoteIdentifier($tableName)} (schema_id VARCHAR(191) PRIMARY KEY, installed_at VARCHAR(23))");
