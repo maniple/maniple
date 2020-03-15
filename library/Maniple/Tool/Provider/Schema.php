@@ -267,6 +267,21 @@ class Maniple_Tool_Provider_Schema extends Maniple_Tool_Provider_Abstract
                     '$1 $2' . $tablePrefix . '$3 $4 $5' . $tablePrefix,
                     $query
                 );
+                $query = preg_replace(
+                    '/(UPDATE) (`|"|\\[)?([^ ]+) (SET)/i',
+                    '$1 $2' . $tablePrefix . '$3 $4',
+                    $query
+                );
+                $query = preg_replace(
+                    '/ (FROM|JOIN|LEFT JOIN|RIGHT JOIN|OUTER JOIN|INNER JOIN|CROSS JOIN) (`|"|\\[)?([^ ]+)/i',
+                    ' $1 $2' . $tablePrefix . '$3',
+                    $query
+                );
+                $query = preg_replace(
+                    '/(INSERT INTO) (`|"|\\[)?([^ ]+)/i',
+                    '$1 $2' . $tablePrefix . '$3',
+                    $query
+                );
                 return $query;
             },
             $sql
