@@ -45,6 +45,8 @@ class Maniple_Tool_Provider_Schema extends Maniple_Tool_Provider_Abstract
         }
 
         $db = $this->_getDbAdapter();
+        $tablePrefix = $this->_db->getTablePrefix();
+        $tableName = $tablePrefix . '_schemas';
 
         foreach ($install as $id => $queries) {
             if (empty($queries)) {
@@ -270,8 +272,8 @@ class Maniple_Tool_Provider_Schema extends Maniple_Tool_Provider_Abstract
                     $query
                 );
                 $query = preg_replace(
-                    '/(UPDATE) (`|"|\\[)?([^ ]+) (SET)/i',
-                    '$1 $2' . $tablePrefix . '$3 $4',
+                    '/(UPDATE) (`|"|\\[)?([^ ]+)/i',
+                    '$1 $2' . $tablePrefix . '$3',
                     $query
                 );
                 $query = preg_replace(
