@@ -44,6 +44,8 @@ class Maniple_Tool_Provider_Schema extends Maniple_Tool_Provider_Abstract
             return;
         }
 
+        $db = $this->_getDbAdapter();
+
         foreach ($install as $id => $queries) {
             if (empty($queries)) {
                 echo 'No queries found in ', $id, "\n";
