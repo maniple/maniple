@@ -232,7 +232,7 @@ abstract class Maniple_Application_Module_Bootstrap
     }
 
     /**
-     * Register routes in router using definitions from getResourcesConfig()
+     * Register routes in router using definitions from getRoutesConfig()
      *
      * @return void
      */
@@ -243,6 +243,15 @@ abstract class Maniple_Application_Module_Bootstrap
         }
 
         $routesConfig = (array) $this->getRoutesConfig();
+
+        // add module name if it's not provided
+        $moduleName = basename($this->getModuleDirectory());
+        foreach ($routesConfig as &$route) {
+            if (empty($route['defaults']['module'])) {
+                $route['defaults']['module'] = $moduleName;
+            }
+        }
+        unset($route);
 
         /** @var Zend_Application_Bootstrap_BootstrapAbstract $bootstrap */
         $bootstrap = $this->getApplication();
