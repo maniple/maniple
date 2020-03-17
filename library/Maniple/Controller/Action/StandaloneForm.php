@@ -166,15 +166,15 @@ abstract class Maniple_Controller_Action_StandaloneForm extends Maniple_Controll
     /**
      * Retrieves AJAX response.
      *
-     * @return Zefram_Controller_Action_AjaxResponse_Abstract
+     * @return Maniple_Controller_Action_AjaxResponse_Abstract
      * @throws Maniple_Controller_Action_Exception_InvalidArgument
      */
     public function getAjaxResponse()
     {
         $ajaxResponse = $this->_helper->ajaxResponse();
-        if (!$ajaxResponse instanceof Zefram_Controller_Action_AjaxResponse_Abstract) {
+        if (!$ajaxResponse instanceof Maniple_Controller_Action_AjaxResponse_Abstract) {
             throw new Maniple_Controller_Action_Exception_InvalidArgument(
-                'AjaxResponse must be an instance of Zefram_Controller_Action_AjaxResponse_Abstract'
+                'AjaxResponse must be an instance of Maniple_Controller_Action_AjaxResponse_Abstract'
             );
         }
         return $ajaxResponse;

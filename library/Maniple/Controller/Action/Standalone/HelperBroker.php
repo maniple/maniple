@@ -18,6 +18,7 @@
  * @property Zend_Controller_Action_Helper_ViewRenderer $viewRenderer
  * @property Zend_Layout_Controller_Action_Helper_Layout $layout
  * @method string|void json(mixed $data, bool $sendNow = true, bool $keepLayouts = false, bool $encodeData = true)
+ * @method Maniple_Controller_Action_AjaxResponse_Abstract ajaxResponse()
  */
 class Maniple_Controller_Action_Standalone_HelperBroker
 {

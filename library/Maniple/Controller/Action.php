@@ -1,5 +1,8 @@
 <?php
 
+/**
+ * @property Maniple_Controller_Action_HelperBroker_Abstract $_helper
+ */
 class Maniple_Controller_Action extends Zefram_Controller_Action
 {
     /**
