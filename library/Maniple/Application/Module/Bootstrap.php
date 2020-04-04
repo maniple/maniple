@@ -204,6 +204,7 @@ abstract class Maniple_Application_Module_Bootstrap
      * Run module tasks.
      *
      * @return void
+     * @deprecated
      */
     protected function _runModuleTasks() // {{{
     {
@@ -229,6 +230,17 @@ abstract class Maniple_Application_Module_Bootstrap
             trigger_error(sprintf('%s::_moduleDeps is deprecated. Each module should override getModuleDependencies() function', get_class($this)), E_USER_NOTICE);
         }
         return $this->_moduleDeps;
+    }
+
+    /**
+     * Store reference to this bootstrap to allow using it by other modules
+     * before 'modules' resource has finished bootstrapping
+     *
+     * @return void
+     */
+    protected function _initBootstrap()
+    {
+        $this->getContainer()->{get_class($this)} = $this;
     }
 
     /**
