@@ -63,16 +63,23 @@ class Maniple_Tool_Provider_Manifest implements Zend_Tool_Framework_Manifest_Pro
         $providers = array();
 
         if (is_dir('application/modules')) {
-            /** @var Maniple_Application_Resource_Modules $modules */
-            $modules = $this->_getApplication()->getBootstrap()->getPluginResource('modules');
+            $application = new Zefram_Application(__CLASS__);
 
             foreach (scandir(APPLICATION_PATH . '/modules') as $module) {
                 if ($module === '.' || $module === '..') {
                     continue;
                 }
 
+                $bootstrapFile = APPLICATION_PATH . '/modules/' . $module . '/Bootstrap.php';
+                if (!file_exists($bootstrapFile)) {
+                    continue;
+                }
+
+                require_once $bootstrapFile;
+                $bootstrapClass = $this->_formatModuleName($module) . '_Bootstrap';
+
                 try {
-                    $bootstrap = $modules->loadModule($module);
+                    $bootstrap = new $bootstrapClass($application);
                 } catch (Zend_Application_Resource_Exception $e) {
                     continue;
                 }
