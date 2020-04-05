@@ -105,35 +105,9 @@ class Maniple_Tool_Provider_Module_Install
             }
         }
 
-        // Install package without updating all dependencies
+        // Install package
         echo "Installing package {$spec}{$version} ... \n";
-        passthru("composer require --no-update {$spec}{$version}", $return);
-
-        // Ensure proper commit version is present in lockfile
-        list($branch, $commit) = strpos($version, '#') !== false ? explode('#', $version) : array('', '');
-        if ($branch === ':dev-master' && strlen($commit)) {
-            $lock = Zefram_Json::decode(file_get_contents('./composer.lock'));
-            $changed = false;
-            foreach ($lock['packages'] as $i => &$package) {
-                if ($package['name'] === $spec
-                    && $package['version'] === 'dev-master'
-                    && strpos($package['source']['reference'], $commit) !== 0
-                ) {
-                    $package['source']['reference'] = $commit;
-                    $changed = true;
-                }
-            }
-            unset($package);
-            if ($changed) {
-                echo 'Updated package version in composer.lock', "\n";
-                file_put_contents('./composer.lock', Zefram_Json::encode($lock, array(
-                    'prettyPrint'      => true,
-                    'unescapedSlashes' => true,
-                    'unescapedUnicode' => true,
-                )));
-                passthru("composer update --lock");
-            }
-        }
+        passthru("composer require {$spec}{$version}", $return);
 
         echo "Setting up module " . basename($spec) . " ...\n";
         Maniple_Tool_Provider_Module_Setup::run(basename($spec));
