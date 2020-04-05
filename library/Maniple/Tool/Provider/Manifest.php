@@ -21,6 +21,7 @@ class Maniple_Tool_Provider_Manifest implements Zend_Tool_Framework_Manifest_Pro
                 Maniple_Tool_Provider_Model::className,
                 Maniple_Tool_Provider_CliConfig::className,
                 Maniple_Tool_Provider_Schema::className,
+                Maniple_Tool_Provider_Db::className,
             ),
             $this->_loadModuleProviders()
         );

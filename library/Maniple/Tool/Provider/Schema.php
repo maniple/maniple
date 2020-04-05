@@ -298,32 +298,6 @@ class Maniple_Tool_Provider_Schema extends Maniple_Tool_Provider_Abstract
     // Mapping between adapter
     public static function getSchemaName($name)
     {
-        $name = strtolower($name);
-
-        switch ($name) {
-            case 'mysqli':
-            case 'mysql':
-                return 'Mysql';
-
-            case 'oci':
-            case 'oracle':
-                return 'Oracle';
-
-            case 'mssql':
-            case 'sqlsrv':
-            case 'sqlserver':
-                return 'Sqlsrv';
-
-            case 'ids':
-            case 'informix':
-                return 'Informix';
-
-            case 'pgsql':
-            case 'postgres':
-            case 'postgresql':
-                return 'Pgsql';
-        }
-
-        return ucfirst($name);
+        return Maniple_Tool_Provider_Db::getDbAdapterName($name);
     }
 }
