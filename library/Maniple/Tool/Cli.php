@@ -65,6 +65,7 @@ try {
                 'commandName'   => 'maniple',
                 'helpHeader'    => false,
                 'classesToLoad' => 'Maniple_Tool_Provider_Manifest',
+                'allowRemainingArgs' => true,
                 'application'   => array(
                     'class'       => 'Zefram_Application',
                     'environment' => APPLICATION_ENV,
