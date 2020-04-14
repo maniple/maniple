@@ -40,6 +40,7 @@ class Maniple_Application_Resource_Maniple extends Zend_Application_Resource_Res
 
             // Aliases
             'SharedEventManager' => 'resource:Maniple.SharedEventManager',
+            'Zend_EventManager_SharedEventManager' => 'resource:Maniple.SharedEventManager',
         ));
 
         return $this;

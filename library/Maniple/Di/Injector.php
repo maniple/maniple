@@ -42,20 +42,26 @@ class Maniple_Di_Injector
 
     /**
      * @param string $class
-     * @param array $args
+     * @param array $overrides
      * @return object
      */
-    public function newInstance($class, array $args = array())
+    public function newInstance($class, array $overrides = array())
     {
-        if ($args) {
-            $ref = new ReflectionClass($class);
-            if ($ref->hasMethod('__construct')) {
-                $instance = $ref->newInstanceArgs($args);
-            } else {
-                $instance = $ref->newInstance();
+        $ref = new ReflectionClass($class);
+        if ($ref->hasMethod('__construct')) {
+            $meta = $this->_extractMethodMetadata($ref, '__construct');
+            $instanceArgs = array();
+            foreach ($meta as $paramName => $paramInfo) {
+                $resourceName = $paramInfo['resourceName'];
+                if (array_key_exists($resourceName, $overrides)) {
+                    $instanceArgs[] = $overrides[$resourceName];
+                } else {
+                    $instanceArgs[] = $this->_container->{$resourceName};
+                }
             }
+            $instance = $ref->newInstanceArgs($instanceArgs);
         } else {
-            $instance = new $class();
+            $instance = $ref->newInstance();
         }
 
         $this->inject($instance);
@@ -65,11 +71,15 @@ class Maniple_Di_Injector
 
     /**
      * @param object $object
+     * @return object
      */
     public function inject($object)
     {
         if (!is_object($object)) {
-            throw new InvalidArgumentException();
+            throw new InvalidArgumentException(sprintf(
+                'Expected object for property injection, %s was provided instead',
+                gettype($object)
+            ));
         }
 
         $metadata = $this->_getMetadata($object);
@@ -87,7 +97,7 @@ class Maniple_Di_Injector
 
             if ($dep === null) {
                 if (!$desc['nullable']) {
-                    throw new Exception('Resource not found: ' . $desc['resourceName']);
+                    throw new InvalidArgumentException('Resource not found: ' . $desc['resourceName']);
                 }
 
             } elseif ($desc['varType']) {
@@ -120,7 +130,7 @@ class Maniple_Di_Injector
     {
         $objectClass = get_class($object);
 
-        if (!isset($this->_metadata[$objectClass])) {
+        if (!isset($this->_metadata[$objectClass]['properties'])) {
             $metadata = array();
             $ref = new ReflectionClass($object);
             foreach ($ref->getProperties() as $prop) {
@@ -170,9 +180,29 @@ class Maniple_Di_Injector
                 $metadata[$prop->getName()] = compact('resourceName', 'varType', 'nullable');
             }
 
-            $this->_metadata[$objectClass] = $metadata;
+            return $this->_metadata[$objectClass]['properties'] = $metadata;
         }
 
-        return $this->_metadata[$objectClass];
+        return $this->_metadata[$objectClass]['properties'];
+    }
+
+    protected function _extractMethodMetadata(ReflectionClass $refClass, $method)
+    {
+        if (!isset($this->_metadata[$refClass->getName()][$method])) {
+            $refMethod = $refClass->getMethod($method);
+            $metadata = array();
+
+            foreach ($refMethod->getParameters() as $param) {
+                $metadata[$param->getName()] = array(
+                    'resourceName' => $param->getClass()->getName(),
+                    'varType'      => $param->getClass()->getName(),
+                    'nullable'     => $param->allowsNull(),
+                );
+            }
+
+            return $this->_metadata[$refClass->getName()][$method] = $metadata;
+        }
+
+        return $this->_metadata[$refClass->getName()][$method];
     }
 }
