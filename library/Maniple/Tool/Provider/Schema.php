@@ -286,12 +286,12 @@ class Maniple_Tool_Provider_Schema extends Maniple_Tool_Provider_Abstract
                     '$1 $2' . $tablePrefix . '$3',
                     $query
                 );
-                // MySQL rename table
                 $query = preg_replace(
-                    '/(RENAME TABLE) (`|"|\\[)?/i',
+                    '/(RENAME TABLE|RENAME CONSTRAINT) (`|"|\\[)?/i',
                     '$1 $2' . $tablePrefix,
                     $query
                 );
+                // MySQL rename table
                 $query = preg_replace(
                     '/(RENAME TABLE (`[^`]+`|"[^"]+"|\[[^]]+\]|[_a-z][_a-z0-9]*) TO) (`|"|\\[)?([^ ]+)/i',
                     '$1 $3' . $tablePrefix . '$4',
