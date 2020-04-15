@@ -64,6 +64,8 @@ class Maniple_Tool_Provider_Schema extends Maniple_Tool_Provider_Abstract
                 }
                 $utime = microtime(true) - time();
                 $now = date('Y-m-d H:i:s') . sprintf('.%03d', $utime * 1000);
+                $now = substr($now, 0, 23);
+                echo sprintf("Marking schema as installed at %s\n\n", $now);
                 $db->insert($tableName, array(
                     'schema_id'    => $id,
                     'installed_at' => $now,
