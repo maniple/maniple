@@ -353,8 +353,8 @@ abstract class Maniple_Application_Module_Bootstrap
         /** @var Zefram_Controller_Action_Helper_ViewRenderer $viewRenderer */
         $viewRenderer = Zend_Controller_Action_HelperBroker::getStaticHelper('ViewRenderer');
 
-        // Zend_Controller_Front::addModuleDirectory() treats module directory as module name
-        // get dispatcher-compatible module name
+        // Zend_Controller_Front::addModuleDirectory() treats module directory as
+        // a dispatcher-compatible module name
         $moduleName = basename($this->getModuleDirectory());
 
         if (isset($viewConfig['scriptPathSpec'])) {
