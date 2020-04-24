@@ -1,5 +1,8 @@
 <?php
 
+/**
+ * @deprecated Use {@link Maniple_Menu_MenuManager}
+ */
 class Maniple_Navigation_Manager
 {
     /**

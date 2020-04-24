@@ -24,7 +24,11 @@ class Maniple_Application_Resource_Maniple extends Zend_Application_Resource_Res
 
         $container->addResources(array(
             'Maniple.Injector' => $container->getInjector(),
+
             'Maniple.SharedEventManager' => $this->_initSharedEventManager(),
+            'SharedEventManager' => 'resource:Maniple.SharedEventManager',
+            'Zend_EventManager_SharedEventManager' => 'resource:Maniple.SharedEventManager',
+
             'Maniple.AssetRegistry' => array(
                 'class' => 'Maniple_Assets_AssetRegistry',
             ),
@@ -38,9 +42,10 @@ class Maniple_Application_Resource_Maniple extends Zend_Application_Resource_Res
                 ),
             ),
 
-            // Aliases
-            'SharedEventManager' => 'resource:Maniple.SharedEventManager',
-            'Zend_EventManager_SharedEventManager' => 'resource:Maniple.SharedEventManager',
+            'Maniple_Menu_MenuManager' => array(
+                'callback' => 'Maniple_Menu_MenuManagerFactory::factory',
+            ),
+            'maniple.menuManager' => 'resource:Maniple_Menu_MenuManager',
         ));
 
         return $this;
