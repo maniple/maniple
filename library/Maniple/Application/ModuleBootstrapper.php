@@ -1,5 +1,8 @@
 <?php
 
+/**
+ * @deprecated
+ */
 interface Maniple_Application_ModuleBootstrapper
 {
     /**

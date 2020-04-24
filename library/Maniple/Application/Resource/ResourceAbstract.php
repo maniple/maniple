@@ -1,5 +1,8 @@
 <?php
 
+/**
+ * @deprecated
+ */
 abstract class Maniple_Application_Resource_ResourceAbstract
     extends Zend_Application_Resource_ResourceAbstract
 {

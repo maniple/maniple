@@ -1,5 +1,8 @@
 <?php
 
+/**
+ * @deprecated
+ */
 class Maniple_Application_Resource_NavigationManager extends Zend_Application_Resource_ResourceAbstract
 {
     /**

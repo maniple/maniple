@@ -5,6 +5,8 @@
  *
  * Module tasks are common routines executed as the last stage of module
  * bootstrapping.
+ *
+ * @deprecated
  */
 interface Maniple_Application_Module_Task_TaskInterface
 {

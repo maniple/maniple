@@ -1,5 +1,8 @@
 <?php
 
+/**
+ * @deprecated
+ */
 class Maniple_Application_Module_Task_Translations
     implements Maniple_Application_Module_Task_TaskInterface
 {

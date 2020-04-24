@@ -17,7 +17,7 @@
  * @version 2014-07-13
  */
 class Maniple_Application_Resource_Modules
-    extends Maniple_Application_Resource_ResourceAbstract
+    extends Zend_Application_Resource_ResourceAbstract
     implements Maniple_Application_ModuleBootstrapper
 {
     const STATE_DEFAULT       = 0;
