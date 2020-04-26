@@ -19,14 +19,21 @@ class Maniple_View_Helper_ManipleMenu extends Maniple_View_Helper_Abstract
 
     public function render(array $options = array())
     {
-        return $this->renderMenu('maniple.primary') . $this->renderMenu('maniple.secondary');
+        $html = $this->renderMenu('maniple.primary', 'maniple-menu-primary')
+            . $this->renderMenu('maniple.secondary', 'maniple-menu-secondary');
+
+        if (strlen($html)) {
+            return '<nav class="maniple-menu">' . $html . '</nav>';
+        }
+
+        return '';
     }
 
     /**
      * @param string $name
      * @return string
      */
-    public function renderMenu($name)
+    public function renderMenu($name, $class)
     {
         $menu = $this->_menuManager->getMenu($name);
 
@@ -35,7 +42,9 @@ class Maniple_View_Helper_ManipleMenu extends Maniple_View_Helper_Abstract
             $separator->setClass(trim($separator->getClass() . ' dropdown-divider divider'));
         }
 
-        return $this->view->navigation()->menu()->addPageClassToLi(false)->render($menu);
+        return $this->view->navigation()->menu()
+            ->setUlClass($class)
+            ->addPageClassToLi(false)->render($menu);
     }
 
     public function __toString()
