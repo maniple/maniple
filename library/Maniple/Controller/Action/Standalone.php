@@ -46,7 +46,7 @@ abstract class Maniple_Controller_Action_Standalone
     protected $_response;
 
     /**
-     * @var Zefram_View_Interface
+     * @var Zefram_View_Abstract
      */
     public $view;
 
