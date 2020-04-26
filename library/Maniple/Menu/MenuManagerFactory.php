@@ -14,7 +14,7 @@ class Maniple_Menu_MenuManagerFactory
         $modules = $container->getResource('Modules');
         foreach ($modules as $moduleBootstrap) {
             if (!$moduleBootstrap instanceof Maniple_Menu_MenuManagerProviderInterface
-                && !is_callable($moduleBootstrap, 'getMenuManagerConfig')
+                && !method_exists($moduleBootstrap, 'getMenuManagerConfig')
             ) {
                 continue;
             }
