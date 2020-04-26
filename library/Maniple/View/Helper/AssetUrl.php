@@ -2,20 +2,14 @@
 
 /**
  * Generates asset url with cache-busting suffix
- *
- * @version 2019-02-11
  */
-class Maniple_View_Helper_AssetUrl extends Zend_View_Helper_Abstract
+class Maniple_View_Helper_AssetUrl extends Maniple_View_Helper_Abstract
 {
     /**
-     * @return Maniple_AssetMananger_Service
+     * @Inject('Maniple.AssetManager')
+     * @var Maniple_AssetMananger_Service
      */
-    protected function _getAssetManager()
-    {
-        /** @var Maniple_AssetMananger_Service $assetManager */
-        $assetManager = Zend_Controller_Front::getInstance()->getParam('bootstrap')->getResource('Maniple.AssetManager');
-        return $assetManager;
-    }
+    protected $_assetManager;
 
     /**
      * @param string $path
@@ -24,6 +18,6 @@ class Maniple_View_Helper_AssetUrl extends Zend_View_Helper_Abstract
      */
     public function assetUrl($path, $moduleName = null)
     {
-        return $this->_getAssetManager()->getAssetUrl($path, $moduleName);
+        return $this->_assetManager->getAssetUrl($path, $moduleName);
     }
 }
