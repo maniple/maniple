@@ -42,7 +42,7 @@ class Application_MainController extends Maniple_Controller_Action
 }
 ```
 
-or pull it explicitly from DI container:
+or pull it explicitly from the DI container:
 
 ```php
 /** @var Maniple_Menu_MenuManager $menuManager */

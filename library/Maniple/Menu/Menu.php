@@ -49,4 +49,43 @@ class Maniple_Menu_Menu extends Zend_Navigation
 
         return $page;
     }
+
+    /**
+     * Returns a child page that is an instance of a given class.
+     *
+     * @param string $class
+     * @return Zend_Navigation_Page|null
+     */
+    public function findInstanceOf($class)
+    {
+        $iterator = new RecursiveIteratorIterator($this, RecursiveIteratorIterator::SELF_FIRST);
+
+        foreach ($iterator as $page) {
+            if ($page instanceof $class) {
+                return $page;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Returns all child pages that are instances of a given class.
+     *
+     * @param string $class
+     * @return Zend_Navigation_Page[]
+     */
+    public function findAllInstancesOf($class)
+    {
+        $found = array();
+        $iterator = new RecursiveIteratorIterator($this, RecursiveIteratorIterator::SELF_FIRST);
+
+        foreach ($iterator as $page) {
+            if ($page instanceof $class) {
+                $found[] = $page;
+            }
+        }
+
+        return $found;
+    }
 }
