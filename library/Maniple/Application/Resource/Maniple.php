@@ -32,7 +32,8 @@ class Maniple_Application_Resource_Maniple extends Zend_Application_Resource_Res
             'Maniple.AssetRegistry' => array(
                 'class' => 'Maniple_Assets_AssetRegistry',
             ),
-            'Maniple.AssetManager' => array(
+
+            'Maniple_Assets_AssetManager' => array(
                 'class' => 'Maniple_Assets_AssetManager',
                 'args'  => array(
                     'resource:FrontController',
@@ -41,6 +42,7 @@ class Maniple_Application_Resource_Maniple extends Zend_Application_Resource_Res
                     'resource:Maniple.AssetRegistry',
                 ),
             ),
+            'Maniple.AssetManager' => 'resource:Maniple_Assets_AssetManager',
 
             'Maniple_Menu_MenuManager' => array(
                 'callback' => 'Maniple_Menu_MenuManagerFactory::factory',

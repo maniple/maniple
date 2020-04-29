@@ -10,6 +10,8 @@
  */
 class Maniple_Assets_AssetManager
 {
+    const className = __CLASS__;
+
     /**
      * @var Zend_Controller_Front
      */

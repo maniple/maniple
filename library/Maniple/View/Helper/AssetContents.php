@@ -6,8 +6,8 @@
 class Maniple_View_Helper_AssetContents extends Maniple_View_Helper_Abstract
 {
     /**
-     * @Inject('Maniple.AssetManager')
-     * @var Maniple_AssetMananger_Service
+     * @Inject
+     * @var Maniple_Assets_AssetManager
      */
     protected $_assetManager;
 

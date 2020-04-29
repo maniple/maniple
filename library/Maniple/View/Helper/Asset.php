@@ -9,12 +9,12 @@
 class Maniple_View_Helper_Asset extends Zend_View_Helper_Abstract
 {
     /**
-     * @return Maniple_AssetMananger_Service
+     * @return Maniple_Assets_AssetManager
      */
     protected function _getAssetManager()
     {
-        /** @var Maniple_AssetMananger_Service $assetManager */
-        $assetManager = Zend_Controller_Front::getInstance()->getParam('bootstrap')->getResource('Maniple.AssetManager');
+        /** @var Maniple_Assets_AssetManager $assetManager */
+        $assetManager = Zend_Controller_Front::getInstance()->getParam('bootstrap')->getResource('Maniple_Assets_AssetManager');
         return $assetManager;
     }
 
