@@ -1,5 +1,8 @@
 <?php
 
+/**
+ * @property Zefram_View_Abstract $view
+ */
 class Maniple_View_Helper_Abstract extends Zend_View_Helper_Abstract
 {
     public function __construct()

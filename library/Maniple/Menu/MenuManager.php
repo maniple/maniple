@@ -60,6 +60,12 @@ class Maniple_Menu_MenuManager
             $builder->buildMenu($menu);
         }
 
+        foreach ($this->_builders as $builder) {
+            if (method_exists($builder, 'postBuildMenu')) {
+                $builder->postBuildMenu($menu);
+            }
+        }
+
         return $menu;
     }
 }
