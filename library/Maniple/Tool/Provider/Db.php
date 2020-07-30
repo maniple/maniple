@@ -38,7 +38,7 @@ class Maniple_Tool_Provider_Db extends Maniple_Tool_Provider_Abstract
      * @return Zend_Db_Adapter_Abstract
      * @throws Zend_Application_Bootstrap_Exception
      */
-    public function getDbAdapterConfig()
+    protected function _getDbAdapterConfig()
     {
         $dbResource = $this->_getApplication()->getBootstrap()->getPluginResource('Db');
         return $dbResource->getOptions();
