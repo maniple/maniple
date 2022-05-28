@@ -9,27 +9,40 @@ class Maniple_Tool_Provider_Db extends Maniple_Tool_Provider_Abstract
      */
     protected $_db;
 
-    public function dumpAction($excludeTables = null)
+    public function dumpAction()
     {
-        $path = realpath(APPLICATION_PATH . '/../data/') . '/db/dumps';
+        $path = realpath(APPLICATION_PATH . '/../data/') . '/dumps';
         @mkdir($path, 0755, true);
 
-        $config = $this->getDbAdapterConfig();
+        $config = $this->_getDbAdapterConfig();
         $adapter = self::getDbAdapterName($config['adapter']);
         switch ($adapter) {
             case 'Mysql':
                 require_once __DIR__ . '/Db/DumpMysql.php';
-                Maniple_Tool_Provider_Db_DumpMysql::run($config, $path);
-                return;
+                $output = Maniple_Tool_Provider_Db_DumpMysql::run($config, $path);
+                break;
 
             case 'Pgsql':
                 require_once __DIR__ . '/Db/DumpPgsql.php';
-                Maniple_Tool_Provider_Db_DumpPgsql::run($config, $path);
-                return;
+                $output = Maniple_Tool_Provider_Db_DumpPgsql::run($config, $path);
+                break;
 
             default:
-                throw new RuntimeException('Unrecognized db adapter: ' . $adapter);
+                throw new RuntimeException('Unsupported db adapter: ' . $adapter);
         }
+
+        if (!$output) {
+            throw new Zend_Tool_Framework_Provider_Exception("No output generated");
+        }
+
+        // gzip removes original file, which is what we want here
+        exec("gzip " . escapeshellarg($output), $lines, $error);
+        if ($error) {
+            throw new Zend_Tool_Framework_Provider_Exception(implode("\n", $lines));
+        }
+
+        echo implode("\n", $lines);
+        echo "Compressed dump written to ", $output . '.tgz', "\n\n";
     }
 
     /**
