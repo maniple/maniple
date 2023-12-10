@@ -525,7 +525,7 @@ class Maniple_Application_Resource_Modules
         }
 
         $moduleInfo->state = self::STATE_BOOTSTRAPPED;
-        $this->_bootstraps{$moduleName} = $moduleBootstrap;
+        $this->_bootstraps[$moduleName] = $moduleBootstrap;
 
         return $moduleBootstrap;
     }
