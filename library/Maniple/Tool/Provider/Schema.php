@@ -54,10 +54,12 @@ class Maniple_Tool_Provider_Schema extends Maniple_Tool_Provider_Abstract
                 continue;
             }
 
+            $isDDL = false;
             $db->beginTransaction();
             try {
                 echo sprintf("Installing schema %s, %d queries found\n", $id, count($queries));
                 foreach ($queries as $i => $query) {
+                    $isDDL = $isDDL || preg_match('/^(CREATE|ALTER|DROP)/i', $query);
                     echo sprintf("Running query #%d:\n  %s\n", $i, $query);
                     $db->query($query);
                     echo "\n\n";
@@ -72,7 +74,23 @@ class Maniple_Tool_Provider_Schema extends Maniple_Tool_Provider_Abstract
                 ));
                 $db->commit();
             } catch (Exception $e) {
-                $db->rollBack();
+                // Some databases, including MySQL, automatically issue an implicit COMMIT when a database
+                // definition language (DDL) statement such as DROP TABLE or CREATE TABLE is issued within
+                // a transaction. The implicit COMMIT will prevent you from rolling back any other changes
+                // within the transaction boundary.
+                // See: https://www.php.net/manual/en/pdo.begintransaction.php
+
+                // If COMMIT failed because of a auto-commit triggered by a DDL statement, queries were
+                // executed and transaction is already committed, so we just continue with next schema.
+                if ($e->getMessage() === 'There is no active transaction' && $isDDL) {
+                    continue;
+                }
+
+                try {
+                    $db->rollBack();
+                } catch (Exception $_) {
+                    // ROLLBACK may fail if previously committed due to DDL statement, ignore
+                }
                 throw $e;
             }
         }
