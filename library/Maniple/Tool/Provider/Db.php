@@ -42,7 +42,7 @@ class Maniple_Tool_Provider_Db extends Maniple_Tool_Provider_Abstract
         }
 
         echo implode("\n", $lines);
-        echo "Compressed dump written to ", $output . '.tgz', "\n\n";
+        echo "Compressed dump written to ", $output . '.gz', "\n\n";
     }
 
     /**
