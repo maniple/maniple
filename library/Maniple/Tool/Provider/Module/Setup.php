@@ -30,7 +30,7 @@ class Maniple_Tool_Provider_Module_Setup
                 $gitignore = array();
             }
 
-            $prefix = 'application/modules/';
+            $prefix = substr(dirname($modulePath), strlen(APPLICATION_PATH)) . '/';
             $moduleGitignore = $prefix . $moduleName;
 
             if (!in_array($moduleGitignore, $gitignore)) {

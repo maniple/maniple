@@ -11,7 +11,7 @@ class Maniple_Tool_Provider_Db extends Maniple_Tool_Provider_Abstract
 
     public function dumpAction()
     {
-        $path = realpath(APPLICATION_PATH . '/../data/') . '/dumps';
+        $path = getcwd() . '/data/dumps';
         @mkdir($path, 0755, true);
 
         $config = $this->_getDbAdapterConfig();

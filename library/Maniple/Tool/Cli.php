@@ -33,48 +33,54 @@ $action = $args[1];
 $action_args = array_slice($args, 2);
 
 define('APPLICATION_ENV',  (is_file('appenv') ? trim(file_get_contents('appenv')) : 'production'));
-define('APPLICATION_PATH', getcwd() . '/application');
+
+// Auto-detect application dir
+$application_dir = is_dir(getcwd() . '/application') ? 'application' : '';
+define('APPLICATION_PATH', getcwd() . ($application_dir ? "/$application_dir" : ''));
 
 try {
     if ($action === 'install' && !count($action_args)) {
-        maniple_install(isset($args[2]) ? $args[2] : '/');
-    } else switch ($action) {
-        case 'init':
-            // maniple init
-            maniple_init(isset($args[2]) ? $args[2] : null);
-            break;
+        maniple_init(isset($args[2]) ? $args[2] : getcwd(), $application_dir);
+        maniple_install('/');
+    } else {
+        switch ($action) {
+            case 'init':
+                // maniple init
+                maniple_init(isset($args[2]) ? $args[2] : getcwd(), $application_dir);
+                break;
 
-        case 'vendor-update':
-            // maniple vendor-update [vendor_path]
-            maniple_vendor_update(isset($args[2]) ? $args[2] : null);
-            break;
+            case 'vendor-update':
+                // maniple vendor-update [vendor_path]
+                maniple_vendor_update(isset($args[2]) ? $args[2] : null);
+                break;
 
-        case 'set-baseurl':
-            // maniple set-baseurl [base_url]
-            break;
+            case 'set-baseurl':
+                // maniple set-baseurl [base_url]
+                break;
 
-        case 'db:dump':
-            maniple_db_dump(@$args[2]);
-            break;
+            case 'db:dump':
+                maniple_db_dump(@$args[2]);
+                break;
 
-        case 'create-module':
-            throw new Exception('create-module action has been removed. Use \'maniple module create\' instead');
+            case 'create-module':
+                throw new Exception('create-module action has been removed. Use \'maniple module create\' instead');
 
-        default:
-            $console = new Maniple_Tool_Client_Console(array(
-                'commandName'   => 'maniple',
-                'helpHeader'    => false,
-                'classesToLoad' => 'Maniple_Tool_Provider_Manifest',
-                'allowRemainingArgs' => true,
-                'application'   => array(
-                    'class'       => 'Zefram_Application',
-                    'environment' => APPLICATION_ENV,
-                    'config'      => APPLICATION_PATH . '/configs/application.config.php',
-                ),
-            ));
-            $console->dispatch();
+            default:
+                $console = new Maniple_Tool_Client_Console(array(
+                    'commandName' => 'maniple',
+                    'helpHeader' => false,
+                    'classesToLoad' => 'Maniple_Tool_Provider_Manifest',
+                    'allowRemainingArgs' => true,
+                    'application' => array(
+                        'class' => 'Zefram_Application',
+                        'environment' => APPLICATION_ENV,
+                        'config' => APPLICATION_PATH . '/configs/application.config.php',
+                    ),
+                ));
+                $console->dispatch();
 
-            break;
+                break;
+        }
     }
 } catch (Exception $e) {
     echo "[ FAIL ] ", $e->getMessage(), "\n";
@@ -84,8 +90,6 @@ echo "\n";
 
 function maniple_install($basePath)
 {
-    maniple_init();
-
     if (is_file('maniple.json')) {
         $config = (array) json_decode(file_get_contents('maniple.json'), true);
         if (isset($config['modules'])) {
@@ -123,20 +127,16 @@ function set_baseurl($baseUrl)
 
 }
 
-function maniple_init($baseDir = null) {
-    if ($baseDir !== null) {
-        if (!is_dir($baseDir)) {
-            echo "not a directory: ", $baseDir, "\n";
-            exit(1);
-        }
-        $baseDir = realpath($baseDir);
-    } else {
-        $baseDir = getcwd();
+function maniple_init($baseDir, $applicationDir) {
+    if (!is_dir($baseDir)) {
+        echo "not a directory: ", $baseDir, "\n";
+        exit(1);
     }
+    $baseDir = realpath($baseDir);
 
     $dirs = array(
-        'application/configs' => false,
-        'application/modules' => false,
+        $applicationDir ? "$applicationDir/configs" : 'configs' => false,
+        $applicationDir ? "$applicationDir/modules" : 'modules' => false,
         'public' => false,
     );
 
