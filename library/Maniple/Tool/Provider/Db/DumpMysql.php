@@ -20,7 +20,7 @@ class Maniple_Tool_Provider_Db_DumpMysql
 
         @mkdir(dirname($sqlOutput), 0755, true);
 
-        exec('mysqldump --no-create-db --skip-extended-insert ' . escapeshellarg($dbName) . ' > ' . escapeshellarg($sqlOutput), $output, $error);
+        exec('mysqldump --no-create-db --skip-extended-insert --no-tablespaces ' . escapeshellarg($dbName) . ' > ' . escapeshellarg($sqlOutput), $output, $error);
 
         if ($error) {
             throw new Zend_Tool_Framework_Provider_Exception(implode("\n", $output));
